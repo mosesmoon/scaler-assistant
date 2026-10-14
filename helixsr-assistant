@@ -1,0 +1,5 @@
+#!/usr/bin/env bash
+# Launch HelixSR 助手 (HelixSR Assistant) from its source directory.
+here="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")" && pwd)"
+export PYTHONPATH="$here${PYTHONPATH:+:$PYTHONPATH}"
+exec python3 -m helixsr_assistant "$@"

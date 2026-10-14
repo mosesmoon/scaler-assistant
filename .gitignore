@@ -1,0 +1,20 @@
+# Build outputs
+build/
+dist/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
+
+# Local development notes (contain machine-specific details; never published)
+HANDOFF.md
+CLAUDE.md
+.ruff_cache/
