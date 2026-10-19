@@ -39,7 +39,7 @@ from .steam_cef import CefError, SteamCef
 STAMP = f"Scaler Assistant {__version__}"
 FSR4_BUILDS = ("auto", "dgpu", "igpu", "native")
 # Raised when games.detect_layout changes what it finds, so cached scans are redone.
-LAYOUT_VERSION = 3
+LAYOUT_VERSION = 4
 
 
 def config_dir() -> Path:

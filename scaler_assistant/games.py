@@ -51,12 +51,34 @@ DLSS_FG = "sl.dlss_g.dll"             # Streamline's DLSS Frame Generation: Heli
 HX_SCALER_SUB = "OptiScaler"          # HelixSR Scaler's own FidelityFX / XeSS DLLs
 APIS = ("dx12", "dx11", "vulkan")
 
-_ANTI_CHEAT_DIRS = {"easyanticheat": "Easy Anti-Cheat", "battleye": "BattlEye"}
-_ANTI_CHEAT_FILES = (
-    (re.compile(r"^start_protected_game\.exe$", re.I), "Easy Anti-Cheat"),
-    (re.compile(r"^easyanticheat.*\.(exe|dll|sys)$", re.I), "Easy Anti-Cheat"),
-    (re.compile(r"^(beservice|battleye).*\.(exe|dll|sys)$", re.I), "BattlEye"),
+# Anti-cheat a game ships, by the start of a file or folder name (the same vendors HelixSR's
+# installer knows, so both agree on which games need the anti-cheat confirmation).
+_ANTI_CHEAT = (
+    ("Easy Anti-Cheat", ("easyanticheat", "start_protected_game.exe", "eac_launcher.exe")),
+    ("BattlEye", ("battleye", "beservice", "beclient")),
+    ("nProtect GameGuard", ("gameguard",)),
+    ("XIGNCODE3", ("xigncode",)),
+    ("EQU8", ("equ8",)),
+    ("Anti-Cheat Expert", ("anticheatexpert", "ace-base")),
+    ("EA Javelin", ("eaanticheat", "eaac.")),
+    ("PunkBuster", ("pnkbstr", "punkbuster", "pbsvc")),
+    ("Denuvo Anti-Cheat", ("denuvo-anti-cheat", "denuvoanticheat")),
+    ("mhyprot", ("mhyprot",)),
+    ("NetEase Anti-Cheat", ("neacsafe", "neac_")),
 )
+_ANTI_CHEAT_DEPTH = 5   # levels below the game's folder that are searched
+
+
+def anti_cheat_of(name: str) -> Optional[str]:
+    lower = name.lower()
+    for label, prefixes in _ANTI_CHEAT:
+        if lower.startswith(prefixes):
+            return label
+    if lower.endswith("_be.exe"):
+        return "BattlEye"
+    return None
+
+
 _WALK_DEPTH = 7
 _WALK_MAX_DIRS = 20000
 
@@ -233,11 +255,13 @@ def detect_layout(install_dir: Path | str, appinfo: Optional[dict] = None) -> Ga
     combined: list[Path] = []
     anti_cheat: set[str] = set()
     dlss_fg = False
+    base = len(install_dir.parts)
     for directory, dirs, files in tree:
-        for name in dirs:
-            label = _ANTI_CHEAT_DIRS.get(name.lower())
-            if label:
-                anti_cheat.add(label)
+        if len(directory.parts) - base < _ANTI_CHEAT_DEPTH:
+            for name in (*dirs, *files):
+                label = anti_cheat_of(name)
+                if label:
+                    anti_cheat.add(label)
         for name in files:
             lower = name.lower()
             if lower in INPUTS:
@@ -248,9 +272,6 @@ def detect_layout(install_dir: Path | str, appinfo: Optional[dict] = None) -> Ga
                 combined.append(directory / name)
             elif lower == DLSS_FG:
                 dlss_fg = True
-            for pattern, label in _ANTI_CHEAT_FILES:
-                if pattern.match(name):
-                    anti_cheat.add(label)
     # HelixSR replaces the upscaler DLL; only games without one use the combined DLL.
     targets = sorted(upscaler or combined)
     exe = find_exe(install_dir, tree, appinfo) if (inputs or targets) else None

@@ -837,6 +837,19 @@ class ModernHelixSRTest(Base):
         self.assertEqual(self.entry(DLSS).status.route, "hscaler")
 
 
+class AntiCheatTest(unittest.TestCase):
+    def test_vendors_helixsr_knows(self):
+        import tempfile
+        from scaler_assistant.games import detect_layout
+        with tempfile.TemporaryDirectory() as tmp:
+            game = Path(tmp) / "Sora"
+            (game / "bin" / "equ8_conf").mkdir(parents=True)
+            (game / "bin" / "game.exe").write_bytes(b"MZ")
+            (game / "bin" / "nvngx_dlss.dll").write_bytes(b"MZ")
+            (game / "bin" / "Game_BE.exe").write_bytes(b"MZ")
+            self.assertEqual(detect_layout(game).anti_cheat, ["BattlEye", "EQU8"])
+
+
 class FrameGenerationTest(Base):
     """HelixSR 2.0's frame generation switch: HelixSR Scaler in a game with DLSS Frame Generation."""
 

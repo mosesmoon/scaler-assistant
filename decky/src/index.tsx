@@ -18,7 +18,7 @@ import {
   ModalRoot,
   PanelSection,
   PanelSectionRow,
-  ProgressBarWithInfo,
+  ProgressBar,
   showModal,
   staticClasses,
   ToggleField,
@@ -526,8 +526,14 @@ function Content() {
       {state.text && (
         <PanelSection>
           <PanelSectionRow>
-            <ProgressBarWithInfo indeterminate={state.progress < 0} nProgress={Math.max(0, state.progress)}
-              sOperationText={state.text} />
+            <div style={{ display: "flex", flexDirection: "column", alignItems: "stretch", gap: "6px",
+              width: "100%", minWidth: 0, maxWidth: "100%", boxSizing: "border-box", padding: "2px 0",
+              margin: 0, textAlign: "left" }}>
+              <div style={{ fontSize: "12px", lineHeight: "16px", color: "#dcdedf", textAlign: "left",
+                textTransform: "none", whiteSpace: "normal", overflowWrap: "anywhere", minWidth: 0 }}>
+                {state.text}</div>
+              <ProgressBar indeterminate={state.progress < 0} nProgress={Math.max(0, state.progress)} />
+            </div>
           </PanelSectionRow>
         </PanelSection>
       )}
