@@ -16,11 +16,11 @@ A desktop tool (PyQt6) that lets you choose the upscaler for each Steam game —
 
 ### Screenshots
 
-![Main window: games with FSR 4.1 Exact, FSR 4.1 Lossy (OptiScaler as winmm.dll) and FSR 3, one running](screenshot/01-game-list.png)
+![Main window on a Steam Deck: HelixSR 2.0 through HelixSR Scaler and FSR 4.1 Lossy running, FSR 4.1 Exact with a newer download](screenshot/01-game-list.png)
 
 | | |
 |---|---|
-| ![Choose upscaler](screenshot/02-choose-upscaler.png)<br>The upscaler menu on a Steam Deck: the DLSS way greyed out (GeForce only), FSR 4.1 Lossy recommended | ![Downloads](screenshot/03-downloads.png)<br>OptiScaler and FSR 4.1 downloads and the FSR 4.1 build for your GPU |
+| ![Choose upscaler](screenshot/02-choose-upscaler.png)<br>The upscaler menu on a Steam Deck with HelixSR 2.0: HelixSR Scaler, and FSR 4.1 Lossy recommended | ![Downloads](screenshot/03-downloads.png)<br>OptiScaler and FSR 4.1 downloads and the FSR 4.1 build for your GPU |
 | ![OptiScaler file name](screenshot/04-optiscaler-name.png)<br>OptiScaler's file name, chosen automatically or by hand | ![HelixSR](screenshot/05-helixsr.png)<br>The HelixSR folder for DLSS 3.7 |
 | ![Light theme](screenshot/06-light-theme.png)<br>The light theme (Auto follows the desktop) | |
 
@@ -116,11 +116,11 @@ Scaler Assistant is an independent, unofficial tool, not affiliated with or endo
 
 ### 截圖
 
-![主視窗：使用 FSR 4.1 Exact、FSR 4.1 Lossy（OptiScaler 名稱 winmm.dll）與 FSR 3 的遊戲，其中一款執行中](screenshot/01-game-list.png)
+![Steam Deck 上的主視窗：透過 HelixSR Scaler 執行的 HelixSR 2.0 與 FSR 4.1 Lossy 執行中，FSR 4.1 Exact 有較新的下載檔](screenshot/01-game-list.png)
 
 | | |
 |---|---|
-| ![選擇升頻](screenshot/02-choose-upscaler.png)<br>Steam Deck 上的升頻選單：DLSS 方式反灰（僅限 GeForce）、推薦 FSR 4.1 Lossy | ![下載檔](screenshot/03-downloads.png)<br>OptiScaler 與 FSR 4.1 下載檔，以及適合你顯示卡的 FSR 4.1 版本 |
+| ![選擇升頻](screenshot/02-choose-upscaler.png)<br>Steam Deck 上搭配 HelixSR 2.0 的升頻選單：HelixSR Scaler，並推薦 FSR 4.1 Lossy | ![下載檔](screenshot/03-downloads.png)<br>OptiScaler 與 FSR 4.1 下載檔，以及適合你顯示卡的 FSR 4.1 版本 |
 | ![OptiScaler 檔名](screenshot/04-optiscaler-name.png)<br>OptiScaler 的檔名可自動或手動選擇 | ![HelixSR](screenshot/05-helixsr.png)<br>DLSS 3.7 使用的 HelixSR 資料夾 |
 | ![淺色主題](screenshot/06-light-theme.png)<br>淺色主題（「自動」跟隨桌面設定） | |
 
