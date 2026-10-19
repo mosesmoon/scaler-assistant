@@ -1105,8 +1105,12 @@ class MainWindow(QMainWindow):
             if upscaler_of(current) == "helixsr":
                 sub.setTitle("✓ " + tr("menu_helixsr"))
         elif entry.layout.optiscaler_possible and not entry.layout.helixsr_possible:
-            action = menu.addAction(tr("menu_helixsr_api",
-                                       api=API_LABELS.get(entry.layout.api, "?")))
+            api = API_LABELS.get(entry.layout.api, "?")
+            folder = self.folder
+            if folder is not None and folder.version and not folder.modern:
+                action = menu.addAction(tr("menu_helixsr_api_hx2", version=folder.version, api=api))
+            else:
+                action = menu.addAction(tr("menu_helixsr_api", api=api))
             action.setEnabled(False)
         fsr = [c for c in entry.choices if upscaler_of(c) in ("fsr4", "fsr3")]
         if fsr:

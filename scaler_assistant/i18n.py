@@ -477,6 +477,7 @@ STRINGS["en"] = {
     "in_modern": "Installed HelixSR {version} ({way}) with HelixSR's own installer: {folder}",
     "blk_no_files": "Your HelixSR folder doesn't have this way's files: HelixSR 1.9 releases only install the FSR way. For games without FSR 3.1 use HelixSR 2.0 or newer (HelixSR Scaler), or 1.8.x.",
     "blk_no_files_short": "needs HelixSR 1.8 or 2.0",
+    "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): Direct3D 12 only (this game: {api}). HelixSR 2.0 or newer runs it through HelixSR Scaler",
 }
 
 STRINGS["zh_TW"] = {
@@ -851,6 +852,7 @@ STRINGS["zh_TW"] = {
     "in_modern": "已用 HelixSR 自己的安裝程式安裝 HelixSR {version}（{way}）：{folder}",
     "blk_no_files": "你的 HelixSR 資料夾沒有這種方式的檔案：HelixSR 1.9 版只能安裝 FSR 方式。沒有 FSR 3.1 的遊戲請改用 HelixSR 2.0 以上（HelixSR Scaler）或 1.8.x。",
     "blk_no_files_short": "需要 HelixSR 1.8 或 2.0",
+    "menu_helixsr_api_hx2": "DLSS 3.7（HelixSR {version}）：只支援 Direct3D 12（這款遊戲：{api}）。HelixSR 2.0 以上可透過 HelixSR Scaler 使用",
 }
 
 STRINGS["zh_CN"] = {
@@ -1225,6 +1227,7 @@ STRINGS["zh_CN"] = {
     "in_modern": "已用 HelixSR 自己的安装程序安装 HelixSR {version}（{way}）：{folder}",
     "blk_no_files": "你的 HelixSR 文件夹没有这种方式的文件：HelixSR 1.9 版只能安装 FSR 方式。没有 FSR 3.1 的游戏请改用 HelixSR 2.0 及以上（HelixSR Scaler）或 1.8.x。",
     "blk_no_files_short": "需要 HelixSR 1.8 或 2.0",
+    "menu_helixsr_api_hx2": "DLSS 3.7（HelixSR {version}）：只支持 Direct3D 12（这款游戏：{api}）。HelixSR 2.0 及以上可通过 HelixSR Scaler 使用",
 }
 
 STRINGS["ja"] = {
@@ -1599,6 +1602,7 @@ STRINGS["ja"] = {
     "in_modern": "HelixSR 自身のインストーラーで HelixSR {version}（{way}）をインストールしました：{folder}",
     "blk_no_files": "HelixSR フォルダーにこの方式のファイルがありません：HelixSR 1.9 は FSR 方式しかインストールできません。FSR 3.1 のないゲームには HelixSR 2.0 以降（HelixSR Scaler）か 1.8.x を使ってください。",
     "blk_no_files_short": "HelixSR 1.8 か 2.0 が必要",
+    "menu_helixsr_api_hx2": "DLSS 3.7（HelixSR {version}）：Direct3D 12 のみ（このゲーム：{api}）。HelixSR 2.0 以降なら HelixSR Scaler で使えます",
 }
 
 STRINGS["de"] = {
@@ -1973,6 +1977,7 @@ STRINGS["de"] = {
     "in_modern": "HelixSR {version} ({way}) mit HelixSRs eigenem Installationsprogramm installiert: {folder}",
     "blk_no_files": "Dein HelixSR-Ordner hat die Dateien dieses Wegs nicht: HelixSR 1.9 installiert nur den FSR-Weg. Für Spiele ohne FSR 3.1 nutze HelixSR 2.0 oder neuer (HelixSR Scaler) oder 1.8.x.",
     "blk_no_files_short": "braucht HelixSR 1.8 oder 2.0",
+    "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): nur Direct3D 12 (dieses Spiel: {api}). HelixSR 2.0 oder neuer läuft hier über HelixSR Scaler",
 }
 
 STRINGS["fr"] = {
@@ -2347,6 +2352,7 @@ STRINGS["fr"] = {
     "in_modern": "HelixSR {version} ({way}) installé avec l'installateur propre à HelixSR : {folder}",
     "blk_no_files": "Votre dossier HelixSR n'a pas les fichiers de cette méthode : HelixSR 1.9 n'installe que la méthode FSR. Pour les jeux sans FSR 3.1, utilisez HelixSR 2.0 ou plus récent (HelixSR Scaler), ou 1.8.x.",
     "blk_no_files_short": "demande HelixSR 1.8 ou 2.0",
+    "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}) : Direct3D 12 uniquement (ce jeu : {api}). HelixSR 2.0 ou plus récent fonctionne via HelixSR Scaler",
 }
 
 STRINGS["es"] = {
@@ -2721,6 +2727,7 @@ STRINGS["es"] = {
     "in_modern": "HelixSR {version} ({way}) instalado con el instalador propio de HelixSR: {folder}",
     "blk_no_files": "Tu carpeta de HelixSR no tiene los archivos de este método: HelixSR 1.9 solo instala el método FSR. Para juegos sin FSR 3.1 usa HelixSR 2.0 o posterior (HelixSR Scaler), o 1.8.x.",
     "blk_no_files_short": "necesita HelixSR 1.8 o 2.0",
+    "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): solo Direct3D 12 (este juego: {api}). HelixSR 2.0 o posterior funciona con HelixSR Scaler",
 }
 
 STRINGS["it"] = {
@@ -3095,6 +3102,7 @@ STRINGS["it"] = {
     "in_modern": "HelixSR {version} ({way}) installato con l'installer di HelixSR: {folder}",
     "blk_no_files": "La tua cartella HelixSR non ha i file di questo metodo: HelixSR 1.9 installa solo il metodo FSR. Per i giochi senza FSR 3.1 usa HelixSR 2.0 o successivo (HelixSR Scaler), oppure 1.8.x.",
     "blk_no_files_short": "richiede HelixSR 1.8 o 2.0",
+    "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): solo Direct3D 12 (questo gioco: {api}). HelixSR 2.0 o successivo funziona tramite HelixSR Scaler",
 }
 
 STRINGS["th"] = {
@@ -3469,6 +3477,7 @@ STRINGS["th"] = {
     "in_modern": "ติดตั้ง HelixSR {version} ({way}) ด้วยตัวติดตั้งของ HelixSR เองแล้ว: {folder}",
     "blk_no_files": "โฟลเดอร์ HelixSR ของคุณไม่มีไฟล์ของวิธีนี้: HelixSR 1.9 ติดตั้งได้เฉพาะวิธี FSR สำหรับเกมที่ไม่มี FSR 3.1 ให้ใช้ HelixSR 2.0 ขึ้นไป (HelixSR Scaler) หรือ 1.8.x",
     "blk_no_files_short": "ต้องใช้ HelixSR 1.8 หรือ 2.0",
+    "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): รองรับเฉพาะ Direct3D 12 (เกมนี้: {api}) HelixSR 2.0 ขึ้นไปใช้ได้ผ่าน HelixSR Scaler",
 }
 
 STRINGS["vi"] = {
@@ -3843,6 +3852,7 @@ STRINGS["vi"] = {
     "in_modern": "Đã cài HelixSR {version} ({way}) bằng trình cài đặt riêng của HelixSR: {folder}",
     "blk_no_files": "Thư mục HelixSR của bạn không có tệp của cách này: HelixSR 1.9 chỉ cài được cách FSR. Với game không có FSR 3.1, hãy dùng HelixSR 2.0 trở lên (HelixSR Scaler) hoặc 1.8.x.",
     "blk_no_files_short": "cần HelixSR 1.8 hoặc 2.0",
+    "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): chỉ Direct3D 12 (game này: {api}). HelixSR 2.0 trở lên chạy được qua HelixSR Scaler",
 }
 
 STRINGS["ms"] = {
@@ -4217,6 +4227,7 @@ STRINGS["ms"] = {
     "in_modern": "HelixSR {version} ({way}) dipasang dengan pemasang HelixSR sendiri: {folder}",
     "blk_no_files": "Folder HelixSR anda tiada fail cara ini: HelixSR 1.9 hanya memasang cara FSR. Untuk permainan tanpa FSR 3.1, gunakan HelixSR 2.0 atau lebih baharu (HelixSR Scaler), atau 1.8.x.",
     "blk_no_files_short": "perlu HelixSR 1.8 atau 2.0",
+    "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): Direct3D 12 sahaja (permainan ini: {api}). HelixSR 2.0 atau lebih baharu berfungsi melalui HelixSR Scaler",
 }
 
 STRINGS["hi"] = {
@@ -4591,4 +4602,5 @@ STRINGS["hi"] = {
     "in_modern": "HelixSR के अपने इंस्टॉलर से HelixSR {version} ({way}) इंस्टॉल किया: {folder}",
     "blk_no_files": "आपके HelixSR फ़ोल्डर में इस तरीके की फ़ाइलें नहीं हैं: HelixSR 1.9 केवल FSR तरीका इंस्टॉल करता है। FSR 3.1 के बिना गेम के लिए HelixSR 2.0 या नया (HelixSR Scaler) या 1.8.x इस्तेमाल करें।",
     "blk_no_files_short": "HelixSR 1.8 या 2.0 चाहिए",
+    "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): केवल Direct3D 12 (यह गेम: {api})। HelixSR 2.0 या नया HelixSR Scaler से चलता है",
 }

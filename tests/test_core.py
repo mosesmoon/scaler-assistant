@@ -872,3 +872,32 @@ class SandboxTest(unittest.TestCase):
         self.assertFalse(sandbox.in_flatpak())
         self.assertEqual(sandbox.host(["steam"]), ["steam"])
         self.assertEqual(sandbox.proc_root(), Path("/proc"))
+
+
+class ApiDetectionTest(unittest.TestCase):
+    def make(self, imports, files, mention=b""):
+        tmp = tempfile.TemporaryDirectory()
+        self.addCleanup(tmp.cleanup)
+        game = Path(tmp.name) / "Game"
+        (game / "bin").mkdir(parents=True)
+        (game / "bin" / "game.exe").write_bytes(pe_exe(["KERNEL32.dll", *imports]) + mention + b"\0" * 64)
+        for name in files:
+            (game / "bin" / name).write_bytes(b"MZ " + name.encode())
+        return detect_layout(game).api
+
+    def test_dx12_renderer_wins_over_static_d3d11_or_vulkan_imports(self):
+        # D3D11 linked statically, D3D12 loaded at run time; FSR 3.1 has only a D3D12 back end
+        self.assertEqual(self.make(["d3d11.dll"], ["nvngx_dlss.dll", "amd_fidelityfx_upscaler_dx12.dll"]), "dx12")
+        self.assertEqual(self.make(["d3d11.dll"], ["nvngx_dlss.dll"], b"LoadLibrary d3d12.dll"), "dx12")
+        self.assertEqual(self.make(["d3d11.dll"], ["nvngx_dlss.dll"]), "dx11")
+        self.assertEqual(self.make(["vulkan-1.dll"], ["nvngx_dlss.dll", "libxess.dll"]), "vulkan")
+        self.assertEqual(self.make(["vulkan-1.dll"], ["amd_fidelityfx_dx12.dll"]), "dx12")
+
+
+class LayoutCacheTest(Base):
+    def test_old_scan_results_are_redone_once(self):
+        self.service.state["games"][0]["layout"]["api"] = "dx11"
+        self.service.state.pop("layout_version")
+        self.service.scan(rescan_library=False)
+        self.assertNotIn("dx11", {g["layout"]["api"] for g in self.service.state["games"]})
+        self.assertEqual(self.service.state["layout_version"], 2)

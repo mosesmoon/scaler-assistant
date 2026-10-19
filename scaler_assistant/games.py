@@ -180,21 +180,32 @@ def find_exe(install_dir: Path, tree, appinfo: Optional[dict]) -> Optional[Path]
 
 def detect_api(exe: Optional[Path], tree, exe_dir: Optional[Path]) -> str:
     """The graphics API from the main .exe's imports, with fallbacks for games that load
-    their renderer at run time."""
+    their renderer at run time.
+
+    Many games link D3D11 (or Vulkan) statically and load D3D12 only when they start
+    rendering with it, so the import table alone can say "DX11" for a DX12 game. Proof
+    of a D3D12 renderer wins: the FSR 3.1 DLLs (they only have a D3D12 back end), the
+    D3D12 Agility SDK next to the .exe, or (for a D3D11 import) the .exe naming
+    d3d12.dll itself.
+    """
     exes = [exe] if exe and exe.is_file() else []
     api = graphics_api(exes)
-    if api:
+    if api == "dx12":
         return api
     names = {n.lower() for d, _, files in tree for n in files}
-    if exe_dir is not None and (exe_dir / "D3D12" / "D3D12Core.dll").is_file():
-        return "dx12"   # the D3D12 Agility SDK next to the .exe
-    if names & {FSR_UPSCALER, FSR_COMBINED, "libxess.dll", "ffx_fsr2_api_dx12_x64.dll"}:
-        return "dx12"   # DX12-only upscaler DLLs
+    agility = exe_dir is not None and (exe_dir / "D3D12" / "D3D12Core.dll").is_file()
+    if agility or names & {FSR_UPSCALER, FSR_COMBINED, "ffx_fsr2_api_dx12_x64.dll"}:
+        return "dx12"   # a D3D12 renderer is certainly there
+    if api == "dx11" or not api:
+        for path in exes:
+            if _mentions(path, rb"d3d12\.dll"):
+                return "dx12"   # loads D3D12 at run time
+    if api:
+        return api
+    if "libxess.dll" in names:
+        return "dx12"   # XeSS's D3D12 DLL
     if "libxess_dx11.dll" in names:
         return "dx11"
-    for path in exes:
-        if _mentions(path, rb"d3d12\.dll"):
-            return "dx12"
     return ""
 
 

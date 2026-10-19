@@ -160,12 +160,12 @@ class DeckBridge:
             "shows_launch": bool(status.opti_name and needs_override(status.opti_name)
                                  or entry.launch_options),
             "has_log": entry.installed,
-            "choices": self.choices(entry),
+            "choices": self.choices(entry, self.service.helixsr()),
             "running": live,
         }
 
     @staticmethod
-    def choices(entry: GameEntry) -> list[dict[str, Any]]:
+    def choices(entry: GameEntry, folder=None) -> list[dict[str, Any]]:
         """Every choice for the game: ways this GPU can't use come without an id (shown greyed
         out, with the reason), the one recommended for this PC is marked."""
         result = []
@@ -194,7 +194,10 @@ class DeckBridge:
         if layout.optiscaler_possible and not entry.ways:
             result.insert(0, {"id": "", "label": tr("menu_helixsr"), "current": False,
                               "recommended": False,
-                              "hint": tr("menu_helixsr_api", api=API_LABELS.get(layout.api, "?"))})
+                              "hint": tr("menu_helixsr_api_hx2", version=folder.version,
+                                         api=API_LABELS.get(layout.api, "?"))
+                              if folder is not None and folder.version and not folder.modern
+                              else tr("menu_helixsr_api", api=API_LABELS.get(layout.api, "?"))})
         return result
 
     def helixsr(self) -> dict[str, Any]:

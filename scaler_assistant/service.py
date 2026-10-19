@@ -38,6 +38,8 @@ from .steam_cef import CefError, SteamCef
 
 STAMP = f"Scaler Assistant {__version__}"
 FSR4_BUILDS = ("auto", "dgpu", "igpu", "native")
+# Raised when games.detect_layout changes what it finds, so cached scans are redone.
+LAYOUT_VERSION = 2
 
 
 def config_dir() -> Path:
@@ -466,11 +468,14 @@ class AssistantService:
 
     def scan(self, rescan_library: bool = True) -> list[GameEntry]:
         cached = self.state.get("games")
-        if rescan_library or not cached:
+        # Game folders are looked at again when the detection itself has changed.
+        stale = self.state.get("layout_version") != LAYOUT_VERSION
+        if rescan_library or not cached or stale:
             steam = self.steam()
             games = steam.scan_games()
             self.state["games"] = [self._cache(game) for game in games]
             self.state["scanned"] = True
+            self.state["layout_version"] = LAYOUT_VERSION
             self._save_state()
         return self.entries()
 
