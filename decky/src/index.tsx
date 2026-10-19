@@ -85,6 +85,8 @@ const removeDownloads = callable<[], Result>("remove_downloads");
 const setFsr4Build = callable<[value: string], void>("set_fsr4_build");
 const optiNamesCall = callable<[appId: number], OptiNames>("opti_names");
 const setOptiName = callable<[appId: number, name: string], Result>("set_opti_name");
+const hxAutoText = callable<[], { title: string; text: string; ok: string }>("helixsr_auto_text");
+const buildHelixsrCall = callable<[], Result>("build_helixsr");
 const setHelixsrFolder = callable<[path: string], Result>("set_helixsr_folder");
 const logText = callable<[appId: number], { path: string; text: string }>("log_text");
 const setToast = callable<[enabled: boolean], void>("set_toast");
@@ -507,7 +509,12 @@ function Content() {
           progress: total > 0 ? (100 * done) / total : -1,
         });
       });
-    return () => { removeEventListener("download_progress", listener); };
+    const hxListener = addEventListener<[text: string, percent: number]>(
+      "helixsr_progress", (text, percent) => { setBusy({ text, progress: percent }); });
+    return () => {
+      removeEventListener("download_progress", listener);
+      removeEventListener("helixsr_progress", hxListener);
+    };
   }, []);
 
   const running = data?.games.filter((g) => g.running) ?? [];
@@ -575,6 +582,22 @@ function Content() {
                 refresh();
               }}>
               {t("btn_choose_folder")}
+            </ButtonItem>
+          </PanelSectionRow>
+          <PanelSectionRow>
+            <ButtonItem layout="below" description={t("btn_hx_auto_tip")}
+              onClick={async () => {
+                const info = await hxAutoText();
+                if (!(await ask(info.title, info.text, info.ok))) return;
+                setBusy({ text: t("busy_hxa"), progress: -1 });
+                try {
+                  await report(await buildHelixsrCall());
+                } finally {
+                  setBusy({ text: "", progress: -1 });
+                }
+                refresh();
+              }}>
+              {t("btn_hx_auto")}
             </ButtonItem>
           </PanelSectionRow>
           <PanelSectionRow>

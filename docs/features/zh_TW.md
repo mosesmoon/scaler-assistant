@@ -38,6 +38,7 @@ Scaler 助手在一個視窗裡完成這一切，並保留所有被取代的檔�
 
 - **FSR 4.1 和 FSR 3** 不需要其他東西：第一次選擇時，Scaler 助手會詢問是否下載 OptiScaler 及適合你顯示卡的 FSR 4.1 DLL（見下方「下載檔」）。
 - **DLSS 3.7** 需要 HelixSR，Scaler 助手並不包含它。請從 [HelixSR 的 GitHub Releases](https://github.com/lonewolf0622/HelixSR/releases) 下載 1.8.0 以上版本，解壓縮到會保留的資料夾，並在那裡執行一次 `./helixsr-setup.sh`（它會在你的電腦上建立 HelixSR 的神經網路；開始逐一詢問遊戲時可以回答 `n`）。按上方的 **HelixSR** 標籤可看到這些說明；Scaler 助手會自動在家目錄、下載、桌面或 Games 資料夾中尋找已設定好的 HelixSR 資料夾。
+  更簡單的方式：在該視窗按 **下載並建置 HelixSR**（HelixSR 2.0 以上），Scaler 助手會替你完成以上步驟，不需要終端機。
 - 遊戲透過 **Proton** 執行。HelixSR 是為 AMD 顯示卡（RDNA 1 以上）設計的。FSR 4.1 Exact／Lossy 是為 Radeon RX 7000／RX 6000 及 Radeon 內建顯示晶片（含 Steam Deck）製作；其他 GPU 應該也能執行，但原作者尚未測試。
 
 ## 功能
@@ -132,6 +133,7 @@ Scaler 助手在一個視窗裡完成這一切，並保留所有被取代的檔�
 
 ## HelixSR 2.0 與顯示卡
 
+- **一鍵下載並建置 HelixSR**：「下載並建置 HelixSR」（在 HelixSR 視窗與 Steam Deck 外掛中）會從 GitHub 發布頁下載最新的 HelixSR（2.0 以上），核對 SHA-256 後放到 `~/.local/share/scaler-assistant/helixsr`，再用 HelixSR 自己的建置程式（`setup/helixsr_setup.py`，原封不動執行）在這台電腦上建置。做法與 HelixSR 自己的 App 相同，所以不需要終端機，也不會進入遊戲安裝步驟。建置需要的東西也會備齊：有 numpy 的 Python（系統的 Python 無法解壓 NVIDIA 的 zstd 套件時，改用可攜式 Python 3.14，影格生成不必另外安裝 `zstd`），以及透過 Steam 的 Proton 或 Wine 執行的 Microsoft DirectX 著色器編譯器。NVIDIA 的檔案只會在你於 App 中同意後才下載，建置結果只留在你的電腦。Flatpak 版會在主機上建置。再執行一次只會補建缺少的部分；有新版時會取代先前下載的版本。
 - **HelixSR 2.0 以上**把建好的 DLL 放在 `HelixSR-fsrfg`，並提供兩種方式：**HelixSR Scaler**（HelixSR 自帶、放在 `.exe` 旁的 OptiScaler：遊戲內選 DLSS；DX11 和 Vulkan 遊戲也能用）與 **FSR 方式**（FSR drop-in）。Scaler 助手透過你 HelixSR 資料夾裡的安裝程式（`setup/helixsr_bridge.py`，也就是 HelixSR 官方 App 使用的那一個）安裝這兩種方式，所以 HelixSR 的 setup、它的 App 和 Scaler 助手都能辨識、更新、移除彼此的安裝。檔名仍由 Scaler 助手選擇，需要時也會加入啟動選項。以舊方式設定的遊戲在更新時會改用 HelixSR Scaler。HelixSR 1.8.x 仍有三種方式；1.9.0～1.9.3 只有 FSR 方式（其他方式反灰）。
 - **HelixSR 影格生成**（HelixSR 2.0）：有 DLSS Frame Generation（Streamline 的 `sl.dlss_g.dll`）的 DirectX 12 遊戲，裝了 HelixSR Scaler 後卡片上（以及 Steam Deck 外掛中）會出現「HelixSR 影格生成」開關。它透過 HelixSR 自己的安裝程式（`scaler-fg`）切換，只改 OptiScaler.ini 的 `[FrameGen]` 選項；打開後在遊戲中開啟 DLSS Frame Generation。需要 `./helixsr-setup.sh` 建好的影格生成（會下載 NVIDIA 的 DLSS Frame Generation 檔案），在那之前開關會反灰並說明原因。新安裝時預設關閉；更新或改 OptiScaler 檔名會保留原本的狀態。其他 DX12 遊戲仍可在 HelixSR Scaler 選單（Insert）選 AMD FSR 或 XeSS 影格生成；DX11／Vulkan 遊戲與 FSR 方式只有升頻。
 - **較舊的 HelixSR 版本**：1.8.x 三種方式（FSR 方式、OptiScaler 方式、DLSS 方式）都能用。HelixSR 1.9.0～1.9.3 只附 FSR 方式的檔案，所以 OptiScaler 與 DLSS 方式會反灰（「需要 HelixSR 1.8 或 2.0」）；沒有 FSR 3.1 的遊戲需要 HelixSR 2.0（HelixSR Scaler）。1.8.0 以前的版本不支援。
@@ -150,6 +152,7 @@ Scaler 助手在一個視窗裡完成這一切，並保留所有被取代的檔�
 - **設定**：HelixSR 資料夾（檔案選擇器）、下載檔與 FSR 4.1 版本（Steam Deck 使用內建顯示晶片版）、遊戲啟動時通知（顯示升頻是否已載入），以及語言（預設與 Steam 相同）。
 - 與桌面版共用 `state.json`、下載檔與啟動選項紀錄，在其中一邊設定的遊戲另一邊也看得到。啟動選項透過 Steam 即時寫入。
 - 外掛不包含：HelixSR 設定表單（請用桌面版），以及 HelixSR 本身的 `helixsr-setup.sh`（請在桌面模式執行一次）。
+- 外掛中的 **下載並建置 HelixSR** 在遊戲模式也能下載並建置 HelixSR 2.0 以上（需要幾分鐘）。
 
 安裝：先在 Steam Deck 安裝 Decky Loader，從 [Releases](https://github.com/mosesmoon/scaler-assistant/releases) 頁面下載 `Scaler_Assistant-Decky-<版本>.zip`，再到 Decky 設定 →「開發者」（先在「一般」開啟開發者模式）→「Install Plugin from ZIP File」。
 

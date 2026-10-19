@@ -337,11 +337,15 @@ class HelixSRDialog(_FitDialog):
             text = text.replace("<a href=", '<a style="color:#ffd27a;" href=')
             text += "<br><br>" + tr("banner_note")
             box = "banner"
-        layout.addWidget(_label(tr("hx_intro"), "subtitle"))
+        layout.addWidget(_label(tr("hx_intro") + " " + tr("hxa_intro"), "subtitle"))
         layout.addWidget(_label(text, box))
         buttons = QHBoxLayout()
+        auto = QPushButton(tr("btn_hx_auto"))
+        auto.setObjectName("install" if folder is not None and folder.ready else "primary")
+        auto.setToolTip(tr("btn_hx_auto_tip"))
+        auto.clicked.connect(lambda: (self.accept(), self.main.build_helixsr()))
+        buttons.addWidget(auto)
         choose = QPushButton(tr("btn_choose_folder"))
-        choose.setObjectName("primary")
         choose.clicked.connect(lambda: (self.accept(), self.main.choose_folder()))
         buttons.addWidget(choose)
         if folder is not None and folder.version and not folder.built:
@@ -352,7 +356,7 @@ class HelixSRDialog(_FitDialog):
                 setup.setToolTip(tr("btn_run_setup_none"))
             setup.clicked.connect(lambda: (self.accept(), self.main.run_setup()))
             buttons.addWidget(setup)
-        download = QPushButton(tr("btn_download"))
+        download = QPushButton(tr("btn_hx_releases"))
         download.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(RELEASES_URL)))
         buttons.addWidget(download)
         buttons.addStretch(1)
@@ -928,6 +932,31 @@ class MainWindow(QMainWindow):
             self.write_log(tr(folder.problem, path=folder.path, version=folder.version or "?",
                               minimum=".".join(map(str, MIN_VERSION))))
         self.refresh(rescan=False)
+
+    def build_helixsr(self) -> None:
+        """Download the newest HelixSR and build it here, after the user agreed to NVIDIA's
+        downloads (HelixSR's setup gets --yes only then)."""
+        box = QMessageBox(QMessageBox.Icon.Question, tr("hxa_title"),
+                          self.service.helixsr_auto_consent(), parent=self)
+        box.setTextFormat(Qt.TextFormat.PlainText)
+        agree = box.addButton(tr("hxa_ok"), QMessageBox.ButtonRole.AcceptRole)
+        box.addButton(tr("cancel"), QMessageBox.ButtonRole.RejectRole)
+        box.exec()
+        if box.clickedButton() is not agree:
+            self.write_log(tr("log_cancelled"))
+            return
+        self.write_log(tr("log_hxa_start"))
+
+        def progress(value):
+            self.last_line.setText(self.service.helixsr_auto_progress(*value))
+
+        def done(result):
+            self.write_log(result)
+            self.refresh(rescan=False)
+
+        self.run_task(tr("busy_hxa"),
+                      lambda emit: self.service.build_helixsr(lambda *v: emit(v)),
+                      on_done=done, on_progress=progress)
 
     def run_setup(self) -> None:
         if self.folder is None:

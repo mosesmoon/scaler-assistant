@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
 
-from . import __version__, components, gpu, helixsr, installer, sandbox, settings
+from . import __version__, components, gpu, helixsr, hxsetup, installer, sandbox, settings
 from . import launch_options as lo
 from . import optiscaler
 from .components import Component
@@ -355,6 +355,44 @@ class AssistantService:
         self.state["helixsr_folder"] = str(folder.path.resolve())
         self._save_state()
         return folder
+
+    # ---- HelixSR downloaded and built in one step ------------------------------------
+
+    @staticmethod
+    def helixsr_auto_consent() -> str:
+        return tr("hxa_consent", releases=hxsetup.RELEASES, data=hxsetup.data_root(),
+                  licences="\n".join(hxsetup.NVIDIA_LICENSES))
+
+    @staticmethod
+    def helixsr_auto_progress(stage: str, done: int, total: int, text: str) -> str:
+        """One line for a progress report of build_helixsr()."""
+        mb = lambda n: f"{n / 1_000_000:.0f}"
+        if stage in ("release", "python"):
+            return tr("hxa_p_" + stage, done=mb(done), total=mb(total))
+        if stage == "dxc":
+            return tr("hxa_p_dxc", done=mb(done))
+        if stage == "numpy":
+            return tr("hxa_p_numpy")
+        if stage == "build":
+            return (tr("hxa_p_build", pct=done, text=text) if done >= 0
+                    else tr("hxa_p_build_line", text=text))
+        return tr("busy_hxa")
+
+    def build_helixsr(self, report: Callable[[str, int, int, str], None] = lambda *_: None) -> str:
+        """Download the newest HelixSR, build its network (and frame generation) on this PC and
+        use it. Only after the user agreed to NVIDIA's downloads (helixsr_auto_consent)."""
+        try:
+            result = hxsetup.install(report)
+        except hxsetup.SetupError as error:
+            raise hxsetup.SetupError(tr("hxa_failed", error=error)) from error
+        folder = self.set_helixsr_folder(result.folder.path)
+        lines = [tr("hxa_done", version=folder.version or "?", path=folder.path)]
+        if result.fg:
+            lines.append(tr("hxa_fg_ready"))
+        else:
+            lines.append(tr("hxa_no_fg"))
+            lines += ["  " + line for line in result.lines[-6:]]
+        return "\n".join(lines)
 
     def require_helixsr(self) -> HelixSRFolder:
         """A HelixSR folder that can be installed from, or an error saying what's missing."""

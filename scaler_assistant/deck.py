@@ -218,6 +218,17 @@ class DeckBridge:
                 "message": plain(tr(problem, path=folder.path, version=folder.version or "?",
                                     minimum=minimum))}
 
+    def helixsr_auto_text(self) -> dict[str, Any]:
+        return {"title": tr("hxa_title"), "text": self.service.helixsr_auto_consent(),
+                "ok": tr("hxa_ok")}
+
+    def build_helixsr(self, progress: Callable[[str, int], None] = lambda *_: None) -> dict[str, Any]:
+        """progress(text, percent or -1)."""
+        def report(stage: str, done: int, total: int, text: str) -> None:
+            percent = int(100 * done / total) if total > 0 and done >= 0 else -1
+            progress(self.service.helixsr_auto_progress(stage, done, total, text), percent)
+        return self._run(lambda: self.service.build_helixsr(report))
+
     def downloads(self) -> dict[str, Any]:
         service = self.service
         build = service.fsr4_build()

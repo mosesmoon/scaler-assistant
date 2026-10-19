@@ -228,6 +228,8 @@ def looks_like_helixsr(path: Path) -> bool:
 
 def _search_roots() -> Iterable[tuple[Path, int]]:
     home = Path.home()
+    data = Path(os.environ.get("XDG_DATA_HOME") or home / ".local" / "share")
+    yield data / "scaler-assistant" / "helixsr", 1    # downloaded and built by Scaler Assistant
     yield home, 2
     for name in ("Downloads", "下載", "下载", "ダウンロード", "Desktop", "桌面", "デスクトップ",
                  "Games", "Applications", "Apps", "Programs", "Tools", "opt"):

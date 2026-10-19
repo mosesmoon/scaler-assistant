@@ -109,6 +109,17 @@ class Plugin:
 
         return await self._work(self.bridge.download, list(keys), progress)
 
+    async def helixsr_auto_text(self):
+        return await self._read(self.bridge.helixsr_auto_text)
+
+    async def build_helixsr(self):
+        loop = self.loop
+
+        def progress(text, percent):
+            asyncio.run_coroutine_threadsafe(decky.emit("helixsr_progress", text, int(percent)), loop)
+
+        return await self._work(self.bridge.build_helixsr, progress)
+
     async def remove_downloads(self):
         return await self._work(self.bridge.remove_downloads)
 
