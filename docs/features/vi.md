@@ -128,7 +128,7 @@ Với DLSS 3.7, "⚙ Cài đặt" sửa `helixsr.ini` của game bằng biểu m
 ### 11. Giao diện
 
 - Theo phong cách "Liquid Glass" của MAKO Assistant: mỗi game một thẻ với ảnh bìa Steam, nhãn trạng thái, những gì game hỗ trợ và, khi đang chạy, những gì thật sự đã được nạp. Nút ⌄ mở chi tiết (API đồ họa, bộ upscale, thư mục `.exe`, tên OptiScaler, tùy chọn khởi chạy) và các thao tác ít dùng.
-- Nút trong suốt như pha lê: sắc màu nhạt, viền mảnh và mép trên sáng hơn, không dùng chuyển màu. Xanh mòng két là cài, xanh dương là đổi, hổ phách là cập nhật, đỏ là gỡ.
+- Nút là pha lê trong nổi khối: sắc màu nhạt với viền mảnh, vệt sáng cong ở nửa trên, ánh sáng dọc mép dưới bên trong và bóng mềm bên dưới — tất cả là các lớp trong mờ phẳng, không dùng chuyển màu. Núm công tắc cũng nổi lên như vậy; mục giao diện đang chọn là pha lê nổi trong rãnh lõm. Xanh ngọc là cài đặt, xanh dương là chuyển đổi, hổ phách là cập nhật, đỏ là gỡ bỏ.
 - Giao diện tối, sáng hoặc tự động (theo desktop). Nhật ký hoạt động nằm trong ngăn kéo ở đáy cửa sổ.
 
 ## HelixSR 2.0 và GPU

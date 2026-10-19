@@ -1,9 +1,10 @@
 """Visual system for Scaler Assistant, in MAKO Assistant's Liquid Glass style.
 
 Near-black ground lit by soft teal / blue / coral glows, glass panels with
-hairline borders. Buttons, switches and selected segments are clear crystal:
-a translucent tint, a light hairline border and a brighter top edge, never a
-gradient. Colours are tokens; `stylesheet()` renders the Qt style sheet from them.
+hairline borders. Buttons, switch knobs and selected segments are raised clear
+crystal: a translucent tint with a hairline border, a curved specular cap, a
+glint along the lower rim and a soft shadow, all flat translucent layers, never
+a gradient. Colours are tokens; `stylesheet()` renders the Qt style sheet from them.
 """
 
 from __future__ import annotations
@@ -13,7 +14,7 @@ from typing import Optional
 
 from PyQt6.QtCore import QPointF, QRectF, Qt
 from PyQt6.QtGui import (
-    QColor, QFontDatabase, QGuiApplication, QPainter, QPainterPath, QPixmap, QRadialGradient,
+    QColor, QFontDatabase, QGuiApplication, QPainter, QPainterPath, QPen, QPixmap, QRadialGradient,
 )
 
 TEAL, CORAL, PURPLE, BLUE = "#27d4b3", "#f86461", "#946eff", "#469ef6"
@@ -123,18 +124,82 @@ def qcolor(name: str) -> QColor:
     return QColor(value)
 
 
-def paint_glass(painter: QPainter, rect: QRectF, radius: float, fill: str = "glass",
-                border: str = "glass_border", edge: str = "glass_edge") -> None:
-    """A crystal surface: translucent tint, hairline border, brighter top edge (no gradient)."""
+def crystal_body(rect: QRectF, pressed: bool = False) -> QRectF:
+    """The raised crystal's own outline inside `rect` (room below it for its shadow)."""
+    drop = 1.0 if pressed else 0.0
+    return rect.adjusted(0.5, 0.5 + drop, -0.5, -2.5 + drop)
+
+
+def paint_crystal(painter: QPainter, rect: QRectF, radius: float, fill: str = "glass",
+                  border: str = "glass_border", hover: bool = False,
+                  pressed: bool = False) -> QRectF:
+    """A raised clear-crystal surface, painted with flat translucent layers only (no gradient):
+
+    * a soft shadow under it (a few stacked, offset translucent shapes),
+    * the translucent tint with a hairline border,
+    * a specular cap: a light, curved-edged shape over the upper part, inset from the rim,
+    * a thin glint along the inside of the lower rim (light passing through the crystal).
+
+    Pressed, it sits lower with a shorter shadow. Returns the body's rectangle."""
+    dark = _mode == "dark"
+    body = crystal_body(rect, pressed)
+    r = min(radius, body.height() / 2)
+    painter.save()
+    painter.setPen(Qt.PenStyle.NoPen)
+    layers = ((1.0, 0.30), (2.0, 0.16), (3.0, 0.07)) if dark else ((1.0, 0.12), (2.0, 0.07), (3.0, 0.03))
+    for offset, alpha in (layers[:1] if pressed else layers):
+        painter.setBrush(QColor(0, 0, 0, int(alpha * 255)))
+        painter.drawRoundedRect(body.translated(0, offset).adjusted(0.5, 0, -0.5, 0), r, r)
+    # a solid base keeps the tint readable over the glows and the cards
+    base = QColor(qcolor("bg")) if dark else QColor(255, 255, 255)
+    base.setAlphaF(0.55 if dark else 0.70)
+    painter.setBrush(base)
+    painter.drawRoundedRect(body, r, r)
     painter.setBrush(qcolor(fill))
     painter.setPen(qcolor(border))
-    painter.drawRoundedRect(rect, radius, radius)
-    path = QPainterPath()
-    inner = rect.adjusted(radius * 0.45, 0.5, -radius * 0.45, 0)
-    path.moveTo(inner.left(), inner.top() + 0.5)
-    path.lineTo(inner.right(), inner.top() + 0.5)
-    painter.setPen(qcolor(edge))
-    painter.drawPath(path)
+    painter.drawRoundedRect(body, r, r)
+
+    outline = QPainterPath()
+    outline.addRoundedRect(body.adjusted(1, 1, -1, -1), max(r - 1, 0), max(r - 1, 0))
+    painter.setClipPath(outline)
+    painter.setPen(Qt.PenStyle.NoPen)
+    # specular cap: the rim's own curve inset a little, cut off by a shallow arc at ~48 %,
+    # with a smaller cap on it for a soft falloff (stacked flat layers)
+    shine = 0.075 if dark else 0.30
+    if hover:
+        shine += 0.04 if dark else 0.10
+    if pressed:
+        shine *= 0.6
+    for inset, depth, alpha in ((1.6, 0.50, shine), (3.0, 0.34, shine * 0.8)):
+        ring = QPainterPath()
+        inner = body.adjusted(inset, inset * 0.8, -inset, -inset)
+        ring.addRoundedRect(inner, max(r - inset, 0), max(r - inset, 0))
+        cut = QPainterPath()
+        bottom = body.top() + body.height() * depth
+        cut.moveTo(body.left() - 1, body.top() - 1)
+        cut.lineTo(body.right() + 1, body.top() - 1)
+        cut.lineTo(body.right() + 1, bottom - body.height() * 0.10)
+        cut.quadTo(body.center().x(), bottom + body.height() * 0.10, body.left() - 1,
+                   bottom - body.height() * 0.10)
+        cut.closeSubpath()
+        painter.setBrush(QColor(255, 255, 255, int(alpha * 255)))
+        painter.drawPath(ring.intersected(cut))
+    # glint along the lower rim
+    glint = QPainterPath()
+    inner = body.adjusted(r * 0.6, 0, -r * 0.6, -2.2)
+    glint.moveTo(inner.left(), inner.bottom() - 1.2)
+    glint.quadTo(inner.center().x(), inner.bottom() + 0.6, inner.right(), inner.bottom() - 1.2)
+    painter.setBrush(Qt.BrushStyle.NoBrush)
+    painter.setPen(QPen(QColor(255, 255, 255, int((0.16 if dark else 0.55) * 255)), 1.0))
+    painter.drawPath(glint)
+    painter.restore()
+    return body
+
+
+def paint_glass(painter: QPainter, rect: QRectF, radius: float, fill: str = "glass",
+                border: str = "glass_border", edge: str = "glass_edge") -> None:
+    """A raised crystal surface (kept for the custom widgets; see paint_crystal)."""
+    paint_crystal(painter, rect, radius, fill, border)
 
 
 def paint_backdrop(painter: QPainter, rect: QRectF) -> None:
@@ -175,9 +240,9 @@ def _glass_button(selector: str, p: dict, kind: str = "") -> str:
     fg = p.get(f"glass{k}_fg", p["glass_fg"] if not kind else p["danger"])
     return f"""
 {selector} {{ background: {p[f'glass{k}']}; border: 1px solid {p[f'glass{k}_border']};
-    border-top-color: {p['glass_edge']}; color: {fg}; font-family: {BODY_SEMIBOLD}; }}
+    color: {fg}; font-family: {BODY_SEMIBOLD}; }}
 {selector}:hover {{ background: {p[f'glass{k}_hover']}; }}
-{selector}:pressed {{ background: {p[f'glass{k}']}; border-top-color: {p[f'glass{k}_border']}; }}
+{selector}:pressed {{ background: {p[f'glass{k}']}; }}
 {selector}:disabled {{ background: {p['field']}; border-color: {p['border']}; color: {p['faint']}; }}
 """
 
@@ -207,10 +272,9 @@ QLabel#card {{ background: {p['panel2']}; border: 1px solid {p['border']}; borde
     padding: 10px 12px; }}
 
 QLabel#pill, QPushButton#pill {{ background: {p['panel2']}; border: 1px solid {p['border']};
-    border-top-color: {p['edge']}; border-radius: 16px; padding: 0 14px; min-height: 30px;
+    border-radius: 16px; padding: 0 14px; min-height: 30px;
     max-height: 30px; font-family: {BODY_MEDIUM}; font-size: 12px; }}
-QPushButton#pill:hover {{ background: {p['field_hover']}; border-color: {p['border_hover']};
-    border-top-color: {p['edge']}; }}
+QPushButton#pill:hover {{ background: {p['field_hover']}; border-color: {p['border_hover']}; }}
 QLabel#chip {{ border-radius: 10px; padding: 3px 10px; font-family: {BODY_MEDIUM}; font-size: 12px; }}
 QLabel#chip[tone="ok"] {{ color: {p['ok']}; background: {p['ok_bg']}; }}
 QLabel#chip[tone="warn"] {{ color: {p['warn']}; background: {p['warn_bg']}; }}
@@ -230,10 +294,9 @@ QGroupBox {{ background: {p['panel2']}; border: 1px solid {p['border']}; border-
 QGroupBox::title {{ subcontrol-origin: margin; left: 14px; padding: 0 4px; color: {p['muted']};
     font-family: {DISPLAY}; }}
 
-QPushButton {{ background: {p['field']}; border: 1px solid {p['border']}; border-top-color: {p['edge']};
+QPushButton {{ background: {p['field']}; border: 1px solid {p['border']};
     border-radius: 17px; padding: 7px 16px; font-family: {BODY_MEDIUM}; min-height: 20px; }}
-QPushButton:hover {{ background: {p['field_hover']}; border-color: {p['border_hover']};
-    border-top-color: {p['edge']}; }}
+QPushButton:hover {{ background: {p['field_hover']}; border-color: {p['border_hover']}; }}
 QPushButton:pressed {{ background: {p['border']}; }}
 QPushButton:disabled {{ color: {p['faint']}; background: {p['field']}; border-color: {p['border']}; }}
 QPushButton:focus {{ border-color: {p['border_hover']}; }}
@@ -255,7 +318,7 @@ QPushButton#seg {{ background: transparent; border: 1px solid transparent; borde
     min-height: 18px; }}
 QPushButton#seg:hover {{ color: {p['fg']}; }}
 QPushButton#seg:checked {{ background: {p['glass']}; border-color: {p['glass_border']};
-    border-top-color: {p['glass_edge']}; color: {p['glass_fg']}; }}
+    color: {p['glass_fg']}; }}
 
 QLineEdit, QComboBox, QSpinBox, QDoubleSpinBox {{ background: {p['field']}; border: 1px solid {p['border']};
     border-radius: 17px; padding: 7px 14px; selection-background-color: {BLUE}; min-height: 20px; }}

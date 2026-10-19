@@ -7,12 +7,13 @@ import html
 from typing import Any, Callable, Optional
 
 from PyQt6.QtCore import (
-    QEasingCurve, QPointF, QPropertyAnimation, QRectF, QSize, Qt, pyqtProperty, pyqtSignal,
+    QEasingCurve, QEvent, QObject, QPointF, QPropertyAnimation, QRectF, QSize, Qt, pyqtProperty,
+    pyqtSignal,
 )
 from PyQt6.QtGui import QColor, QFont, QFontMetrics, QLinearGradient, QPainter, QPainterPath, QPen, QPixmap
 from PyQt6.QtWidgets import (
     QAbstractButton, QButtonGroup, QFrame, QGridLayout, QHBoxLayout, QLabel, QMenu, QPushButton,
-    QSizePolicy, QVBoxLayout, QWidget,
+    QSizePolicy, QStyle, QStyleOptionButton, QVBoxLayout, QWidget,
 )
 
 from . import theme
@@ -41,6 +42,76 @@ def choice_text(choice: Optional[str]) -> str:
 
 
 # ---- primitives ---------------------------------------------------------------------------------
+
+# fill, fill on hover, border: per push button object name ("" = an ordinary button)
+_CRYSTAL = {
+    "": ("field", "field_hover", "border_hover"),
+    "pill": ("panel2", "field_hover", "border_hover"),
+    "primary": ("glass", "glass_hover", "glass_border"),
+    "install": ("glass_ok", "glass_ok_hover", "glass_ok_border"),
+    "update": ("glass_warn", "glass_warn_hover", "glass_warn_border"),
+    "danger": ("glass_danger", "glass_danger_hover", "glass_danger_border"),
+    "running": ("ok_bg", "ok_bg", "glass_ok_border"),
+    "seg": ("glass", "glass_hover", "glass_border"),
+}
+
+
+class CrystalButtons(QObject):
+    """Paints every push button as a raised crystal (theme.paint_crystal); the style sheet
+    still sizes them and draws their text, icon and colours."""
+
+    def eventFilter(self, obj, event) -> bool:
+        if event.type() != QEvent.Type.Paint or not isinstance(obj, QPushButton):
+            return False
+        name = obj.objectName()
+        if name not in _CRYSTAL and name.startswith("qt_"):
+            name = ""   # Qt's own buttons (message boxes, dialogs)
+        if name not in _CRYSTAL or (name == "seg" and not obj.isChecked()):
+            return False
+        paint_button(obj, *_CRYSTAL[name])
+        return True
+
+
+def paint_button(button: QPushButton, fill: str, hover_fill: str, border: str) -> None:
+    p = QPainter(button)
+    p.setRenderHint(QPainter.RenderHint.Antialiasing)
+    rect = QRectF(button.rect())
+    pressed = button.isDown()
+    if button.isEnabled():
+        hover = button.underMouse()
+        body = theme.paint_crystal(p, rect, rect.height() / 2, hover_fill if hover else fill,
+                                   border, hover=hover, pressed=pressed)
+    else:
+        body = theme.crystal_body(rect)
+        p.setBrush(theme.qcolor("field"))
+        p.setPen(theme.qcolor("border"))
+        p.drawRoundedRect(body, body.height() / 2, body.height() / 2)
+    option = QStyleOptionButton()   # (initStyleOption is protected for Qt's own buttons)
+    option.initFrom(button)
+    option.text = button.text()
+    option.icon = button.icon()
+    option.iconSize = button.iconSize()
+    if button.menu() is not None:
+        option.features |= QStyleOptionButton.ButtonFeature.HasMenu
+    if pressed:
+        option.state |= QStyle.StateFlag.State_Sunken
+    if button.isChecked():
+        option.state |= QStyle.StateFlag.State_On
+    option.rect = body.toAlignedRect()
+    button.style().drawControl(QStyle.ControlElement.CE_PushButtonLabel, option, p, button)
+    if button.menu() is not None:
+        color = QColor(button.palette().buttonText().color())
+        p.setPen(QPen(color, 1.5, Qt.PenStyle.SolidLine, Qt.PenCapStyle.RoundCap,
+                      Qt.PenJoinStyle.RoundJoin))
+        p.setBrush(Qt.BrushStyle.NoBrush)
+        c = QPointF(body.right() - 15, body.center().y())
+        arrow = QPainterPath()
+        arrow.moveTo(c + QPointF(-3.5, -1.5))
+        arrow.lineTo(c + QPointF(0, 2))
+        arrow.lineTo(c + QPointF(3.5, -1.5))
+        p.drawPath(arrow)
+    p.end()
+
 
 class Switch(QAbstractButton):
     """Pill toggle: clear crystal track when on, sliding white knob."""
@@ -84,17 +155,29 @@ class Switch(QAbstractButton):
         p.setRenderHint(QPainter.RenderHint.Antialiasing)
         r = QRectF(1, 1, self.width() - 2, self.height() - 2)
         radius = r.height() / 2
-        if self.isChecked() and self.isEnabled():
-            theme.paint_glass(p, r, radius, "glass_ok", "glass_ok_border")
-        else:
-            p.setBrush(theme.qcolor("track"))
-            p.setPen(theme.qcolor("border"))
-            p.drawRoundedRect(r, radius, radius)
-        knob = r.height() - 6
-        x = r.left() + 3 + self._offset * (r.width() - knob - 6)
+        on = self.isChecked() and self.isEnabled()
+        p.setBrush(theme.qcolor("glass_ok" if on else "track"))   # the track sits in, flat
+        p.setPen(theme.qcolor("glass_ok_border" if on else "border"))
+        p.drawRoundedRect(r, radius, radius)
+        knob = r.height() - 5
+        x = r.left() + 2.5 + self._offset * (r.width() - knob - 5)
+        ball = QRectF(x, r.top() + 2, knob, knob)
         p.setPen(Qt.PenStyle.NoPen)
+        if self.isEnabled():   # the knob stands up out of it: shadow, then a glossy cap
+            for dy, alpha in ((1.0, 60), (2.0, 28)):
+                p.setBrush(QColor(0, 0, 0, alpha))
+                p.drawEllipse(ball.translated(0, dy))
         p.setBrush(QColor(255, 255, 255, 255 if self.isEnabled() else 150))
-        p.drawEllipse(QRectF(x, r.top() + 3, knob, knob))
+        p.drawEllipse(ball)
+        if self.isEnabled():
+            p.setBrush(QColor(255, 255, 255))
+            p.setPen(QPen(QColor(0, 0, 0, 22), 0.8))
+            p.drawEllipse(ball.adjusted(0.4, 0.4, -0.4, -0.4))
+            p.setPen(Qt.PenStyle.NoPen)
+            p.setBrush(QColor(200, 214, 230, 110))   # the lower half catches less light
+            lower = QPainterPath()
+            lower.addEllipse(ball.adjusted(2.5, ball.height() * 0.48, -2.5, -1.2))
+            p.drawPath(lower)
 
 
 class ChevronButton(QAbstractButton):

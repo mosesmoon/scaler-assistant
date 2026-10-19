@@ -128,7 +128,7 @@ Con DLSS 3.7, «⚙ Ajustes» edita el `helixsr.ini` del juego con un formulario
 ### 11. Aspecto
 
 - Al estilo de MAKO Assistant («Liquid Glass»): una tarjeta por juego con su portada de Steam, una etiqueta de estado, lo que ofrece el juego y, mientras se ejecuta, lo que de verdad está cargado. El botón ⌄ abre los detalles (API gráfica, escaladores, carpeta del `.exe`, nombre de OptiScaler, opciones de lanzamiento) y las acciones menos frecuentes.
-- Los botones son de cristal transparente: un tinte suave, un borde fino y un borde superior más claro, sin degradados. Turquesa instala, azul cambia, ámbar actualiza, rojo quita.
+- Los botones son cristal transparente en relieve: un tinte suave con un borde fino, un brillo curvo en la mitad superior, un destello en el borde inferior y una sombra suave debajo, todo con capas translúcidas planas, sin degradados. Los mandos de los interruptores sobresalen igual; el tema elegido es un cristal en relieve dentro de un carril hundido. Turquesa instala, azul cambia, ámbar actualiza, rojo quita.
 - Tema oscuro, claro o automático (sigue al escritorio). El registro de actividad es el cajón al pie de la ventana.
 
 ## HelixSR 2.0 y la GPU

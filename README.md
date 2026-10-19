@@ -56,7 +56,7 @@ Multilingual release notes for each version are in [`docs/releases/`](docs/relea
 - **Switch, update, repair, remove**: switching removes the current choice first; "Update all" brings games to your HelixSR build and the current downloads; "Repair" fixes games after a game update (and a missing launch option); removal puts every file back.
 - **HelixSR settings** (`helixsr.ini`) as a form, **live status** of what is really loaded in a running game, and an **overlay** when a game starts.
 - **Works with HelixSR's own setup**: same install record (`helixsr-install.json`) and backups for DLSS 3.7.
-- **Liquid Glass look** (after MAKO Assistant): a card per game with its cover, status and a details panel; clear crystal buttons without gradients; dark, light or automatic theme.
+- **Liquid Glass look** (after MAKO Assistant): a card per game with its cover, status and a details panel; raised clear-crystal buttons (highlight, rim glint and soft shadow, no gradients); dark, light or automatic theme.
 - **Steam Deck plugin (Decky Loader)**: the same choices, downloads, OptiScaler name and launch-option handling from the Quick Access menu in Game Mode, with a notification when a game starts. It shares settings and downloads with the desktop app. HelixSR's own `helixsr.ini` settings stay in the desktop app.
 - **Languages**: 台灣正體中文, 简体中文, English, 日本語, Deutsch, Français, Español, Italiano, ไทย, Tiếng Việt, Bahasa Melayu, हिन्दी.
 
@@ -169,7 +169,7 @@ Scaler Assistant is an independent, unofficial tool, not affiliated with or endo
 - **切換、更新、修復、移除**：切換時先移除目前的選項；「全部更新」把遊戲更新到你的 HelixSR 版本與目前的下載檔；「修復」處理遊戲更新後的問題（以及消失的啟動選項）；移除時所有檔案恢復原狀。
 - 以表單調整 **HelixSR 設定**（`helixsr.ini`）、顯示執行中遊戲真正載入了什麼的**即時狀態**，以及遊戲啟動時的**浮動提示**。
 - **與 HelixSR 本身的 setup 互通**：DLSS 3.7 使用相同的安裝紀錄（`helixsr-install.json`）和備份。
-- **Liquid Glass 外觀**（參考 MAKO Assistant）：每款遊戲一張卡片，含封面、狀態與詳細資訊面板；按鈕為不帶漸層的水晶通透風格；深色、淺色或自動主題。
+- **Liquid Glass 外觀**（參考 MAKO Assistant）：每款遊戲一張卡片，含封面、狀態與詳細資訊面板；按鈕為立體浮起的水晶風格（弧形反光、下緣微光與柔和陰影，不帶漸層）；深色、淺色或自動主題。
 - **Steam Deck 外掛（Decky Loader）**：在遊戲模式的快速存取選單中做同樣的選擇、下載、OptiScaler 檔名與啟動選項處理，遊戲啟動時會顯示通知。設定與下載檔和桌面版共用。HelixSR 本身的 `helixsr.ini` 設定仍在桌面版調整。
 - **語言**：台灣正體中文、简体中文、English、日本語、Deutsch、Français、Español、Italiano、ไทย、Tiếng Việt、Bahasa Melayu、हिन्दी。
 

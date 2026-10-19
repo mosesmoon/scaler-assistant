@@ -128,7 +128,7 @@ Untuk DLSS 3.7, "⚙ Tetapan" menyunting `helixsr.ini` permainan dengan borang (
 ### 11. Rupa
 
 - Mengikut gaya "Liquid Glass" MAKO Assistant: satu kad bagi setiap permainan dengan kulit Steam, cip status, apa yang ditawarkan permainan dan, semasa berjalan, apa yang benar-benar dimuatkan. Butang ⌄ membuka butiran (API grafik, penskala, folder `.exe`, nama OptiScaler, pilihan pelancaran) dan tindakan yang jarang digunakan.
-- Butang jernih seperti kristal: warna lembut, sempadan halus dan tepi atas yang lebih terang, tanpa kecerunan. Hijau kebiruan memasang, biru menukar, ambar mengemas kini, merah membuang.
+- Butang ialah kristal jernih yang timbul: warna lembut dengan sempadan halus, kilauan melengkung di separuh atas, sinaran di sepanjang tepi bawah dan bayang lembut di bawahnya — semuanya lapisan lut sinar rata, tanpa kecerunan. Tombol suis timbul dengan cara yang sama; tema yang dipilih ialah kristal timbul dalam landasan yang tenggelam. Hijau kebiruan memasang, biru menukar, ambar mengemas kini, merah membuang.
 - Tema gelap, cerah atau automatik (ikut desktop). Log aktiviti ialah laci di bahagian bawah tetingkap.
 
 ## HelixSR 2.0 dan GPU

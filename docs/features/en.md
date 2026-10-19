@@ -128,7 +128,7 @@ For DLSS 3.7, "⚙ Settings" edits the game's `helixsr.ini` with a form (sharpen
 ### 11. Look and feel
 
 - In the style of MAKO Assistant ("Liquid Glass"): one card per game with its Steam cover, a status chip, what the game offers and, while it runs, what is really loaded. The ⌄ button opens the game's details (graphics API, upscalers, `.exe` folder, OptiScaler's name, launch options) and its less frequent actions.
-- Buttons are clear crystal: a light tint, a hairline border and a brighter top edge, no gradients. Teal installs, blue changes, amber updates, red removes.
+- Buttons are raised clear crystal: a light tint with a hairline border, a curved highlight on the upper half, a glint along the lower rim and a soft shadow underneath — all flat translucent layers, no gradients. Switch knobs stand up the same way; the selected theme segment is a raised crystal in a sunken track. Teal installs, blue changes, amber updates, red removes.
 - Dark, light or automatic theme (follows the desktop). The activity log is the drawer at the bottom of the window.
 
 ## HelixSR 2.0 and the GPU

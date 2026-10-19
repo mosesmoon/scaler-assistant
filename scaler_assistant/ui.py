@@ -36,7 +36,8 @@ from .service import (
     NeedsHelixSRError, SteamMustCloseError, choice_label, component_label, upscaler_of,
 )
 from .widgets import (
-    API_LABELS, THUMB_H, THUMB_W, Backdrop, GameCard, Segmented, Switch, Wordmark, live_html,
+    API_LABELS, THUMB_H, THUMB_W, Backdrop, CrystalButtons, GameCard, Segmented, Switch, Wordmark,
+    live_html,
 )
 
 POLL_MS = 3000
@@ -1460,6 +1461,9 @@ def prepare_app(app: QApplication, service: AssistantService) -> None:
     theme.load_fonts()
     theme.set_mode(theme.resolve(service.theme))
     app.setStyleSheet(theme.stylesheet())
+    if not hasattr(app, "_crystal_buttons"):
+        app._crystal_buttons = CrystalButtons(app)
+        app.installEventFilter(app._crystal_buttons)
 
 
 def main() -> int:
