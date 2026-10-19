@@ -36,7 +36,7 @@ import { FaLayerGroup } from "react-icons/fa";
 
 // ---- backend ---------------------------------------------------------------------------------
 
-interface Choice { id: string; label: string; hint: string; current: boolean }
+interface Choice { id: string; label: string; hint: string; current: boolean; recommended: boolean }
 interface LiveLine { label: string; detail: string; active: boolean }
 interface Live { headline: string; tone: string; lines: LiveLine[]; notes: string[]; loaded: boolean }
 interface Game {
@@ -310,9 +310,14 @@ function GameModal({ game, closeModal, refresh }: {
                 {fixLabel} — {game.label}
               </DialogButton>
             )}
-            {game.choices.map((choice) => (
-              <Field key={choice.id || "x"} label={`${choice.current ? "✓ " : ""}${choice.label}`}
-                description={choice.hint} bottomSeparator="none" childrenLayout="inline"
+            {game.choices.map((choice, index) => (
+              <Field key={choice.id || `blocked-${index}`}
+                label={<span style={{
+                  opacity: choice.id ? 1 : 0.45,
+                  color: choice.recommended ? TONES.ok : undefined,
+                }}>{`${choice.current ? "✓ " : ""}${choice.label}`}</span>}
+                description={<span style={{ whiteSpace: "pre-wrap", opacity: choice.id ? 1 : 0.6 }}>{choice.hint}</span>}
+                bottomSeparator="none" childrenLayout="inline"
                 focusable={!choice.id || choice.current} >
                 {choice.id && !choice.current && (
                   <DialogButton style={{ minWidth: "120px" }}

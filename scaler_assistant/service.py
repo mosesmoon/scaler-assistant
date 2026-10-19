@@ -82,7 +82,8 @@ def upscaler_of(choice: Optional[str]) -> str:
 
 
 def uses_optiscaler(choice: Optional[str]) -> bool:
-    return upscaler_of(choice) in ("fsr4", "fsr3") or choice == "helixsr:optiscaler"
+    return upscaler_of(choice) in ("fsr4", "fsr3") or choice in ("helixsr:optiscaler",
+                                                                  "helixsr:hscaler")
 
 
 @dataclass
@@ -98,6 +99,8 @@ class GameEntry:
     names: dict[str, str] = field(default_factory=dict)
     launch_options: str = ""
     launch_missing: bool = False                            # OptiScaler's override is gone
+    blocked: dict[str, str] = field(default_factory=dict)   # choice -> i18n key: why not here
+    recommended: Optional[str] = None                       # the choice to suggest for this PC
 
     @property
     def display_name(self) -> str:
@@ -334,6 +337,9 @@ class AssistantService:
         return None
 
     def set_helixsr_folder(self, path: Path | str) -> HelixSRFolder:
+        path = Path(path).expanduser()
+        if path.name == helixsr.FSRFG and helixsr.looks_like_helixsr(path.parent):
+            path = path.parent   # HelixSR 2.0: its HelixSR-fsrfg folder was picked
         folder = helixsr.inspect(path)
         if not folder.version and not helixsr.looks_like_helixsr(folder.path):
             # A parent folder holding one extracted release (HelixSR-1.9.0/HelixSR-1.9.0)
@@ -474,15 +480,53 @@ class AssistantService:
         return {"app_id": game.app_id, "name": game.name, "names": game.names,
                 "install_dir": str(game.install_dir), "layout": layout.to_json()}
 
-    def choices_for(self, layout: GameLayout, loader: bool = True) -> list[str]:
-        result = [f"helixsr:{way}" for way in layout.ways(loader)]
+    def gpu_kind(self) -> str:
+        """nvidia / amd / amd_apu / intel / unknown, for the GPU games run on."""
+        main = self.main_gpu()
+        if main is None:
+            return "unknown"
+        if main.vendor == "NVIDIA":
+            return "nvidia"
+        if main.vendor == "Intel":
+            return "intel"
+        return "amd_apu" if main.apu else "amd"
+
+    def _ways(self, layout: GameLayout, folder: Optional[HelixSRFolder]) -> list[str]:
+        modern = bool(folder and folder.modern)
+        loader = folder.has_loader if folder and folder.version and not modern else True
+        return layout.ways(loader, modern)
+
+    def blocked_choices(self, ways: list[str]) -> dict[str, str]:
+        """HelixSR ways this PC's GPU can't use. The DLSS way needs a GeForce: with an AMD or
+        Intel GPU games don't offer DLSS to select (no NVIDIA driver answers them)."""
+        blocked = {}
+        if "dlss" in ways and self.gpu_kind() in ("amd", "amd_apu", "intel"):
+            blocked["helixsr:dlss"] = "blk_dlss_gpu"
+        return blocked
+
+    def recommended_choice(self, choices: list[str]) -> Optional[str]:
+        """Built-in graphics (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) and Intel GPUs: Lossy."""
+        if self.gpu_kind() in ("amd_apu", "intel") and "fsr4:lossy" in choices:
+            return "fsr4:lossy"
+        return None
+
+    def choices_for(self, layout: GameLayout, folder: Optional[HelixSRFolder] = None,
+                    ways: Optional[list[str]] = None) -> list[str]:
+        ways = self._ways(layout, folder) if ways is None else ways
+        blocked = self.blocked_choices(ways)
+        result = [f"helixsr:{way}" for way in ways if f"helixsr:{way}" not in blocked]
         if layout.optiscaler_possible:
             result += self.fsr4_choices() + ["fsr3"]
         return result
 
+    def modern_choice(self, choice: str, folder: Optional[HelixSRFolder]) -> str:
+        """With HelixSR 2.0 an earlier way (OptiScaler, DLSS loader) is updated to HelixSR Scaler."""
+        if folder is not None and folder.modern and choice in ("helixsr:optiscaler", "helixsr:dlss"):
+            return "helixsr:hscaler"
+        return choice
+
     def entries(self, live: bool = False) -> list[GameEntry]:
         folder = self.helixsr()
-        loader = folder.has_loader if folder and folder.version else True
         games = self.state.get("games", [])
         try:
             options = self.read_launch_options([int(g["app_id"]) for g in games], live)
@@ -500,14 +544,18 @@ class AssistantService:
                 outdated = status.source != self.expected_source(status.choice)
             else:
                 outdated = status.outdated(folder)
+            ways = self._ways(layout, folder)
+            choices = self.choices_for(layout, folder, ways)
             result.append(GameEntry(
                 app_id=app_id,
                 name=game["name"],
                 install_dir=game["install_dir"],
                 layout=layout,
                 status=status,
-                ways=layout.ways(loader),
-                choices=self.choices_for(layout, loader),
+                ways=ways,
+                choices=choices,
+                blocked=self.blocked_choices(ways),
+                recommended=self.recommended_choice(choices),
                 outdated=outdated,
                 names=dict(game.get("names") or {}),
                 launch_options=current,
@@ -563,6 +611,7 @@ class AssistantService:
         if chosen:
             return chosen, "user"
         same = ((choice == "helixsr:optiscaler" and status.route == "optiscaler")
+                or (choice == "helixsr:hscaler" and status.route == "hscaler")
                 or (upscaler_of(choice) in ("fsr4", "fsr3") and status.route == "scaler"))
         blocked = lo.blocked_names(options)
         if status.opti_name:
@@ -596,7 +645,9 @@ class AssistantService:
         """What ``apply`` will need; nothing is changed."""
         if choice not in installer.CHOICES:
             raise LookupError(choice)
+        choice = self.modern_choice(choice, self.helixsr())
         cached, layout = self._refresh_game(app_id)
+        self._check_blocked(layout, choice)
         status = installer.state(layout)
         options = self.read_launch_options([app_id]).get(app_id, "")
         name, reason = self._opti_name(cached, layout, status, choice, options)
@@ -617,16 +668,23 @@ class AssistantService:
             lossy_warning=choice == "fsr4:lossy" and not self.state.get("lossy_accepted"),
             anti_cheat=list(layout.anti_cheat))
 
+    def _check_blocked(self, layout: GameLayout, choice: str) -> None:
+        reason = self.blocked_choices(self._ways(layout, self.helixsr())).get(choice)
+        if reason:
+            raise installer.InstallError(tr(reason))
+
     def apply(self, app_id: int, choice: str) -> str:
         """Install, switch to, update or repair a choice in one game."""
         if choice not in installer.CHOICES:
             raise LookupError(choice)
         upscaler = upscaler_of(choice)
         folder = self.require_helixsr() if upscaler == "helixsr" else None
+        choice = self.modern_choice(choice, folder)
         missing = self.missing_components(choice)
         if missing:
             raise NeedsDownloadError(missing)
         cached, layout = self._refresh_game(app_id)
+        self._check_blocked(layout, choice)
         name = self._name(cached)
         self._ensure_closed(app_id, name)
         before = installer.state(layout)
@@ -642,7 +700,8 @@ class AssistantService:
         if folder is not None:
             route = choice.partition(":")[2]
             notes = installer.install_helixsr(layout, folder, route, STAMP,
-                                              opti_name if route == "optiscaler" else None)
+                                              opti_name if route in ("optiscaler", "hscaler")
+                                              else None, cached["install_dir"])
         else:
             component, dll = self._source_for(choice)
             plan = ScalerPlan(

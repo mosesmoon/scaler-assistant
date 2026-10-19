@@ -9,7 +9,7 @@ import types
 from pathlib import Path
 from unittest import mock
 
-from scaler_assistant import components, gpu, i18n
+from scaler_assistant import gpu, i18n
 from scaler_assistant.deck import DeckBridge, plain, steam_language
 
 from tests.fakes import make_components, snapshot, write_launch_options

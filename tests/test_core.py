@@ -322,7 +322,8 @@ class FsrTest(Base):
                          ["helixsr:direct", "helixsr:optiscaler", "helixsr:dlss",
                           "fsr4:exact", "fsr4:lossy", "fsr3"])
         self.service._gpus = [gpu.Gpu("AMD", 0x7550, (12, 0, 1))]   # RX 9070: RDNA 4
-        self.assertEqual(self.entry(FSR).choices[3:], ["fsr4:native", "fsr3"])
+        self.assertEqual([c for c in self.entry(FSR).choices if c.startswith("fsr")],
+                         ["fsr4:native", "fsr3"])
         self.assertFalse(self.service.force_int8())
         self.service._gpus = [gpu.Gpu("AMD", 0x163f, (10, 3, 3), apu=True)]   # Steam Deck
         self.assertEqual(self.service.needed_components("fsr4:lossy")[1], components.FSR4["igpu"])
@@ -741,3 +742,92 @@ class GpuTest(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class GpuChoicesTest(Base):
+    def test_dlss_way_only_with_a_geforce(self):
+        self.service._gpus = [gpu.Gpu("AMD", 0x744c, (11, 0, 0))]
+        entry = self.entry(DLSS)
+        self.assertIn("dlss", entry.ways)
+        self.assertNotIn("helixsr:dlss", entry.choices)
+        self.assertEqual(entry.blocked, {"helixsr:dlss": "blk_dlss_gpu"})
+        with self.assertRaises(InstallError):
+            self.service.plan(DLSS, "helixsr:dlss")
+        with self.assertRaises(InstallError):
+            self.service.apply(DLSS, "helixsr:dlss")
+        self.service._gpus = [gpu.Gpu("Intel", 0x56a0, None, apu=False)]
+        self.assertIn("helixsr:dlss", self.entry(DLSS).blocked)
+        self.service._gpus = [gpu.Gpu("NVIDIA", 0x2684)]
+        self.assertIn("helixsr:dlss", self.entry(DLSS).choices)
+        self.assertEqual(self.entry(DLSS).blocked, {})
+
+    def test_lossy_recommended_on_built_in_and_intel_graphics(self):
+        cases = [(gpu.Gpu("AMD", 0x163f, (10, 3, 3), apu=True), "fsr4:lossy"),     # Steam Deck
+                 (gpu.Gpu("AMD", 0x1586, (11, 5, 1), apu=True), "fsr4:lossy"),     # Ryzen AI MAX
+                 (gpu.Gpu("Intel", 0x7d55, None, apu=True), "fsr4:lossy"),
+                 (gpu.Gpu("AMD", 0x744c, (11, 0, 0)), None),                       # RX 7900
+                 (gpu.Gpu("AMD", 0x7550, (12, 0, 1)), None)]                       # RX 9070
+        for card, want in cases:
+            self.service._gpus = [card]
+            self.assertEqual(self.entry(DLSS).recommended, want, card)
+        self.service._gpus = []
+        self.assertIsNone(self.entry(DLSS).recommended)
+
+
+class ModernHelixSRTest(Base):
+    """HelixSR 2.0: HelixSR-fsrfg, HelixSR Scaler, installed through the release's installer."""
+
+    def setUp(self):
+        super().setUp()
+        from tests.fakes import make_helixsr_modern
+        self.hx2 = make_helixsr_modern(self.root / "HelixSR-2.0.0")
+        make_components(self.root / "components")
+        self.service._gpus = [gpu.Gpu("AMD", 0x744c, (11, 0, 0))]
+
+    def test_folder_and_ways(self):
+        folder = helixsr.inspect(self.hx2)
+        self.assertTrue(folder.modern and folder.ready)
+        self.assertEqual((folder.version, folder.scaler_version()), ("2.0.0", "1.1.0"))
+        self.assertTrue(helixsr.looks_like_helixsr(self.hx2))
+        # picking the HelixSR-fsrfg folder itself works too
+        chosen = self.service.set_helixsr_folder(self.hx2 / "HelixSR-fsrfg")
+        self.assertEqual(chosen.path, self.hx2.resolve())
+        self.assertEqual(self.entry(FSR).ways, ["hscaler", "direct"])
+        self.assertEqual(self.entry(DLSS).ways, ["hscaler"])
+        from tests.fakes import make_helixsr_modern
+        unbuilt = make_helixsr_modern(self.root / "raw", built=False)
+        self.assertEqual(helixsr.inspect(unbuilt).problem, "hx_not_built")
+
+    def test_hscaler_install_switch_and_remove(self):
+        self.service.set_helixsr_folder(self.hx2)
+        (self.dlss_bin / "dxgi.dll").write_bytes(b"MZ ReShade")
+        before = snapshot(self.common / "DlssGame")
+        write_launch_options(self.steam, {DLSS: "-dx12 %command%"})
+        message = self.service.apply(DLSS, "helixsr:hscaler")
+        status = self.entry(DLSS).status
+        self.assertEqual((status.choice, status.version), ("helixsr:hscaler", "2.0.0"), message)
+        self.assertNotEqual(status.opti_name, "dxgi.dll")   # ReShade's file stays
+        self.assertTrue((self.dlss_bin / "HelixSR-fsrfg" / "amd_fidelityfx_dx12.dll").is_file())
+        calls = (self.hx2 / "bridge-calls.txt").read_text()
+        self.assertIn(f"--scaler-name {status.opti_name}", calls)
+        self.assertIn("--anticheat-ok yes", calls)          # DlssGame has Easy Anti-Cheat
+        stem = status.opti_name.rsplit(".", 1)[0]
+        self.assertIn(f'{stem}=n,b', self.entry(DLSS).launch_options)
+        self.assertEqual(self.entry(DLSS).issues, [])
+        # an earlier HelixSR way is updated to HelixSR Scaler
+        self.assertEqual(self.service.plan(DLSS, "helixsr:optiscaler").choice, "helixsr:hscaler")
+        # switching to FSR 3 takes HelixSR Scaler out first (its record, the game's files back)
+        self.service.apply(DLSS, "fsr3")
+        self.assertEqual(self.entry(DLSS).status.choice, "fsr3")
+        self.assertFalse((self.dlss_bin / "HelixSR-Scaler.files").exists())
+        self.assertFalse((self.dlss_bin / "HelixSR-fsrfg").exists())
+        self.service.uninstall(DLSS, False)
+        self.assertEqual(snapshot(self.common / "DlssGame"), before)
+        self.assertEqual(self.entry(DLSS).launch_options, "-dx12 %command%")
+
+    def test_scan_ignores_helixsr_scaler_files(self):
+        self.service.set_helixsr_folder(self.hx2)
+        self.service.apply(DLSS, "helixsr:hscaler")
+        self.service.scan()
+        self.assertEqual(self.entry(DLSS).layout.fsr_targets, [])
+        self.assertEqual(self.entry(DLSS).status.route, "hscaler")

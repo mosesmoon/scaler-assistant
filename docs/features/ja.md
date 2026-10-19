@@ -130,6 +130,12 @@ DLSS 3.7 では「⚙ 設定」でゲームの `helixsr.ini`（シャープ化�
 - ボタンはクリスタルのように透明：淡い色、細い枠線、明るい上端で、グラデーションはありません。ティールはインストール、青は切り替え、琥珀は更新、赤は削除です。
 - ダーク、ライト、自動（デスクトップに合わせる）のテーマ。アクティビティログはウィンドウ下部の引き出しです。
 
+## HelixSR 2.0 と GPU
+
+- **HelixSR 2.0 以降**はビルド済み DLL を `HelixSR-fsrfg` に置き、2 つの方式があります：**HelixSR Scaler**（`.exe` の横に置く HelixSR 独自の OptiScaler。ゲームで DLSS を選択。DX11 と Vulkan のゲームにも対応）と **FSR 方式**（FSR ドロップイン）。Scaler アシスタントは HelixSR フォルダー内のインストーラー（`setup/helixsr_bridge.py`、HelixSR 公式アプリが使うもの）で両方をインストールするため、HelixSR のセットアップ、そのアプリ、Scaler アシスタントは互いのインストールを認識・更新・削除できます。ファイル名は引き続き Scaler アシスタントが選び、必要なら起動オプションも追加します。以前の方式で設定したゲームは更新時に HelixSR Scaler へ移ります。HelixSR 1.8／1.9 のフォルダーでは従来の 3 方式のままです。
+- **DLSS 方式は GeForce のみ**：AMD や Intel の GPU ではゲームで DLSS を選べないため、（HelixSR 1.x の）DLSS 方式は理由つきでグレー表示になります。
+- **FSR 4.1 Lossy をおすすめ**：内蔵グラフィックス（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）と Intel GPU では、FSR 4.1 の選択肢の中だけで「★ おすすめ」と表示します。
+
 ## HelixSR 本体の setup との連携
 
 DLSS 3.7 では、HelixSR の setup と同じインストール記録（`helixsr-install.json`）、バックアップ、ファイル名を使うので、`helixsr-setup.sh`／`helixsr-uninstall.sh` と Scaler アシスタントは互いのゲームを認識します。HelixSR の setup はゲームの `ScalerAssistant` フォルダーにある FSR DLL をゲーム自身の FSR 3.1 DLL とみなし、HelixSR に置き換えることがあります。その場合 Scaler アシスタントは修復が必要と表示し、「修復」で HelixSR を取り除きます。そのゲームで DLSS 3.7 を使うなら Scaler アシスタントで選んでください。
@@ -171,7 +177,7 @@ chmod +x Scaler_Assistant-*-x86_64.AppImage
 
 - **Steam のゲームのみ。** FSR 4.1／FSR 3 の導入方法は OptiScaler 0.9.4 でファイル単位に確認済みですが、ゲームごとに挙動は異なります。不具合があれば OptiScaler の互換性リストを確認するか、OptiScaler のファイル名を変えてください。
 - Direct3D 11 と Vulkan のゲームでの FSR 4.1 は OptiScaler の Direct3D 12 経由で、検証が少なめです。
-- HelixSR は変化が速いです。Scaler アシスタントは HelixSR 1.8.0 以降が必要で、1.8.x／1.9.x の構成に合わせています。
+- HelixSR は変化が速いです。Scaler アシスタントは HelixSR 1.8.0 以降が必要で、1.8.x／1.9.x／2.0.x の構成に合わせています。
 - Steam Deck のゲームモード（gamescope）ではオーバーレイは表示されません。Decky プラグインでは代わりに Steam の通知で表示します。
 - タイ語、ベトナム語、マレー語、ヒンディー語の右クリックメニューは英語です（Qt の公式翻訳がないため）。Steam にはマレー語とヒンディー語のゲーム名がありません。
 

@@ -178,3 +178,61 @@ def snapshot(folder: Path) -> dict[str, str]:
             path = Path(directory) / name
             result[str(path.relative_to(folder))] = hashlib.sha256(path.read_bytes()).hexdigest()
     return result
+
+
+# A stand-in for the installer HelixSR 2.0 releases carry (setup/helixsr_bridge.py): it only
+# speaks the same command line and JSON and lays files out the way HelixSR Scaler does.
+FAKE_BRIDGE = r'''
+import json, os, shutil, sys
+from pathlib import Path
+release, command = Path(sys.argv[1]), sys.argv[2]
+args = dict(zip(sys.argv[3::2], sys.argv[4::2]))
+log = release / "bridge-calls.txt"
+with open(log, "a") as f:
+    f.write(" ".join(sys.argv[2:]) + "\n")
+def answer(**kw):
+    print(json.dumps(dict(protocol=1, ok=True, messages=["fake bridge"], **kw)))
+def exe_dir(game):
+    for d, _, files in os.walk(game):
+        if any(n.endswith(".exe") for n in files):
+            return Path(d)
+    raise SystemExit("no exe")
+if command == "install":
+    t = exe_dir(args["--game"])
+    if args["--way"] == "scaler":
+        name = args.get("--scaler-name", "dxgi.dll")
+        files = []
+        if (t / name).exists():
+            (t / "HelixSR-Scaler-backup").mkdir(exist_ok=True)
+            os.replace(t / name, t / "HelixSR-Scaler-backup" / name)
+        shutil.copyfile(Path(args["--scaler"]) / "OptiScaler.dll", t / name)
+        files.append(name)
+        (t / "HelixSR-fsrfg").mkdir(exist_ok=True)
+        shutil.copyfile(release / "HelixSR-fsrfg" / "amd_fidelityfx_dx12.dll",
+                        t / "HelixSR-fsrfg" / "amd_fidelityfx_dx12.dll")
+        files.append("HelixSR-fsrfg/amd_fidelityfx_dx12.dll")
+        (t / "OptiScaler.ini").write_text("[HelixSR]\n")
+        files.append("OptiScaler.ini")
+        (t / "HelixSR-Scaler.files").write_text(
+            "# HelixSR Scaler, installed by HelixSR Desktop\n# version=" +
+            args.get("--scaler-version", "") + "\nname=" + name + "\n" + "\n".join(files) + "\n")
+    answer(game={})
+elif command == "remove":
+    answer(game={})
+else:
+    print(json.dumps({"protocol": 1, "ok": False, "error": "unknown", "messages": []}))
+'''
+
+
+def make_helixsr_modern(folder: Path, version: str = "2.0.0", built: bool = True) -> Path:
+    """A HelixSR 2.0 style release: HelixSR-fsrfg, helixsr-scaler and the installer."""
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "helixsr-setup.sh").write_text("#!/bin/sh\n")
+    (folder / "HelixSR-fsrfg").mkdir(exist_ok=True)
+    (folder / "HelixSR-fsrfg" / "amd_fidelityfx_dx12.dll").write_bytes(helixsr_dll(version, built))
+    (folder / "helixsr-scaler").mkdir(exist_ok=True)
+    (folder / "helixsr-scaler" / "OptiScaler.dll").write_bytes(
+        b"MZ OptiScaler HelixSR Scaler v1.1.0 (marker)")
+    (folder / "setup").mkdir(exist_ok=True)
+    (folder / "setup" / "helixsr_bridge.py").write_text(FAKE_BRIDGE)
+    return folder

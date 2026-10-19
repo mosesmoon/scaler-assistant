@@ -26,6 +26,14 @@ AMD_FG = "amd_fidelityfx_framegeneration_dx12.dll"
 LOADER_DIR = "dlss-loader"
 LOADER = "dxgi.dll"
 MY_FSR = "my-fsr"
+# HelixSR 2.0 and newer: the DLL is built in HelixSR-fsrfg, games get HelixSR Scaler (HelixSR's own
+# OptiScaler build, in helixsr-scaler) or the FSR drop-in, installed by the release's own installer
+# (setup/helixsr_bridge.py, run as a separate program, never copied).
+FSRFG = "HelixSR-fsrfg"
+BRIDGE = "setup/helixsr_bridge.py"
+SCALER_PKG = "helixsr-scaler"
+SCALER_DLL = "OptiScaler.dll"
+_SCALER_VERSION = re.compile(rb"HelixSR Scaler v(\d+\.\d+\.\d+)")
 
 NETWORK_TAG = b"HXSRNET1"                    # trailer of a DLL that carries the network
 # One-file DLL (network inside), the f/o setup and the record format this tool writes.
@@ -109,10 +117,28 @@ class HelixSRFolder:
     path: Path
     version: Optional[str]
     built: bool
+    modern: bool = False          # HelixSR 2.0 layout (HelixSR-fsrfg, HelixSR Scaler, the bridge)
 
     @property
     def dll(self) -> Path:
-        return self.path / DLL
+        return self.path / FSRFG / DLL if self.modern else self.path / DLL
+
+    @property
+    def bridge(self) -> Path:
+        return self.path / BRIDGE
+
+    @property
+    def scaler_pkg(self) -> Path:
+        return self.path / SCALER_PKG
+
+    def scaler_version(self) -> Optional[str]:
+        """HelixSR Scaler's version, from its DLL (HelixSR 2.0 and newer)."""
+        try:
+            with open(self.scaler_pkg / SCALER_DLL, "rb") as handle:
+                match = _SCALER_VERSION.search(handle.read(64 << 20))
+        except OSError:
+            return None
+        return match.group(1).decode() if match else None
 
     @property
     def version_tuple(self) -> tuple[int, ...]:
@@ -139,10 +165,12 @@ class HelixSRFolder:
 
     @property
     def has_loader(self) -> bool:
-        return (self.path / LOADER_DIR / LOADER).is_file()
+        return not self.modern and (self.path / LOADER_DIR / LOADER).is_file()
 
     @property
     def has_optiscaler(self) -> bool:
+        if self.modern:
+            return False
         base = self.path / OPTI_DIR
         return all((base / name).is_file() for name in (OPTI_DLL, OPTI_INI) + OPTI_EXTRA)
 
@@ -161,6 +189,11 @@ class HelixSRFolder:
     def missing_for(self, route: str) -> list[Path]:
         """Files of this folder that a route copies but that are not there."""
         needed = [self.dll]
+        if self.modern:
+            needed.append(self.bridge)
+            if route == "hscaler":
+                needed.append(self.scaler_pkg / SCALER_DLL)
+            return [p for p in needed if not p.is_file()]
         if route == "optiscaler":
             needed += [self.path / OPTI_DIR / n for n in (OPTI_DLL, OPTI_INI) + OPTI_EXTRA]
             needed += [self.fsr_source(), self.path / AMD_DIR / AMD_FG]
@@ -171,12 +204,13 @@ class HelixSRFolder:
 
 def inspect(path: Path | str) -> HelixSRFolder:
     folder = Path(path).expanduser()
-    dll = folder / DLL
-    return HelixSRFolder(folder, dll_version(dll), has_network(dll))
+    modern = (folder / FSRFG / DLL).is_file()
+    dll = folder / FSRFG / DLL if modern else folder / DLL
+    return HelixSRFolder(folder, dll_version(dll), has_network(dll), modern)
 
 
 def looks_like_helixsr(path: Path) -> bool:
-    return (path / SETUP).is_file() and (path / DLL).is_file()
+    return (path / SETUP).is_file() and ((path / DLL).is_file() or (path / FSRFG / DLL).is_file())
 
 
 def _search_roots() -> Iterable[tuple[Path, int]]:

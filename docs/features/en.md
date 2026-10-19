@@ -130,6 +130,12 @@ For DLSS 3.7, "⚙ Settings" edits the game's `helixsr.ini` with a form (sharpen
 - Buttons are clear crystal: a light tint, a hairline border and a brighter top edge, no gradients. Teal installs, blue changes, amber updates, red removes.
 - Dark, light or automatic theme (follows the desktop). The activity log is the drawer at the bottom of the window.
 
+## HelixSR 2.0 and the GPU
+
+- **HelixSR 2.0 and newer** keep the built DLL in `HelixSR-fsrfg` and offer two ways: **HelixSR Scaler** (HelixSR's own OptiScaler build next to the `.exe`: select DLSS in the game; also DX11 and Vulkan games) and the **FSR way** (FSR drop-in). Scaler Assistant installs both through the installer inside your HelixSR folder (`setup/helixsr_bridge.py`, the one HelixSR's own app uses), so HelixSR's setup, its app and Scaler Assistant recognise, update and remove each other's installs. It still picks the file name and adds the launch option when one is needed. Games set up with an earlier way move to HelixSR Scaler on update. HelixSR 1.8 / 1.9 folders keep their three ways.
+- **DLSS way only with a GeForce**: with an AMD or Intel GPU, games don't offer DLSS to select, so the (HelixSR 1.x) DLSS way is greyed out with the reason.
+- **FSR 4.1 Lossy recommended** on built-in graphics (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) and Intel GPUs: marked "★ Recommended" among the FSR 4.1 choices only.
+
 ## Works together with HelixSR's own setup
 
 For DLSS 3.7, Scaler Assistant writes the same install record (`helixsr-install.json`), backups and file names as HelixSR's setup, so `helixsr-setup.sh` / `helixsr-uninstall.sh` and Scaler Assistant recognise each other's games. HelixSR's setup sees the FSR DLL in a game's `ScalerAssistant` folder as the game's own FSR 3.1 DLL and may replace it with HelixSR; Scaler Assistant then reports the game as needing repair and "Repair" takes HelixSR out again. To use DLSS 3.7 in such a game, choose it in Scaler Assistant.
@@ -171,7 +177,7 @@ If it does not start, your system may be missing FUSE; run it with `--appimage-e
 
 - **Steam games only.** The FSR 4.1 / FSR 3 routes have been checked file by file with OptiScaler 0.9.4; every game behaves differently, so check OptiScaler's compatibility list when a game misbehaves, or pick another OptiScaler file name.
 - FSR 4.1 in Direct3D 11 and Vulkan games runs through OptiScaler's Direct3D 12 path and is less tested.
-- HelixSR changes quickly. Scaler Assistant needs HelixSR 1.8.0 or newer and follows the 1.8.x / 1.9.x layout.
+- HelixSR changes quickly. Scaler Assistant needs HelixSR 1.8.0 or newer and follows the 1.8.x / 1.9.x / 2.0.x layout.
 - The overlay does not appear in Steam Deck Gaming Mode (gamescope). The Decky plugin shows a Steam notification there instead.
 - In Thai, Vietnamese, Malay and Hindi, right-click menus are in English (Qt has no official translations). Steam has no Malay or Hindi game names.
 

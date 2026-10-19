@@ -130,6 +130,12 @@ Với DLSS 3.7, "⚙ Cài đặt" sửa `helixsr.ini` của game bằng biểu m
 - Nút trong suốt như pha lê: sắc màu nhạt, viền mảnh và mép trên sáng hơn, không dùng chuyển màu. Xanh mòng két là cài, xanh dương là đổi, hổ phách là cập nhật, đỏ là gỡ.
 - Giao diện tối, sáng hoặc tự động (theo desktop). Nhật ký hoạt động nằm trong ngăn kéo ở đáy cửa sổ.
 
+## HelixSR 2.0 và GPU
+
+- **HelixSR 2.0 trở lên** đặt DLL đã dựng trong `HelixSR-fsrfg` và có hai cách: **HelixSR Scaler** (bản OptiScaler riêng của HelixSR đặt cạnh `.exe`: chọn DLSS trong game; cả game DX11 và Vulkan) và **cách FSR** (FSR drop-in). Trợ lý Scaler cài cả hai bằng trình cài đặt trong thư mục HelixSR của bạn (`setup/helixsr_bridge.py`, cái mà ứng dụng của HelixSR dùng), nên setup của HelixSR, ứng dụng của nó và Trợ lý Scaler nhận ra, cập nhật và gỡ bản cài của nhau. Tên tệp vẫn do Trợ lý Scaler chọn, và nó thêm tùy chọn khởi chạy khi cần. Game thiết lập bằng cách cũ sẽ chuyển sang HelixSR Scaler khi cập nhật. Thư mục HelixSR 1.8 / 1.9 vẫn giữ ba cách.
+- **Cách DLSS chỉ với GeForce**: với GPU AMD hoặc Intel, game không cho chọn DLSS, nên cách DLSS (HelixSR 1.x) bị làm mờ kèm lý do.
+- **Đề xuất FSR 4.1 Lossy** cho đồ họa tích hợp (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) và GPU Intel: chỉ đánh dấu "★ Đề xuất" trong các lựa chọn FSR 4.1.
+
 ## Dùng chung với setup của HelixSR
 
 Với DLSS 3.7, Trợ lý Scaler ghi cùng bản ghi cài đặt (`helixsr-install.json`), bản sao lưu và tên tệp như setup của HelixSR, nên `helixsr-setup.sh` / `helixsr-uninstall.sh` và Trợ lý Scaler nhận ra game của nhau. Setup của HelixSR coi DLL FSR trong thư mục `ScalerAssistant` của game là DLL FSR 3.1 của game và có thể thay bằng HelixSR; khi đó Trợ lý Scaler báo game cần sửa, và "Sửa" sẽ gỡ HelixSR ra. Muốn dùng DLSS 3.7 trong game đó, hãy chọn trong Trợ lý Scaler.
@@ -171,7 +177,7 @@ Nếu không mở được, có thể hệ thống thiếu FUSE; chạy với `-
 
 - **Chỉ game Steam.** Các cách FSR 4.1 / FSR 3 đã được kiểm từng tệp với OptiScaler 0.9.4; mỗi game hoạt động khác nhau: khi có lỗi, xem danh sách tương thích của OptiScaler hoặc chọn tên tệp khác cho OptiScaler.
 - FSR 4.1 trong game Direct3D 11 và Vulkan chạy qua đường Direct3D 12 của OptiScaler và ít được thử hơn.
-- HelixSR thay đổi nhanh. Trợ lý Scaler cần HelixSR 1.8.0 trở lên và theo cấu trúc của 1.8.x / 1.9.x.
+- HelixSR thay đổi nhanh. Trợ lý Scaler cần HelixSR 1.8.0 trở lên và theo cấu trúc của 1.8.x / 1.9.x / 2.0.x.
 - Thông báo nổi không hiển thị trong Chế độ chơi game của Steam Deck (gamescope). Plugin Decky hiển thị bằng thông báo của Steam thay thế.
 - Với tiếng Thái, Việt, Mã Lai và Hindi, menu chuột phải là tiếng Anh (Qt không có bản dịch chính thức). Steam không có tên game tiếng Mã Lai và Hindi.
 

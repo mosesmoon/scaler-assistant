@@ -130,6 +130,12 @@ Con DLSS 3.7, «⚙ Ajustes» edita el `helixsr.ini` del juego con un formulario
 - Los botones son de cristal transparente: un tinte suave, un borde fino y un borde superior más claro, sin degradados. Turquesa instala, azul cambia, ámbar actualiza, rojo quita.
 - Tema oscuro, claro o automático (sigue al escritorio). El registro de actividad es el cajón al pie de la ventana.
 
+## HelixSR 2.0 y la GPU
+
+- **HelixSR 2.0 y posteriores** guardan la DLL construida en `HelixSR-fsrfg` y ofrecen dos métodos: **HelixSR Scaler** (el OptiScaler propio de HelixSR junto al `.exe`: elige DLSS en el juego; también juegos DX11 y Vulkan) y el **método FSR** (FSR drop-in). El Asistente de Scaler instala ambos con el instalador de tu carpeta de HelixSR (`setup/helixsr_bridge.py`, el que usa la aplicación de HelixSR), así que el setup de HelixSR, su aplicación y el Asistente de Scaler reconocen, actualizan y quitan las instalaciones de los demás. El nombre de archivo lo sigue eligiendo el Asistente de Scaler, que añade la opción de lanzamiento cuando hace falta. Los juegos configurados con un método anterior pasan a HelixSR Scaler al actualizar. Las carpetas de HelixSR 1.8 / 1.9 mantienen sus tres métodos.
+- **Método DLSS solo con una GeForce**: con una GPU AMD o Intel, los juegos no ofrecen DLSS, así que el método DLSS (HelixSR 1.x) aparece en gris con el motivo.
+- **FSR 4.1 Lossy recomendado** en gráficos integrados (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) y GPU Intel: marcado «★ Recomendado» solo entre las opciones de FSR 4.1.
+
 ## Funciona con la instalación propia de HelixSR
 
 Con DLSS 3.7, el Asistente de Scaler escribe el mismo registro de instalación (`helixsr-install.json`), copias de seguridad y nombres que la instalación de HelixSR, así que `helixsr-setup.sh` / `helixsr-uninstall.sh` y el Asistente de Scaler reconocen los juegos del otro. La instalación de HelixSR toma la DLL de FSR de la carpeta `ScalerAssistant` de un juego por la DLL de FSR 3.1 del juego y puede reemplazarla por HelixSR; el Asistente de Scaler marca entonces el juego como pendiente de reparación y «Reparar» quita HelixSR. Para usar DLSS 3.7 en ese juego, elígelo en el Asistente de Scaler.
@@ -171,7 +177,7 @@ Si no arranca, puede que falte FUSE; ejecútalo con `--appimage-extract-and-run`
 
 - **Solo juegos de Steam.** Los métodos FSR 4.1 / FSR 3 se han comprobado archivo por archivo con OptiScaler 0.9.4; cada juego se comporta distinto: si algo falla, consulta la lista de compatibilidad de OptiScaler o elige otro nombre de archivo para OptiScaler.
 - FSR 4.1 en juegos Direct3D 11 y Vulkan pasa por la ruta Direct3D 12 de OptiScaler y está menos probado.
-- HelixSR cambia rápido. El Asistente de Scaler necesita HelixSR 1.8.0 o posterior y sigue la estructura de 1.8.x / 1.9.x.
+- HelixSR cambia rápido. El Asistente de Scaler necesita HelixSR 1.8.0 o posterior y sigue la estructura de 1.8.x / 1.9.x / 2.0.x.
 - El aviso superpuesto no aparece en el modo Juego de Steam Deck (gamescope). El plugin de Decky muestra en su lugar una notificación de Steam.
 - En tailandés, vietnamita, malayo e hindi, los menús contextuales están en inglés (Qt no tiene traducciones oficiales). Steam no tiene nombres de juegos en malayo ni en hindi.
 

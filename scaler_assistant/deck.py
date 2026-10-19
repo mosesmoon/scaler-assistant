@@ -166,19 +166,34 @@ class DeckBridge:
 
     @staticmethod
     def choices(entry: GameEntry) -> list[dict[str, Any]]:
+        """Every choice for the game: ways this GPU can't use come without an id (shown greyed
+        out, with the reason), the one recommended for this PC is marked."""
         result = []
-        for choice in entry.choices:
+        order = [f"helixsr:{way}" for way in entry.ways]
+        order += [c for c in entry.choices if c not in order]
+        for choice in order:
             if upscaler_of(choice) == "helixsr":
-                text = f"{tr('menu_helixsr')} · {tr('way_' + choice.partition(':')[2])}"
-                hint = tr("menu_install_" + choice.partition(":")[2])
+                way = choice.partition(":")[2]
+                text = f"{tr('menu_helixsr')} · {tr('way_' + way)}"
+                hint = tr("menu_install_" + way)
             else:
                 text = choice_label(choice)
                 hint = tr("menu_" + choice.replace(":", "_"))
+            reason = entry.blocked.get(choice)
+            if reason:
+                result.append({"id": "", "label": f"{text} ({tr('blk_short')})",
+                               "hint": tr(reason), "current": False, "recommended": False})
+                continue
+            recommended = choice == entry.recommended
+            if recommended:
+                text = f"{text}  {tr('rec_suffix')}"
+                hint = f"{hint}\n{tr('rec_lossy')}"
             result.append({"id": choice, "label": text, "hint": hint,
-                           "current": choice == entry.status.choice})
+                           "current": choice == entry.status.choice, "recommended": recommended})
         layout = entry.layout
-        if layout.optiscaler_possible and not layout.helixsr_possible:
+        if layout.optiscaler_possible and not entry.ways:
             result.insert(0, {"id": "", "label": tr("menu_helixsr"), "current": False,
+                              "recommended": False,
                               "hint": tr("menu_helixsr_api", api=API_LABELS.get(layout.api, "?"))})
         return result
 

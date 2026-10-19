@@ -404,7 +404,7 @@ class GameCard(QFrame):
         buttons = QHBoxLayout()
         buttons.setSpacing(8)
         actions = self.actions
-        if status.upscaler == "helixsr":
+        if status.upscaler == "helixsr" and status.route != "hscaler":
             settings = QPushButton(tr("btn_settings"))
             settings.setToolTip(tr("btn_settings_tip"))
             settings.clicked.connect(lambda: actions["settings"](entry))

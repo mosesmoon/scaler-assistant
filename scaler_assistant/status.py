@@ -46,6 +46,8 @@ def describe(entry, game: RunningGame,
         headline, tone = tr("rt_not_loaded_" + route), "warn"
     if route == "optiscaler":
         lines.append((f"OptiScaler ({status.opti_name})", tr("rt_menu_hint"), game.helper_loaded))
+    elif route == "hscaler":
+        lines.append((f"HelixSR Scaler ({status.opti_name})", tr("rt_menu_hint"), game.helper_loaded))
     elif route == "dlss":
         lines.append((tr("rt_loader"), "", game.helper_loaded))
     log = game.log

@@ -8,6 +8,9 @@ Two families, both written by Scaler Assistant itself:
   ``*.original.dll``) and file names, so HelixSR's own setup and uninstaller
   recognise games set up here, and the other way round. Every HelixSR file
   comes from the user's own HelixSR folder.
+  HelixSR 2.0 and newer (HelixSR Scaler or the FSR drop-in) is installed by
+  the release's own installer instead (``hxbridge``); its removal is done here
+  from HelixSR Scaler's install record when that installer is not at hand.
 * **FSR 4.1 and FSR 3** through OptiScaler. OptiScaler goes next to the game's
   .exe under the name ``optiscaler.choose_name`` picked, and the FFX DLLs it
   uses go into a ``ScalerAssistant`` folder beside it; OptiScaler.ini points
@@ -26,8 +29,11 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from . import optiscaler, settings
-from .games import FOLDER, MARKER, OPTI_INI, SCALER_FOLDER, SCALER_MARKER, GameLayout
+from . import hxbridge, optiscaler, settings
+from .games import (
+    FOLDER, HX_FSRFG, HX_SCALER_BACKUP, HX_SCALER_FILES, MARKER, OPTI_INI, SCALER_FOLDER,
+    SCALER_MARKER, GameLayout,
+)
 from .helixsr import (
     AMD_DIR, AMD_FG, DLL, LOADER, LOADER_DIR, OPTI_DIR, OPTI_DLL, OPTI_EXTRA, HelixSRFolder,
     dll_version, has_network, is_helixsr, is_loader, is_optiscaler,
@@ -65,7 +71,7 @@ SCALER_NOTE_TEXT = (
     "(OptiScaler.ini points at them) and, in backup, the files OptiScaler replaced.\r\n"
     "Remove the upscaler in Scaler Assistant to put everything back.\r\n"
 )
-CHOICES = ("helixsr:direct", "helixsr:optiscaler", "helixsr:dlss",
+CHOICES = ("helixsr:hscaler", "helixsr:direct", "helixsr:optiscaler", "helixsr:dlss",
            "fsr4:exact", "fsr4:lossy", "fsr4:native", "fsr3")
 
 MY_FSR_TEXT = (
@@ -208,8 +214,69 @@ def _over_foreign(record: dict, store: Path, name: str) -> bool:
     return name in (record.get("moved") or []) and saved.exists() and not is_optiscaler(saved)
 
 
+# HelixSR Scaler (HelixSR 2.0): files it makes while the game runs, removed with it.
+HX_MADE = ("OptiScaler.log", f"{HX_FSRFG}/helixsr.log", f"{HX_FSRFG}/helixsr.ini",
+           f"{HX_FSRFG}/helixsr-fg/nvexec.log", f"{HX_FSRFG}/amd_fidelityfx_upscaler_dx12.amd.dll",
+           "HelixSR-Scaler-remove.sh", "HelixSR-previous.zip")
+HX_DLL = f"{HX_FSRFG}/{DLL}"
+
+
+def hscaler_record(exe: Path) -> Optional[dict]:
+    """HelixSR Scaler's install record (HelixSR-Scaler.files): name, version, files, by."""
+    try:
+        text = (exe / HX_SCALER_FILES).read_text(errors="replace")
+    except OSError:
+        return None
+    record = {"name": "dxgi.dll", "version": None, "files": [], "by": ""}
+    for line in text.splitlines():
+        line = line.strip()
+        if line.startswith("# version="):
+            record["version"] = line.split("=", 1)[1].strip() or None
+        elif line.startswith("# HelixSR Scaler, installed by "):
+            record["by"] = line.split(" by ", 1)[1].strip()
+        elif line.startswith("name="):
+            record["name"] = line.split("=", 1)[1].strip()
+        elif line and not line.startswith("#"):
+            record["files"].append(line)
+    return record
+
+
+def _remove_hscaler(exe: Path) -> list[str]:
+    """Take HelixSR Scaler out the way its record describes and put the game's files back."""
+    record = hscaler_record(exe)
+    if record is None:
+        return []
+    for rel in record["files"] + list(HX_MADE):
+        target = exe / rel
+        if target.is_file() or target.is_symlink():
+            target.unlink()
+    shutil.rmtree(exe / HX_FSRFG / "helixsr-fg.off", ignore_errors=True)
+    backup = exe / HX_SCALER_BACKUP
+    if backup.is_dir():
+        for item in sorted(backup.rglob("*")):
+            if item.is_file() or item.is_symlink():
+                target = exe / item.relative_to(backup)
+                target.parent.mkdir(parents=True, exist_ok=True)
+                os.replace(item, target)
+        shutil.rmtree(backup, ignore_errors=True)
+    _remove(exe / HX_SCALER_FILES)
+    folders = {(exe / rel).parent for rel in record["files"]} | {exe / HX_FSRFG}
+    for folder in sorted(folders, key=lambda p: len(p.parts), reverse=True):
+        while folder != exe and folder.is_dir() and not any(folder.iterdir()):
+            folder.rmdir()
+            folder = folder.parent
+    return [tr("rm_hscaler", folder=exe)]
+
+
 def state(layout: GameLayout) -> InstallState:
     exe = Path(layout.exe_dir) if layout.exe_dir else None
+    hx = hscaler_record(exe) if exe else None
+    if exe and hx is not None:
+        dll, name = exe / HX_DLL, hx["name"]
+        issues = [] if is_optiscaler(exe / name) and is_helixsr(dll) else ["is_files_replaced"]
+        return InstallState("hscaler", dll_version(dll), issues, [dll], [],
+                            [exe / HX_FSRFG / LOG, exe / OPTI_LOG], installed_by=hx["by"],
+                            upscaler="helixsr", opti_name=name, helper_files=[exe / name])
     folder = exe / FOLDER if exe else None
     record = read_record(folder) if folder else {}
     if folder and record and record.get("route") == "dlss":
@@ -314,7 +381,7 @@ def _remove_direct(layout: GameLayout, remove_settings: bool | str) -> list[str]
             os.replace(backup, target)
             notes.append(tr("rm_fsr_restored", file=target))
         notes += _finish_settings(target.parent, read_record(target.parent), remove_settings)
-        for name in (MARKER, LOG) + NETWORK_FILES:
+        for name in (MARKER, LOG, "HelixSR-previous.zip") + NETWORK_FILES:
             _remove(target.parent / name)
     return notes
 
@@ -701,6 +768,8 @@ def _remove_scaler(exe: Path) -> list[str]:
 def _remove_current(layout: GameLayout, current: InstallState,
                     remove_settings: bool | str) -> list[str]:
     exe = Path(layout.exe_dir) if layout.exe_dir else None
+    if current.route == "hscaler" and exe:
+        return _remove_hscaler(exe)
     if current.route == "scaler" and exe:
         return _remove_scaler(exe)
     if current.route == "dlss" and exe:
@@ -716,9 +785,45 @@ def _label(current: InstallState) -> str:
     return tr("choice_" + (current.choice or "").replace(":", "_"))
 
 
+def _install_modern(layout: GameLayout, folder: HelixSRFolder, route: str,
+                    opti_name: Optional[str], game_dir: Optional[str]) -> list[str]:
+    """HelixSR 2.0 and newer: HelixSR's own installer puts it in (HelixSR Scaler or the FSR
+    drop-in). What Scaler Assistant installed itself (FSR 4.1 / FSR 3, earlier HelixSR ways) is
+    taken out first, so the installer finds the game as the game ships."""
+    if route not in layout.ways(modern=True) or not game_dir:
+        raise InstallError(tr("err_route_unavailable"))
+    missing = folder.missing_for(route)
+    if missing:
+        raise InstallError(tr("err_missing_files", files=", ".join(str(p) for p in missing)))
+    if not has_network(folder.dll):
+        raise InstallError(tr("hx_not_built", path=folder.path))
+    current = state(layout)
+    notes: list[str] = []
+    if current.installed and current.route != route:
+        notes.append(tr("sw_from", way=_label(current)))
+        notes += _remove_current(layout, current, False)
+    elif current.route == "hscaler" and route == "hscaler" and opti_name \
+            and current.opti_name != opti_name:
+        notes += _remove_hscaler(Path(str(layout.exe_dir)))   # a new file name: in again fresh
+    try:
+        answer = hxbridge.install(folder, game_dir, "scaler" if route == "hscaler" else "fsr",
+                                  opti_name if route == "hscaler" else None,
+                                  anti_cheat_ok=bool(layout.anti_cheat))
+    except hxbridge.BridgeError as error:
+        raise InstallError("\n".join([tr("err_bridge", error=error), *error.messages])) from error
+    after = state(layout)
+    where = (f"{layout.exe_dir} ({after.opti_name})" if route == "hscaler"
+             else ", ".join(str(Path(t).parent) for t in layout.fsr_targets))
+    notes.append(tr("in_modern", way=tr("way_" + route), version=folder.version, folder=where))
+    notes += ["HelixSR: " + m for m in answer.get("messages", [])]
+    return notes
+
+
 def install_helixsr(layout: GameLayout, folder: HelixSRFolder, route: str, stamp: str,
-                    opti_name: Optional[str] = None) -> list[str]:
+                    opti_name: Optional[str] = None, game_dir: Optional[str] = None) -> list[str]:
     """Install HelixSR the given way; also switches, updates and repairs."""
+    if folder.modern:
+        return _install_modern(layout, folder, route, opti_name, game_dir)
     if route not in layout.ways(folder.has_loader):
         raise InstallError(tr("err_route_unavailable"))
     missing = folder.missing_for(route)

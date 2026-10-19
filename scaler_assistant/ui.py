@@ -1072,21 +1072,35 @@ class MainWindow(QMainWindow):
             self._expanded.discard(app_id)
 
     def _choice_menu(self, entry: GameEntry, parent: QWidget) -> QMenu:
-        """DLSS 3.7 (HelixSR) ▸ its ways, FSR 4.1, FSR 3 — the current one ticked."""
+        """DLSS 3.7 (HelixSR) ▸ its ways, FSR 4.1, FSR 3 — the current one ticked, ways this GPU
+        can't use greyed out, the one recommended for this PC marked."""
         menu = QMenu(parent)
+        menu.setToolTipsVisible(True)
         current = entry.status.choice
 
         def add(target: QMenu, choice: str, text: str) -> None:
+            if choice == entry.recommended:
+                text = f"{text}   {tr('rec_suffix')}"
             action = target.addAction(text)
             action.setCheckable(True)
             action.setChecked(choice == current)
+            if choice == entry.recommended:
+                action.setToolTip(tr("rec_lossy"))
             action.triggered.connect(lambda _, e=entry, c=choice: self.choose(e, c))
 
-        helixsr_choices = [c for c in entry.choices if upscaler_of(c) == "helixsr"]
-        if helixsr_choices:
+        helixsr_ways = [w for w in entry.ways]
+        if helixsr_ways:
             sub = menu.addMenu(tr("menu_helixsr"))
-            for choice in helixsr_choices:
-                add(sub, choice, tr("menu_install_" + choice.partition(":")[2]))
+            sub.setToolTipsVisible(True)
+            for way in helixsr_ways:
+                choice = f"helixsr:{way}"
+                reason = entry.blocked.get(choice)
+                if reason:
+                    action = sub.addAction(f"{tr('menu_install_' + way)}   ({tr('blk_short')})")
+                    action.setEnabled(False)
+                    action.setToolTip(tr(reason))
+                else:
+                    add(sub, choice, tr("menu_install_" + way))
             if upscaler_of(current) == "helixsr":
                 sub.setTitle("✓ " + tr("menu_helixsr"))
         elif entry.layout.optiscaler_possible and not entry.layout.helixsr_possible:

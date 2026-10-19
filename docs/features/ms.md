@@ -130,6 +130,12 @@ Untuk DLSS 3.7, "⚙ Tetapan" menyunting `helixsr.ini` permainan dengan borang (
 - Butang jernih seperti kristal: warna lembut, sempadan halus dan tepi atas yang lebih terang, tanpa kecerunan. Hijau kebiruan memasang, biru menukar, ambar mengemas kini, merah membuang.
 - Tema gelap, cerah atau automatik (ikut desktop). Log aktiviti ialah laci di bahagian bawah tetingkap.
 
+## HelixSR 2.0 dan GPU
+
+- **HelixSR 2.0 dan lebih baharu** menyimpan DLL yang dibina dalam `HelixSR-fsrfg` dan menawarkan dua cara: **HelixSR Scaler** (binaan OptiScaler HelixSR sendiri di sebelah `.exe`: pilih DLSS dalam permainan; juga permainan DX11 dan Vulkan) dan **cara FSR** (FSR drop-in). Pembantu Scaler memasang kedua-duanya melalui pemasang dalam folder HelixSR anda (`setup/helixsr_bridge.py`, yang digunakan aplikasi HelixSR sendiri), jadi setup HelixSR, aplikasinya dan Pembantu Scaler mengenali, mengemas kini dan membuang pemasangan satu sama lain. Nama fail masih dipilih oleh Pembantu Scaler, dan ia menambah pilihan pelancaran apabila perlu. Permainan yang disediakan dengan cara lama beralih ke HelixSR Scaler semasa dikemas kini. Folder HelixSR 1.8 / 1.9 mengekalkan tiga caranya.
+- **Cara DLSS hanya dengan GeForce**: dengan GPU AMD atau Intel, permainan tidak menawarkan DLSS, jadi cara DLSS (HelixSR 1.x) dikelabukan bersama sebabnya.
+- **FSR 4.1 Lossy disyorkan** untuk grafik bersepadu (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) dan GPU Intel: ditanda "★ Disyorkan" hanya dalam pilihan FSR 4.1.
+
 ## Berfungsi bersama persediaan HelixSR sendiri
 
 Untuk DLSS 3.7, Pembantu Scaler menulis rekod pemasangan (`helixsr-install.json`), sandaran dan nama fail yang sama seperti persediaan HelixSR, jadi `helixsr-setup.sh` / `helixsr-uninstall.sh` dan Pembantu Scaler mengenali permainan masing-masing. Persediaan HelixSR menganggap DLL FSR dalam folder `ScalerAssistant` permainan sebagai DLL FSR 3.1 permainan dan mungkin menggantinya dengan HelixSR; Pembantu Scaler kemudian melaporkan permainan perlu dibaiki dan "Baiki" mengeluarkan HelixSR. Untuk menggunakan DLSS 3.7 dalam permainan sedemikian, pilihnya dalam Pembantu Scaler.
@@ -171,7 +177,7 @@ Jika ia tidak bermula, sistem anda mungkin tiada FUSE; jalankan dengan `--appima
 
 - **Permainan Steam sahaja.** Cara FSR 4.1 / FSR 3 telah disemak fail demi fail dengan OptiScaler 0.9.4; setiap permainan berkelakuan berbeza: jika ada masalah, semak senarai keserasian OptiScaler atau pilih nama fail lain untuk OptiScaler.
 - FSR 4.1 dalam permainan Direct3D 11 dan Vulkan berjalan melalui laluan Direct3D 12 OptiScaler dan kurang diuji.
-- HelixSR berubah dengan pantas. Pembantu Scaler memerlukan HelixSR 1.8.0 atau lebih baharu dan mengikut susun atur 1.8.x / 1.9.x.
+- HelixSR berubah dengan pantas. Pembantu Scaler memerlukan HelixSR 1.8.0 atau lebih baharu dan mengikut susun atur 1.8.x / 1.9.x / 2.0.x.
 - Paparan tindih tidak muncul dalam Mod Permainan Steam Deck (gamescope). Pemalam Decky memaparkan pemberitahuan Steam sebagai ganti.
 - Dalam bahasa Thai, Vietnam, Melayu dan Hindi, menu klik kanan dalam bahasa Inggeris (Qt tiada terjemahan rasmi). Steam tiada nama permainan dalam bahasa Melayu atau Hindi.
 

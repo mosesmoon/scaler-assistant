@@ -9,6 +9,12 @@ HelixSR's own setup records, so both tools understand each other's installs):
 * ``dlss`` (d, experimental): HelixSR's DLSS loader and HelixSR as nvngx.dll
   next to the game's .exe.
 
+HelixSR 2.0 and newer has two ways, installed by HelixSR's own installer:
+
+* ``hscaler``: HelixSR Scaler (HelixSR's OptiScaler build) next to the .exe; the game's
+  DLSS option runs HelixSR (Direct3D 12, 11 and Vulkan).
+* ``direct``: the FSR drop-in, as before.
+
 FSR 4.1 and FSR 3 always go through OptiScaler (see ``installer``).
 """
 
@@ -23,7 +29,7 @@ from typing import Any, Optional
 from .executables import JUNK_EXE, detect_executables
 from .pe import graphics_api
 
-ROUTES = ("direct", "optiscaler", "dlss")
+ROUTES = ("direct", "optiscaler", "dlss", "hscaler")
 FSR_UPSCALER = "amd_fidelityfx_upscaler_dx12.dll"
 FSR_COMBINED = "amd_fidelityfx_dx12.dll"
 INPUTS = {
@@ -38,6 +44,10 @@ MARKER = "helixsr-install.json"       # HelixSR's install record
 SCALER_FOLDER = "ScalerAssistant"     # this tool's folder next to the .exe (FSR 4.1 / FSR 3)
 SCALER_MARKER = "scaler-install.json"
 OPTI_INI = "OptiScaler.ini"
+HX_FSRFG = "HelixSR-fsrfg"            # HelixSR 2.0 in a game with HelixSR Scaler
+HX_SCALER_FILES = "HelixSR-Scaler.files"   # HelixSR Scaler's install record
+HX_SCALER_BACKUP = "HelixSR-Scaler-backup"
+HX_SCALER_SUB = "OptiScaler"          # HelixSR Scaler's own FidelityFX / XeSS DLLs
 APIS = ("dx12", "dx11", "vulkan")
 
 _ANTI_CHEAT_DIRS = {"easyanticheat": "Easy Anti-Cheat", "battleye": "BattlEye"}
@@ -73,8 +83,14 @@ class GameLayout:
         """FSR 4.1 and FSR 3 go through OptiScaler, which needs an upscaler the game already has."""
         return bool(self.exe_dir and (self.inputs or self.fsr_targets))
 
-    def ways(self, loader_available: bool = True) -> list[str]:
-        """HelixSR routes that work for this game, the default first (FSR way when the game has FSR 3.1)."""
+    def ways(self, loader_available: bool = True, modern: bool = False) -> list[str]:
+        """HelixSR routes that work for this game, the default first (FSR way when the game has FSR 3.1).
+        modern: HelixSR 2.0 and newer (HelixSR Scaler or the FSR drop-in)."""
+        if modern:
+            ways = ["hscaler"] if self.exe_dir and (self.inputs or self.fsr_targets) else []
+            if self.fsr_targets and self.helixsr_possible:
+                ways.insert(0 if self.anti_cheat else len(ways), "direct")
+            return ways
         if not self.helixsr_possible:
             return []
         ways = []
@@ -123,8 +139,10 @@ def walk(folder: Path, depth: int = _WALK_DEPTH) -> list[tuple[Path, list[str], 
         files = [e.name for e in entries if e.is_file(follow_symlinks=False) or e.is_symlink()]
         out.append((directory, dirs, files))
         if level < depth:
+            hx_scaler = HX_SCALER_FILES in files
             todo += [(directory / name, level + 1) for name in dirs
-                     if name not in (FOLDER, SCALER_FOLDER)]
+                     if name not in (FOLDER, SCALER_FOLDER, HX_FSRFG, HX_SCALER_BACKUP)
+                     and not (hx_scaler and name == HX_SCALER_SUB)]
     return out
 
 
@@ -152,7 +170,7 @@ def find_exe(install_dir: Path, tree, appinfo: Optional[dict]) -> Optional[Path]
     for directory, dirs, files in tree:   # a folder that already has HelixSR, us or OptiScaler wins
         if ((FOLDER in dirs and (directory / FOLDER / MARKER).is_file())
                 or (SCALER_FOLDER in dirs and (directory / SCALER_FOLDER / SCALER_MARKER).is_file())
-                or OPTI_INI in files):
+                or HX_SCALER_FILES in files or OPTI_INI in files):
             return _largest_exe(tree, directory) or directory / "?"
     for path in detect_executables(install_dir, appinfo):
         if path.suffix.lower() == ".exe":

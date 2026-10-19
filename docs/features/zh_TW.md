@@ -130,6 +130,12 @@ Scaler 助手在一個視窗裡完成這一切，並保留所有被取代的檔�
 - 按鈕為水晶通透風格：淡淡的色調、細邊框與較亮的上緣，不帶漸層。青綠色為安裝、藍色為切換、琥珀色為更新、紅色為移除。
 - 深色、淺色或自動主題（跟隨桌面）。活動紀錄在視窗底部的抽屜。
 
+## HelixSR 2.0 與顯示卡
+
+- **HelixSR 2.0 以上**把建好的 DLL 放在 `HelixSR-fsrfg`，並提供兩種方式：**HelixSR Scaler**（HelixSR 自帶、放在 `.exe` 旁的 OptiScaler：遊戲內選 DLSS；DX11 和 Vulkan 遊戲也能用）與 **FSR 方式**（FSR drop-in）。Scaler 助手透過你 HelixSR 資料夾裡的安裝程式（`setup/helixsr_bridge.py`，也就是 HelixSR 官方 App 使用的那一個）安裝這兩種方式，所以 HelixSR 的 setup、它的 App 和 Scaler 助手都能辨識、更新、移除彼此的安裝。檔名仍由 Scaler 助手選擇，需要時也會加入啟動選項。以舊方式設定的遊戲在更新時會改用 HelixSR Scaler。HelixSR 1.8／1.9 資料夾仍是原本的三種方式。
+- **DLSS 方式僅限 GeForce**：使用 AMD 或 Intel GPU 時，遊戲中無法選擇 DLSS，所以（HelixSR 1.x 的）DLSS 方式會反灰並說明原因。
+- **推薦 FSR 4.1 Lossy**：內建顯示晶片（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）與 Intel GPU 只會在 FSR 4.1 的選項中標示「★ 推薦」。
+
 ## 與 HelixSR 本身的 setup 互通
 
 使用 DLSS 3.7 時，Scaler 助手寫入與 HelixSR setup 相同的安裝紀錄（`helixsr-install.json`）、備份和檔名，所以 `helixsr-setup.sh`／`helixsr-uninstall.sh` 與 Scaler 助手都認得對方安裝的遊戲。HelixSR 的 setup 會把遊戲 `ScalerAssistant` 資料夾中的 FSR DLL 當成遊戲自己的 FSR 3.1 DLL，可能把它換成 HelixSR；這時 Scaler 助手會把遊戲標示為需要修復，按「修復」即可把 HelixSR 移除。想在這類遊戲使用 DLSS 3.7，請直接在 Scaler 助手中選擇。
@@ -171,7 +177,7 @@ chmod +x Scaler_Assistant-*-x86_64.AppImage
 
 - **只支援 Steam 遊戲。** FSR 4.1／FSR 3 的安裝方式已用 OptiScaler 0.9.4 逐一核對過檔案；但每款遊戲的表現不同，遊戲出問題時請查 OptiScaler 的相容性清單，或替 OptiScaler 換個檔名。
 - Direct3D 11 與 Vulkan 遊戲的 FSR 4.1 經由 OptiScaler 的 Direct3D 12 路徑，測試程度較低。
-- HelixSR 變化很快。Scaler 助手需要 HelixSR 1.8.0 以上，並依照 1.8.x／1.9.x 的檔案配置。
+- HelixSR 變化很快。Scaler 助手需要 HelixSR 1.8.0 以上，並依照 1.8.x／1.9.x／2.0.x 的檔案配置。
 - Steam Deck 遊戲模式（gamescope）下不會顯示浮動提示。Decky 外掛會改以 Steam 通知顯示。
 - 泰文、越南文、馬來文和印地文的右鍵選單是英文（Qt 沒有官方翻譯）。Steam 沒有馬來文和印地文的遊戲名稱。
 

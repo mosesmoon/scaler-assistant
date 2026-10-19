@@ -463,6 +463,18 @@ STRINGS["en"] = {
     "deck_failed": "That didn't work",
     "deck_settings_desktop": "HelixSR's own settings (helixsr.ini) can be changed in the desktop app (Desktop Mode).",
     "deck_steam_rejected": "Steam didn't take the new launch options. Restart the Steam Deck, then choose Repair for this game.",
+    "choice_helixsr_hscaler": "DLSS 3.7 (HelixSR) · HelixSR Scaler",
+    "way_hscaler": "HelixSR Scaler",
+    "menu_install_hscaler": "HelixSR Scaler: HelixSR 2's own OptiScaler (select DLSS in the game; DX12, DX11 and Vulkan)",
+    "svc_pick_helixsr_hscaler": "In the game, select DLSS as the upscaler. Press Insert in the game for HelixSR Scaler's menu (also HelixSR's frame generation).",
+    "rt_not_loaded_hscaler": "HelixSR not loaded yet: select DLSS in the game's graphics settings",
+    "blk_dlss_gpu": "The DLSS way needs a GeForce (NVIDIA) GPU: with an AMD or Intel GPU, games don't offer DLSS to select. Use another way instead.",
+    "blk_short": "GeForce only",
+    "rec_suffix": "★ Recommended",
+    "rec_lossy": "Recommended for built-in graphics (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) and Intel GPUs: Lossy is the fastest FSR 4.1.",
+    "rm_hscaler": "Removed HelixSR Scaler from {folder}; the game's own files are back",
+    "err_bridge": "HelixSR's own installer reported: {error}",
+    "in_modern": "Installed HelixSR {version} ({way}) with HelixSR's own installer: {folder}",
 }
 
 STRINGS["zh_TW"] = {
@@ -823,6 +835,18 @@ STRINGS["zh_TW"] = {
     "deck_failed": "沒有成功",
     "deck_settings_desktop": "HelixSR 本身的設定（helixsr.ini）可在桌面模式的桌面版中修改。",
     "deck_steam_rejected": "Steam 沒有接受新的啟動選項。請重新啟動 Steam Deck，再對這款遊戲選擇「修復」。",
+    "choice_helixsr_hscaler": "DLSS 3.7（HelixSR）· HelixSR Scaler",
+    "way_hscaler": "HelixSR Scaler",
+    "menu_install_hscaler": "HelixSR Scaler：HelixSR 2 自帶的 OptiScaler（遊戲內選 DLSS；支援 DX12、DX11、Vulkan）",
+    "svc_pick_helixsr_hscaler": "在遊戲中選擇 DLSS 作為升頻技術。在遊戲中按 Insert 開啟 HelixSR Scaler 選單（也可設定 HelixSR 的影格生成）。",
+    "rt_not_loaded_hscaler": "HelixSR 尚未載入：請在遊戲的圖形設定中選擇 DLSS",
+    "blk_dlss_gpu": "DLSS 方式需要 GeForce（NVIDIA）顯示卡：使用 AMD 或 Intel GPU 時，遊戲中無法選擇 DLSS。請改用其他方式。",
+    "blk_short": "僅限 GeForce",
+    "rec_suffix": "★ 推薦",
+    "rec_lossy": "推薦給內建顯示晶片（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）與 Intel GPU：Lossy 是最快的 FSR 4.1。",
+    "rm_hscaler": "已從 {folder} 移除 HelixSR Scaler，遊戲原本的檔案已放回",
+    "err_bridge": "HelixSR 自己的安裝程式回報：{error}",
+    "in_modern": "已用 HelixSR 自己的安裝程式安裝 HelixSR {version}（{way}）：{folder}",
 }
 
 STRINGS["zh_CN"] = {
@@ -1183,6 +1207,18 @@ STRINGS["zh_CN"] = {
     "deck_failed": "没有成功",
     "deck_settings_desktop": "HelixSR 本身的设置（helixsr.ini）可在桌面模式的桌面版中修改。",
     "deck_steam_rejected": "Steam 没有接受新的启动选项。请重新启动 Steam Deck，再对这款游戏选择“修复”。",
+    "choice_helixsr_hscaler": "DLSS 3.7（HelixSR）· HelixSR Scaler",
+    "way_hscaler": "HelixSR Scaler",
+    "menu_install_hscaler": "HelixSR Scaler：HelixSR 2 自带的 OptiScaler（游戏内选 DLSS；支持 DX12、DX11、Vulkan）",
+    "svc_pick_helixsr_hscaler": "在游戏中选择 DLSS 作为超分辨率技术。在游戏中按 Insert 打开 HelixSR Scaler 菜单（也可设置 HelixSR 的帧生成）。",
+    "rt_not_loaded_hscaler": "HelixSR 尚未加载：请在游戏的图形设置中选择 DLSS",
+    "blk_dlss_gpu": "DLSS 方式需要 GeForce（NVIDIA）显卡：使用 AMD 或 Intel GPU 时，游戏中无法选择 DLSS。请改用其他方式。",
+    "blk_short": "仅限 GeForce",
+    "rec_suffix": "★ 推荐",
+    "rec_lossy": "推荐给集成显卡（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）与 Intel GPU：Lossy 是最快的 FSR 4.1。",
+    "rm_hscaler": "已从 {folder} 移除 HelixSR Scaler，游戏原本的文件已放回",
+    "err_bridge": "HelixSR 自己的安装程序报告：{error}",
+    "in_modern": "已用 HelixSR 自己的安装程序安装 HelixSR {version}（{way}）：{folder}",
 }
 
 STRINGS["ja"] = {
@@ -1543,6 +1579,18 @@ STRINGS["ja"] = {
     "deck_failed": "うまくいきませんでした",
     "deck_settings_desktop": "HelixSR 自体の設定（helixsr.ini）はデスクトップモードのデスクトップ版で変更できます。",
     "deck_steam_rejected": "Steam が新しい起動オプションを受け付けませんでした。Steam Deck を再起動してから、このゲームで「修復」を選んでください。",
+    "choice_helixsr_hscaler": "DLSS 3.7（HelixSR）· HelixSR Scaler",
+    "way_hscaler": "HelixSR Scaler",
+    "menu_install_hscaler": "HelixSR Scaler：HelixSR 2 付属の OptiScaler（ゲームで DLSS を選択。DX12、DX11、Vulkan）",
+    "svc_pick_helixsr_hscaler": "ゲームでアップスケーラーに DLSS を選んでください。ゲーム中に Insert で HelixSR Scaler のメニュー（HelixSR のフレーム生成も）を開けます。",
+    "rt_not_loaded_hscaler": "HelixSR はまだ読み込まれていません：ゲームのグラフィック設定で DLSS を選んでください",
+    "blk_dlss_gpu": "DLSS 方式には GeForce（NVIDIA）GPU が必要です：AMD や Intel の GPU ではゲームで DLSS を選べません。別の方式を使ってください。",
+    "blk_short": "GeForce のみ",
+    "rec_suffix": "★ おすすめ",
+    "rec_lossy": "内蔵グラフィックス（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）と Intel GPU におすすめ：Lossy が最速の FSR 4.1 です。",
+    "rm_hscaler": "{folder} から HelixSR Scaler を削除し、ゲーム本来のファイルを戻しました",
+    "err_bridge": "HelixSR 自身のインストーラーの報告：{error}",
+    "in_modern": "HelixSR 自身のインストーラーで HelixSR {version}（{way}）をインストールしました：{folder}",
 }
 
 STRINGS["de"] = {
@@ -1903,6 +1951,18 @@ STRINGS["de"] = {
     "deck_failed": "Das hat nicht geklappt",
     "deck_settings_desktop": "HelixSRs eigene Einstellungen (helixsr.ini) lassen sich in der Desktop-App (Desktopmodus) ändern.",
     "deck_steam_rejected": "Steam hat die neuen Startoptionen nicht übernommen. Starte das Steam Deck neu und wähle dann für dieses Spiel „Reparieren“.",
+    "choice_helixsr_hscaler": "DLSS 3.7 (HelixSR) · HelixSR Scaler",
+    "way_hscaler": "HelixSR Scaler",
+    "menu_install_hscaler": "HelixSR Scaler: HelixSR 2s eigener OptiScaler (im Spiel DLSS wählen; DX12, DX11 und Vulkan)",
+    "svc_pick_helixsr_hscaler": "Wähle im Spiel DLSS als Upscaler. Insert öffnet im Spiel das Menü von HelixSR Scaler (auch für HelixSRs Frame Generation).",
+    "rt_not_loaded_hscaler": "HelixSR noch nicht geladen: in den Grafikeinstellungen des Spiels DLSS wählen",
+    "blk_dlss_gpu": "Der DLSS-Weg braucht eine GeForce (NVIDIA): Mit einer AMD- oder Intel-GPU bieten Spiele DLSS nicht zur Auswahl an. Nutze einen anderen Weg.",
+    "blk_short": "Nur GeForce",
+    "rec_suffix": "★ Empfohlen",
+    "rec_lossy": "Empfohlen für integrierte Grafik (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) und Intel-GPUs: Lossy ist das schnellste FSR 4.1.",
+    "rm_hscaler": "HelixSR Scaler aus {folder} entfernt; die Dateien des Spiels sind zurück",
+    "err_bridge": "HelixSRs eigenes Installationsprogramm meldet: {error}",
+    "in_modern": "HelixSR {version} ({way}) mit HelixSRs eigenem Installationsprogramm installiert: {folder}",
 }
 
 STRINGS["fr"] = {
@@ -2263,6 +2323,18 @@ STRINGS["fr"] = {
     "deck_failed": "Cela n'a pas fonctionné",
     "deck_settings_desktop": "Les réglages propres à HelixSR (helixsr.ini) se modifient dans l'application de bureau (mode Bureau).",
     "deck_steam_rejected": "Steam n'a pas accepté les nouvelles options de lancement. Redémarrez le Steam Deck, puis choisissez Réparer pour ce jeu.",
+    "choice_helixsr_hscaler": "DLSS 3.7 (HelixSR) · HelixSR Scaler",
+    "way_hscaler": "HelixSR Scaler",
+    "menu_install_hscaler": "HelixSR Scaler : l'OptiScaler propre à HelixSR 2 (choisir DLSS dans le jeu ; DX12, DX11 et Vulkan)",
+    "svc_pick_helixsr_hscaler": "Dans le jeu, choisissez DLSS comme upscaler. Insert ouvre dans le jeu le menu de HelixSR Scaler (aussi pour la génération d'images d'HelixSR).",
+    "rt_not_loaded_hscaler": "HelixSR pas encore chargé : choisissez DLSS dans les réglages graphiques du jeu",
+    "blk_dlss_gpu": "La méthode DLSS demande une GeForce (NVIDIA) : avec un GPU AMD ou Intel, les jeux ne proposent pas DLSS. Utilisez une autre méthode.",
+    "blk_short": "GeForce uniquement",
+    "rec_suffix": "★ Recommandé",
+    "rec_lossy": "Recommandé pour les graphismes intégrés (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) et les GPU Intel : Lossy est le FSR 4.1 le plus rapide.",
+    "rm_hscaler": "HelixSR Scaler retiré de {folder} ; les fichiers du jeu sont revenus",
+    "err_bridge": "L'installateur propre à HelixSR signale : {error}",
+    "in_modern": "HelixSR {version} ({way}) installé avec l'installateur propre à HelixSR : {folder}",
 }
 
 STRINGS["es"] = {
@@ -2623,6 +2695,18 @@ STRINGS["es"] = {
     "deck_failed": "No funcionó",
     "deck_settings_desktop": "Los ajustes propios de HelixSR (helixsr.ini) se cambian en la aplicación de escritorio (modo Escritorio).",
     "deck_steam_rejected": "Steam no aceptó las nuevas opciones de lanzamiento. Reinicia la Steam Deck y luego elige Reparar para este juego.",
+    "choice_helixsr_hscaler": "DLSS 3.7 (HelixSR) · HelixSR Scaler",
+    "way_hscaler": "HelixSR Scaler",
+    "menu_install_hscaler": "HelixSR Scaler: el OptiScaler propio de HelixSR 2 (elige DLSS en el juego; DX12, DX11 y Vulkan)",
+    "svc_pick_helixsr_hscaler": "En el juego, elige DLSS como escalador. Insert abre en el juego el menú de HelixSR Scaler (también para la generación de fotogramas de HelixSR).",
+    "rt_not_loaded_hscaler": "HelixSR aún no está cargado: elige DLSS en los ajustes gráficos del juego",
+    "blk_dlss_gpu": "El método DLSS necesita una GeForce (NVIDIA): con una GPU AMD o Intel, los juegos no ofrecen DLSS. Usa otro método.",
+    "blk_short": "Solo GeForce",
+    "rec_suffix": "★ Recomendado",
+    "rec_lossy": "Recomendado para gráficos integrados (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) y GPU Intel: Lossy es el FSR 4.1 más rápido.",
+    "rm_hscaler": "HelixSR Scaler quitado de {folder}; los archivos del juego han vuelto",
+    "err_bridge": "El instalador propio de HelixSR informa: {error}",
+    "in_modern": "HelixSR {version} ({way}) instalado con el instalador propio de HelixSR: {folder}",
 }
 
 STRINGS["it"] = {
@@ -2983,6 +3067,18 @@ STRINGS["it"] = {
     "deck_failed": "Non ha funzionato",
     "deck_settings_desktop": "Le impostazioni di HelixSR (helixsr.ini) si modificano nell'app desktop (modalità Desktop).",
     "deck_steam_rejected": "Steam non ha accettato le nuove opzioni di avvio. Riavvia lo Steam Deck, poi scegli Ripara per questo gioco.",
+    "choice_helixsr_hscaler": "DLSS 3.7 (HelixSR) · HelixSR Scaler",
+    "way_hscaler": "HelixSR Scaler",
+    "menu_install_hscaler": "HelixSR Scaler: l'OptiScaler di HelixSR 2 (scegli DLSS nel gioco; DX12, DX11 e Vulkan)",
+    "svc_pick_helixsr_hscaler": "Nel gioco scegli DLSS come upscaler. Insert apre nel gioco il menu di HelixSR Scaler (anche per la generazione di fotogrammi di HelixSR).",
+    "rt_not_loaded_hscaler": "HelixSR non ancora caricato: scegli DLSS nelle impostazioni grafiche del gioco",
+    "blk_dlss_gpu": "Il metodo DLSS richiede una GeForce (NVIDIA): con una GPU AMD o Intel i giochi non offrono DLSS. Usa un altro metodo.",
+    "blk_short": "Solo GeForce",
+    "rec_suffix": "★ Consigliato",
+    "rec_lossy": "Consigliato per la grafica integrata (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) e le GPU Intel: Lossy è l'FSR 4.1 più veloce.",
+    "rm_hscaler": "HelixSR Scaler rimosso da {folder}; i file del gioco sono tornati",
+    "err_bridge": "L'installer di HelixSR segnala: {error}",
+    "in_modern": "HelixSR {version} ({way}) installato con l'installer di HelixSR: {folder}",
 }
 
 STRINGS["th"] = {
@@ -3343,6 +3439,18 @@ STRINGS["th"] = {
     "deck_failed": "ไม่สำเร็จ",
     "deck_settings_desktop": "การตั้งค่าของ HelixSR เอง (helixsr.ini) แก้ไขได้ในแอปเดสก์ท็อป (โหมดเดสก์ท็อป)",
     "deck_steam_rejected": "Steam ไม่รับตัวเลือกการเปิดเกมใหม่ โปรดรีสตาร์ต Steam Deck แล้วเลือก “ซ่อมแซม” สำหรับเกมนี้",
+    "choice_helixsr_hscaler": "DLSS 3.7 (HelixSR) · HelixSR Scaler",
+    "way_hscaler": "HelixSR Scaler",
+    "menu_install_hscaler": "HelixSR Scaler: OptiScaler ของ HelixSR 2 เอง (เลือก DLSS ในเกม รองรับ DX12, DX11 และ Vulkan)",
+    "svc_pick_helixsr_hscaler": "ในเกมให้เลือก DLSS เป็นอัปสเกลเลอร์ กด Insert ในเกมเพื่อเปิดเมนูของ HelixSR Scaler (รวมถึงการสร้างเฟรมของ HelixSR)",
+    "rt_not_loaded_hscaler": "HelixSR ยังไม่ถูกโหลด: เลือก DLSS ในการตั้งค่ากราฟิกของเกม",
+    "blk_dlss_gpu": "วิธี DLSS ต้องใช้การ์ดจอ GeForce (NVIDIA): กับ GPU ของ AMD หรือ Intel เกมจะไม่ให้เลือก DLSS โปรดใช้วิธีอื่น",
+    "blk_short": "เฉพาะ GeForce",
+    "rec_suffix": "★ แนะนำ",
+    "rec_lossy": "แนะนำสำหรับกราฟิกในตัว (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) และ GPU ของ Intel: Lossy คือ FSR 4.1 ที่เร็วที่สุด",
+    "rm_hscaler": "ลบ HelixSR Scaler ออกจาก {folder} แล้ว ไฟล์เดิมของเกมกลับมาแล้ว",
+    "err_bridge": "ตัวติดตั้งของ HelixSR เองรายงาน: {error}",
+    "in_modern": "ติดตั้ง HelixSR {version} ({way}) ด้วยตัวติดตั้งของ HelixSR เองแล้ว: {folder}",
 }
 
 STRINGS["vi"] = {
@@ -3703,6 +3811,18 @@ STRINGS["vi"] = {
     "deck_failed": "Không thành công",
     "deck_settings_desktop": "Cài đặt riêng của HelixSR (helixsr.ini) có thể đổi trong ứng dụng desktop (Chế độ Desktop).",
     "deck_steam_rejected": "Steam không nhận tùy chọn khởi chạy mới. Hãy khởi động lại Steam Deck rồi chọn Sửa cho game này.",
+    "choice_helixsr_hscaler": "DLSS 3.7 (HelixSR) · HelixSR Scaler",
+    "way_hscaler": "HelixSR Scaler",
+    "menu_install_hscaler": "HelixSR Scaler: OptiScaler riêng của HelixSR 2 (chọn DLSS trong game; DX12, DX11 và Vulkan)",
+    "svc_pick_helixsr_hscaler": "Trong game, chọn DLSS làm bộ upscale. Nhấn Insert trong game để mở menu của HelixSR Scaler (cả tạo khung hình của HelixSR).",
+    "rt_not_loaded_hscaler": "HelixSR chưa được nạp: chọn DLSS trong cài đặt đồ họa của game",
+    "blk_dlss_gpu": "Cách DLSS cần GPU GeForce (NVIDIA): với GPU AMD hoặc Intel, game không cho chọn DLSS. Hãy dùng cách khác.",
+    "blk_short": "Chỉ GeForce",
+    "rec_suffix": "★ Đề xuất",
+    "rec_lossy": "Đề xuất cho đồ họa tích hợp (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) và GPU Intel: Lossy là FSR 4.1 nhanh nhất.",
+    "rm_hscaler": "Đã gỡ HelixSR Scaler khỏi {folder}; tệp gốc của game đã trở lại",
+    "err_bridge": "Trình cài đặt riêng của HelixSR báo: {error}",
+    "in_modern": "Đã cài HelixSR {version} ({way}) bằng trình cài đặt riêng của HelixSR: {folder}",
 }
 
 STRINGS["ms"] = {
@@ -4063,6 +4183,18 @@ STRINGS["ms"] = {
     "deck_failed": "Tidak berjaya",
     "deck_settings_desktop": "Tetapan HelixSR sendiri (helixsr.ini) boleh diubah dalam aplikasi desktop (Mod Desktop).",
     "deck_steam_rejected": "Steam tidak menerima pilihan pelancaran baharu. Mulakan semula Steam Deck, kemudian pilih Baiki untuk permainan ini.",
+    "choice_helixsr_hscaler": "DLSS 3.7 (HelixSR) · HelixSR Scaler",
+    "way_hscaler": "HelixSR Scaler",
+    "menu_install_hscaler": "HelixSR Scaler: OptiScaler HelixSR 2 sendiri (pilih DLSS dalam permainan; DX12, DX11 dan Vulkan)",
+    "svc_pick_helixsr_hscaler": "Dalam permainan, pilih DLSS sebagai penskala. Tekan Insert dalam permainan untuk menu HelixSR Scaler (juga penjanaan bingkai HelixSR).",
+    "rt_not_loaded_hscaler": "HelixSR belum dimuatkan: pilih DLSS dalam tetapan grafik permainan",
+    "blk_dlss_gpu": "Cara DLSS memerlukan GPU GeForce (NVIDIA): dengan GPU AMD atau Intel, permainan tidak menawarkan DLSS. Gunakan cara lain.",
+    "blk_short": "GeForce sahaja",
+    "rec_suffix": "★ Disyorkan",
+    "rec_lossy": "Disyorkan untuk grafik bersepadu (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) dan GPU Intel: Lossy ialah FSR 4.1 terpantas.",
+    "rm_hscaler": "HelixSR Scaler dibuang dari {folder}; fail asal permainan telah kembali",
+    "err_bridge": "Pemasang HelixSR sendiri melaporkan: {error}",
+    "in_modern": "HelixSR {version} ({way}) dipasang dengan pemasang HelixSR sendiri: {folder}",
 }
 
 STRINGS["hi"] = {
@@ -4423,4 +4555,16 @@ STRINGS["hi"] = {
     "deck_failed": "यह काम नहीं किया",
     "deck_settings_desktop": "HelixSR की अपनी सेटिंग्स (helixsr.ini) डेस्कटॉप ऐप (डेस्कटॉप मोड) में बदली जा सकती हैं।",
     "deck_steam_rejected": "Steam ने नए लॉन्च विकल्प स्वीकार नहीं किए। Steam Deck को रीस्टार्ट करें, फिर इस गेम के लिए ‘मरम्मत’ चुनें।",
+    "choice_helixsr_hscaler": "DLSS 3.7 (HelixSR) · HelixSR Scaler",
+    "way_hscaler": "HelixSR Scaler",
+    "menu_install_hscaler": "HelixSR Scaler: HelixSR 2 का अपना OptiScaler (गेम में DLSS चुनें; DX12, DX11 और Vulkan)",
+    "svc_pick_helixsr_hscaler": "गेम में अपस्केलर के रूप में DLSS चुनें। गेम में Insert दबाकर HelixSR Scaler का मेनू खोलें (HelixSR का फ़्रेम जनरेशन भी)।",
+    "rt_not_loaded_hscaler": "HelixSR अभी लोड नहीं हुआ: गेम की ग्राफ़िक्स सेटिंग्स में DLSS चुनें",
+    "blk_dlss_gpu": "DLSS तरीके के लिए GeForce (NVIDIA) GPU चाहिए: AMD या Intel GPU पर गेम DLSS चुनने नहीं देते। कोई दूसरा तरीका इस्तेमाल करें।",
+    "blk_short": "केवल GeForce",
+    "rec_suffix": "★ अनुशंसित",
+    "rec_lossy": "इंटीग्रेटेड ग्राफ़िक्स (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) और Intel GPU के लिए अनुशंसित: Lossy सबसे तेज़ FSR 4.1 है।",
+    "rm_hscaler": "{folder} से HelixSR Scaler हटाया गया; गेम की अपनी फ़ाइलें वापस आ गईं",
+    "err_bridge": "HelixSR के अपने इंस्टॉलर ने बताया: {error}",
+    "in_modern": "HelixSR के अपने इंस्टॉलर से HelixSR {version} ({way}) इंस्टॉल किया: {folder}",
 }
