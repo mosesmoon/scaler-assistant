@@ -492,16 +492,23 @@ class AssistantService:
         return "amd_apu" if main.apu else "amd"
 
     def _ways(self, layout: GameLayout, folder: Optional[HelixSRFolder]) -> list[str]:
-        modern = bool(folder and folder.modern)
-        loader = folder.has_loader if folder and folder.version and not modern else True
-        return layout.ways(loader, modern)
+        return layout.ways(True, bool(folder and folder.modern))
 
-    def blocked_choices(self, ways: list[str]) -> dict[str, str]:
-        """HelixSR ways this PC's GPU can't use. The DLSS way needs a GeForce: with an AMD or
-        Intel GPU games don't offer DLSS to select (no NVIDIA driver answers them)."""
+    def blocked_choices(self, ways: list[str],
+                        folder: Optional[HelixSRFolder] = None) -> dict[str, str]:
+        """HelixSR ways that can't be used here, with the i18n key saying why:
+        * the DLSS way needs a GeForce: with an AMD or Intel GPU games don't offer DLSS to
+          select (no NVIDIA driver answers them);
+        * HelixSR 1.9 releases no longer carry the OptiScaler way's and the DLSS loader's
+          files (only the FSR way); 1.8 releases and HelixSR 2.0 (HelixSR Scaler) do."""
         blocked = {}
         if "dlss" in ways and self.gpu_kind() in ("amd", "amd_apu", "intel"):
             blocked["helixsr:dlss"] = "blk_dlss_gpu"
+        if folder is not None and folder.version and not folder.modern:
+            if "optiscaler" in ways and not folder.has_optiscaler:
+                blocked["helixsr:optiscaler"] = "blk_no_files"
+            if "dlss" in ways and not folder.has_loader:
+                blocked.setdefault("helixsr:dlss", "blk_no_files")
         return blocked
 
     def recommended_choice(self, choices: list[str]) -> Optional[str]:
@@ -513,7 +520,7 @@ class AssistantService:
     def choices_for(self, layout: GameLayout, folder: Optional[HelixSRFolder] = None,
                     ways: Optional[list[str]] = None) -> list[str]:
         ways = self._ways(layout, folder) if ways is None else ways
-        blocked = self.blocked_choices(ways)
+        blocked = self.blocked_choices(ways, folder)
         result = [f"helixsr:{way}" for way in ways if f"helixsr:{way}" not in blocked]
         if layout.optiscaler_possible:
             result += self.fsr4_choices() + ["fsr3"]
@@ -554,7 +561,7 @@ class AssistantService:
                 status=status,
                 ways=ways,
                 choices=choices,
-                blocked=self.blocked_choices(ways),
+                blocked=self.blocked_choices(ways, folder),
                 recommended=self.recommended_choice(choices),
                 outdated=outdated,
                 names=dict(game.get("names") or {}),
@@ -669,7 +676,8 @@ class AssistantService:
             anti_cheat=list(layout.anti_cheat))
 
     def _check_blocked(self, layout: GameLayout, choice: str) -> None:
-        reason = self.blocked_choices(self._ways(layout, self.helixsr())).get(choice)
+        folder = self.helixsr()
+        reason = self.blocked_choices(self._ways(layout, folder), folder).get(choice)
         if reason:
             raise installer.InstallError(tr(reason))
 

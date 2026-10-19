@@ -469,12 +469,14 @@ STRINGS["en"] = {
     "svc_pick_helixsr_hscaler": "In the game, select DLSS as the upscaler. Press Insert in the game for HelixSR Scaler's menu (also HelixSR's frame generation).",
     "rt_not_loaded_hscaler": "HelixSR not loaded yet: select DLSS in the game's graphics settings",
     "blk_dlss_gpu": "The DLSS way needs a GeForce (NVIDIA) GPU: with an AMD or Intel GPU, games don't offer DLSS to select. Use another way instead.",
-    "blk_short": "GeForce only",
+    "blk_dlss_gpu_short": "GeForce only",
     "rec_suffix": "★ Recommended",
     "rec_lossy": "Recommended for built-in graphics (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) and Intel GPUs: Lossy is the fastest FSR 4.1.",
     "rm_hscaler": "Removed HelixSR Scaler from {folder}; the game's own files are back",
     "err_bridge": "HelixSR's own installer reported: {error}",
     "in_modern": "Installed HelixSR {version} ({way}) with HelixSR's own installer: {folder}",
+    "blk_no_files": "Your HelixSR folder doesn't have this way's files: HelixSR 1.9 releases only install the FSR way. For games without FSR 3.1 use HelixSR 2.0 or newer (HelixSR Scaler), or 1.8.x.",
+    "blk_no_files_short": "needs HelixSR 1.8 or 2.0",
 }
 
 STRINGS["zh_TW"] = {
@@ -841,12 +843,14 @@ STRINGS["zh_TW"] = {
     "svc_pick_helixsr_hscaler": "在遊戲中選擇 DLSS 作為升頻技術。在遊戲中按 Insert 開啟 HelixSR Scaler 選單（也可設定 HelixSR 的影格生成）。",
     "rt_not_loaded_hscaler": "HelixSR 尚未載入：請在遊戲的圖形設定中選擇 DLSS",
     "blk_dlss_gpu": "DLSS 方式需要 GeForce（NVIDIA）顯示卡：使用 AMD 或 Intel GPU 時，遊戲中無法選擇 DLSS。請改用其他方式。",
-    "blk_short": "僅限 GeForce",
+    "blk_dlss_gpu_short": "僅限 GeForce",
     "rec_suffix": "★ 推薦",
     "rec_lossy": "推薦給內建顯示晶片（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）與 Intel GPU：Lossy 是最快的 FSR 4.1。",
     "rm_hscaler": "已從 {folder} 移除 HelixSR Scaler，遊戲原本的檔案已放回",
     "err_bridge": "HelixSR 自己的安裝程式回報：{error}",
     "in_modern": "已用 HelixSR 自己的安裝程式安裝 HelixSR {version}（{way}）：{folder}",
+    "blk_no_files": "你的 HelixSR 資料夾沒有這種方式的檔案：HelixSR 1.9 版只能安裝 FSR 方式。沒有 FSR 3.1 的遊戲請改用 HelixSR 2.0 以上（HelixSR Scaler）或 1.8.x。",
+    "blk_no_files_short": "需要 HelixSR 1.8 或 2.0",
 }
 
 STRINGS["zh_CN"] = {
@@ -1213,12 +1217,14 @@ STRINGS["zh_CN"] = {
     "svc_pick_helixsr_hscaler": "在游戏中选择 DLSS 作为超分辨率技术。在游戏中按 Insert 打开 HelixSR Scaler 菜单（也可设置 HelixSR 的帧生成）。",
     "rt_not_loaded_hscaler": "HelixSR 尚未加载：请在游戏的图形设置中选择 DLSS",
     "blk_dlss_gpu": "DLSS 方式需要 GeForce（NVIDIA）显卡：使用 AMD 或 Intel GPU 时，游戏中无法选择 DLSS。请改用其他方式。",
-    "blk_short": "仅限 GeForce",
+    "blk_dlss_gpu_short": "仅限 GeForce",
     "rec_suffix": "★ 推荐",
     "rec_lossy": "推荐给集成显卡（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）与 Intel GPU：Lossy 是最快的 FSR 4.1。",
     "rm_hscaler": "已从 {folder} 移除 HelixSR Scaler，游戏原本的文件已放回",
     "err_bridge": "HelixSR 自己的安装程序报告：{error}",
     "in_modern": "已用 HelixSR 自己的安装程序安装 HelixSR {version}（{way}）：{folder}",
+    "blk_no_files": "你的 HelixSR 文件夹没有这种方式的文件：HelixSR 1.9 版只能安装 FSR 方式。没有 FSR 3.1 的游戏请改用 HelixSR 2.0 及以上（HelixSR Scaler）或 1.8.x。",
+    "blk_no_files_short": "需要 HelixSR 1.8 或 2.0",
 }
 
 STRINGS["ja"] = {
@@ -1585,12 +1591,14 @@ STRINGS["ja"] = {
     "svc_pick_helixsr_hscaler": "ゲームでアップスケーラーに DLSS を選んでください。ゲーム中に Insert で HelixSR Scaler のメニュー（HelixSR のフレーム生成も）を開けます。",
     "rt_not_loaded_hscaler": "HelixSR はまだ読み込まれていません：ゲームのグラフィック設定で DLSS を選んでください",
     "blk_dlss_gpu": "DLSS 方式には GeForce（NVIDIA）GPU が必要です：AMD や Intel の GPU ではゲームで DLSS を選べません。別の方式を使ってください。",
-    "blk_short": "GeForce のみ",
+    "blk_dlss_gpu_short": "GeForce のみ",
     "rec_suffix": "★ おすすめ",
     "rec_lossy": "内蔵グラフィックス（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）と Intel GPU におすすめ：Lossy が最速の FSR 4.1 です。",
     "rm_hscaler": "{folder} から HelixSR Scaler を削除し、ゲーム本来のファイルを戻しました",
     "err_bridge": "HelixSR 自身のインストーラーの報告：{error}",
     "in_modern": "HelixSR 自身のインストーラーで HelixSR {version}（{way}）をインストールしました：{folder}",
+    "blk_no_files": "HelixSR フォルダーにこの方式のファイルがありません：HelixSR 1.9 は FSR 方式しかインストールできません。FSR 3.1 のないゲームには HelixSR 2.0 以降（HelixSR Scaler）か 1.8.x を使ってください。",
+    "blk_no_files_short": "HelixSR 1.8 か 2.0 が必要",
 }
 
 STRINGS["de"] = {
@@ -1957,12 +1965,14 @@ STRINGS["de"] = {
     "svc_pick_helixsr_hscaler": "Wähle im Spiel DLSS als Upscaler. Insert öffnet im Spiel das Menü von HelixSR Scaler (auch für HelixSRs Frame Generation).",
     "rt_not_loaded_hscaler": "HelixSR noch nicht geladen: in den Grafikeinstellungen des Spiels DLSS wählen",
     "blk_dlss_gpu": "Der DLSS-Weg braucht eine GeForce (NVIDIA): Mit einer AMD- oder Intel-GPU bieten Spiele DLSS nicht zur Auswahl an. Nutze einen anderen Weg.",
-    "blk_short": "Nur GeForce",
+    "blk_dlss_gpu_short": "Nur GeForce",
     "rec_suffix": "★ Empfohlen",
     "rec_lossy": "Empfohlen für integrierte Grafik (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) und Intel-GPUs: Lossy ist das schnellste FSR 4.1.",
     "rm_hscaler": "HelixSR Scaler aus {folder} entfernt; die Dateien des Spiels sind zurück",
     "err_bridge": "HelixSRs eigenes Installationsprogramm meldet: {error}",
     "in_modern": "HelixSR {version} ({way}) mit HelixSRs eigenem Installationsprogramm installiert: {folder}",
+    "blk_no_files": "Dein HelixSR-Ordner hat die Dateien dieses Wegs nicht: HelixSR 1.9 installiert nur den FSR-Weg. Für Spiele ohne FSR 3.1 nutze HelixSR 2.0 oder neuer (HelixSR Scaler) oder 1.8.x.",
+    "blk_no_files_short": "braucht HelixSR 1.8 oder 2.0",
 }
 
 STRINGS["fr"] = {
@@ -2329,12 +2339,14 @@ STRINGS["fr"] = {
     "svc_pick_helixsr_hscaler": "Dans le jeu, choisissez DLSS comme upscaler. Insert ouvre dans le jeu le menu de HelixSR Scaler (aussi pour la génération d'images d'HelixSR).",
     "rt_not_loaded_hscaler": "HelixSR pas encore chargé : choisissez DLSS dans les réglages graphiques du jeu",
     "blk_dlss_gpu": "La méthode DLSS demande une GeForce (NVIDIA) : avec un GPU AMD ou Intel, les jeux ne proposent pas DLSS. Utilisez une autre méthode.",
-    "blk_short": "GeForce uniquement",
+    "blk_dlss_gpu_short": "GeForce uniquement",
     "rec_suffix": "★ Recommandé",
     "rec_lossy": "Recommandé pour les graphismes intégrés (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) et les GPU Intel : Lossy est le FSR 4.1 le plus rapide.",
     "rm_hscaler": "HelixSR Scaler retiré de {folder} ; les fichiers du jeu sont revenus",
     "err_bridge": "L'installateur propre à HelixSR signale : {error}",
     "in_modern": "HelixSR {version} ({way}) installé avec l'installateur propre à HelixSR : {folder}",
+    "blk_no_files": "Votre dossier HelixSR n'a pas les fichiers de cette méthode : HelixSR 1.9 n'installe que la méthode FSR. Pour les jeux sans FSR 3.1, utilisez HelixSR 2.0 ou plus récent (HelixSR Scaler), ou 1.8.x.",
+    "blk_no_files_short": "demande HelixSR 1.8 ou 2.0",
 }
 
 STRINGS["es"] = {
@@ -2701,12 +2713,14 @@ STRINGS["es"] = {
     "svc_pick_helixsr_hscaler": "En el juego, elige DLSS como escalador. Insert abre en el juego el menú de HelixSR Scaler (también para la generación de fotogramas de HelixSR).",
     "rt_not_loaded_hscaler": "HelixSR aún no está cargado: elige DLSS en los ajustes gráficos del juego",
     "blk_dlss_gpu": "El método DLSS necesita una GeForce (NVIDIA): con una GPU AMD o Intel, los juegos no ofrecen DLSS. Usa otro método.",
-    "blk_short": "Solo GeForce",
+    "blk_dlss_gpu_short": "Solo GeForce",
     "rec_suffix": "★ Recomendado",
     "rec_lossy": "Recomendado para gráficos integrados (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) y GPU Intel: Lossy es el FSR 4.1 más rápido.",
     "rm_hscaler": "HelixSR Scaler quitado de {folder}; los archivos del juego han vuelto",
     "err_bridge": "El instalador propio de HelixSR informa: {error}",
     "in_modern": "HelixSR {version} ({way}) instalado con el instalador propio de HelixSR: {folder}",
+    "blk_no_files": "Tu carpeta de HelixSR no tiene los archivos de este método: HelixSR 1.9 solo instala el método FSR. Para juegos sin FSR 3.1 usa HelixSR 2.0 o posterior (HelixSR Scaler), o 1.8.x.",
+    "blk_no_files_short": "necesita HelixSR 1.8 o 2.0",
 }
 
 STRINGS["it"] = {
@@ -3073,12 +3087,14 @@ STRINGS["it"] = {
     "svc_pick_helixsr_hscaler": "Nel gioco scegli DLSS come upscaler. Insert apre nel gioco il menu di HelixSR Scaler (anche per la generazione di fotogrammi di HelixSR).",
     "rt_not_loaded_hscaler": "HelixSR non ancora caricato: scegli DLSS nelle impostazioni grafiche del gioco",
     "blk_dlss_gpu": "Il metodo DLSS richiede una GeForce (NVIDIA): con una GPU AMD o Intel i giochi non offrono DLSS. Usa un altro metodo.",
-    "blk_short": "Solo GeForce",
+    "blk_dlss_gpu_short": "Solo GeForce",
     "rec_suffix": "★ Consigliato",
     "rec_lossy": "Consigliato per la grafica integrata (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) e le GPU Intel: Lossy è l'FSR 4.1 più veloce.",
     "rm_hscaler": "HelixSR Scaler rimosso da {folder}; i file del gioco sono tornati",
     "err_bridge": "L'installer di HelixSR segnala: {error}",
     "in_modern": "HelixSR {version} ({way}) installato con l'installer di HelixSR: {folder}",
+    "blk_no_files": "La tua cartella HelixSR non ha i file di questo metodo: HelixSR 1.9 installa solo il metodo FSR. Per i giochi senza FSR 3.1 usa HelixSR 2.0 o successivo (HelixSR Scaler), oppure 1.8.x.",
+    "blk_no_files_short": "richiede HelixSR 1.8 o 2.0",
 }
 
 STRINGS["th"] = {
@@ -3445,12 +3461,14 @@ STRINGS["th"] = {
     "svc_pick_helixsr_hscaler": "ในเกมให้เลือก DLSS เป็นอัปสเกลเลอร์ กด Insert ในเกมเพื่อเปิดเมนูของ HelixSR Scaler (รวมถึงการสร้างเฟรมของ HelixSR)",
     "rt_not_loaded_hscaler": "HelixSR ยังไม่ถูกโหลด: เลือก DLSS ในการตั้งค่ากราฟิกของเกม",
     "blk_dlss_gpu": "วิธี DLSS ต้องใช้การ์ดจอ GeForce (NVIDIA): กับ GPU ของ AMD หรือ Intel เกมจะไม่ให้เลือก DLSS โปรดใช้วิธีอื่น",
-    "blk_short": "เฉพาะ GeForce",
+    "blk_dlss_gpu_short": "เฉพาะ GeForce",
     "rec_suffix": "★ แนะนำ",
     "rec_lossy": "แนะนำสำหรับกราฟิกในตัว (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) และ GPU ของ Intel: Lossy คือ FSR 4.1 ที่เร็วที่สุด",
     "rm_hscaler": "ลบ HelixSR Scaler ออกจาก {folder} แล้ว ไฟล์เดิมของเกมกลับมาแล้ว",
     "err_bridge": "ตัวติดตั้งของ HelixSR เองรายงาน: {error}",
     "in_modern": "ติดตั้ง HelixSR {version} ({way}) ด้วยตัวติดตั้งของ HelixSR เองแล้ว: {folder}",
+    "blk_no_files": "โฟลเดอร์ HelixSR ของคุณไม่มีไฟล์ของวิธีนี้: HelixSR 1.9 ติดตั้งได้เฉพาะวิธี FSR สำหรับเกมที่ไม่มี FSR 3.1 ให้ใช้ HelixSR 2.0 ขึ้นไป (HelixSR Scaler) หรือ 1.8.x",
+    "blk_no_files_short": "ต้องใช้ HelixSR 1.8 หรือ 2.0",
 }
 
 STRINGS["vi"] = {
@@ -3817,12 +3835,14 @@ STRINGS["vi"] = {
     "svc_pick_helixsr_hscaler": "Trong game, chọn DLSS làm bộ upscale. Nhấn Insert trong game để mở menu của HelixSR Scaler (cả tạo khung hình của HelixSR).",
     "rt_not_loaded_hscaler": "HelixSR chưa được nạp: chọn DLSS trong cài đặt đồ họa của game",
     "blk_dlss_gpu": "Cách DLSS cần GPU GeForce (NVIDIA): với GPU AMD hoặc Intel, game không cho chọn DLSS. Hãy dùng cách khác.",
-    "blk_short": "Chỉ GeForce",
+    "blk_dlss_gpu_short": "Chỉ GeForce",
     "rec_suffix": "★ Đề xuất",
     "rec_lossy": "Đề xuất cho đồ họa tích hợp (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) và GPU Intel: Lossy là FSR 4.1 nhanh nhất.",
     "rm_hscaler": "Đã gỡ HelixSR Scaler khỏi {folder}; tệp gốc của game đã trở lại",
     "err_bridge": "Trình cài đặt riêng của HelixSR báo: {error}",
     "in_modern": "Đã cài HelixSR {version} ({way}) bằng trình cài đặt riêng của HelixSR: {folder}",
+    "blk_no_files": "Thư mục HelixSR của bạn không có tệp của cách này: HelixSR 1.9 chỉ cài được cách FSR. Với game không có FSR 3.1, hãy dùng HelixSR 2.0 trở lên (HelixSR Scaler) hoặc 1.8.x.",
+    "blk_no_files_short": "cần HelixSR 1.8 hoặc 2.0",
 }
 
 STRINGS["ms"] = {
@@ -4189,12 +4209,14 @@ STRINGS["ms"] = {
     "svc_pick_helixsr_hscaler": "Dalam permainan, pilih DLSS sebagai penskala. Tekan Insert dalam permainan untuk menu HelixSR Scaler (juga penjanaan bingkai HelixSR).",
     "rt_not_loaded_hscaler": "HelixSR belum dimuatkan: pilih DLSS dalam tetapan grafik permainan",
     "blk_dlss_gpu": "Cara DLSS memerlukan GPU GeForce (NVIDIA): dengan GPU AMD atau Intel, permainan tidak menawarkan DLSS. Gunakan cara lain.",
-    "blk_short": "GeForce sahaja",
+    "blk_dlss_gpu_short": "GeForce sahaja",
     "rec_suffix": "★ Disyorkan",
     "rec_lossy": "Disyorkan untuk grafik bersepadu (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) dan GPU Intel: Lossy ialah FSR 4.1 terpantas.",
     "rm_hscaler": "HelixSR Scaler dibuang dari {folder}; fail asal permainan telah kembali",
     "err_bridge": "Pemasang HelixSR sendiri melaporkan: {error}",
     "in_modern": "HelixSR {version} ({way}) dipasang dengan pemasang HelixSR sendiri: {folder}",
+    "blk_no_files": "Folder HelixSR anda tiada fail cara ini: HelixSR 1.9 hanya memasang cara FSR. Untuk permainan tanpa FSR 3.1, gunakan HelixSR 2.0 atau lebih baharu (HelixSR Scaler), atau 1.8.x.",
+    "blk_no_files_short": "perlu HelixSR 1.8 atau 2.0",
 }
 
 STRINGS["hi"] = {
@@ -4561,10 +4583,12 @@ STRINGS["hi"] = {
     "svc_pick_helixsr_hscaler": "गेम में अपस्केलर के रूप में DLSS चुनें। गेम में Insert दबाकर HelixSR Scaler का मेनू खोलें (HelixSR का फ़्रेम जनरेशन भी)।",
     "rt_not_loaded_hscaler": "HelixSR अभी लोड नहीं हुआ: गेम की ग्राफ़िक्स सेटिंग्स में DLSS चुनें",
     "blk_dlss_gpu": "DLSS तरीके के लिए GeForce (NVIDIA) GPU चाहिए: AMD या Intel GPU पर गेम DLSS चुनने नहीं देते। कोई दूसरा तरीका इस्तेमाल करें।",
-    "blk_short": "केवल GeForce",
+    "blk_dlss_gpu_short": "केवल GeForce",
     "rec_suffix": "★ अनुशंसित",
     "rec_lossy": "इंटीग्रेटेड ग्राफ़िक्स (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) और Intel GPU के लिए अनुशंसित: Lossy सबसे तेज़ FSR 4.1 है।",
     "rm_hscaler": "{folder} से HelixSR Scaler हटाया गया; गेम की अपनी फ़ाइलें वापस आ गईं",
     "err_bridge": "HelixSR के अपने इंस्टॉलर ने बताया: {error}",
     "in_modern": "HelixSR के अपने इंस्टॉलर से HelixSR {version} ({way}) इंस्टॉल किया: {folder}",
+    "blk_no_files": "आपके HelixSR फ़ोल्डर में इस तरीके की फ़ाइलें नहीं हैं: HelixSR 1.9 केवल FSR तरीका इंस्टॉल करता है। FSR 3.1 के बिना गेम के लिए HelixSR 2.0 या नया (HelixSR Scaler) या 1.8.x इस्तेमाल करें।",
+    "blk_no_files_short": "HelixSR 1.8 या 2.0 चाहिए",
 }

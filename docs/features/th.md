@@ -133,6 +133,7 @@
 ## HelixSR 2.0 และ GPU
 
 - **HelixSR 2.0 ขึ้นไป** เก็บ DLL ที่สร้างแล้วไว้ใน `HelixSR-fsrfg` และมีสองวิธี: **HelixSR Scaler** (OptiScaler ของ HelixSR เองวางข้าง `.exe`: เลือก DLSS ในเกม ใช้กับเกม DX11 และ Vulkan ได้ด้วย) และ **วิธี FSR** (FSR drop-in) ผู้ช่วย Scaler ติดตั้งทั้งสองวิธีผ่านตัวติดตั้งในโฟลเดอร์ HelixSR ของคุณ (`setup/helixsr_bridge.py` ตัวเดียวกับที่แอปของ HelixSR ใช้) ดังนั้น setup ของ HelixSR แอปของมัน และผู้ช่วย Scaler จึงรู้จัก อัปเดต และลบการติดตั้งของกันและกันได้ ชื่อไฟล์ยังคงเลือกโดยผู้ช่วย Scaler และจะเพิ่มตัวเลือกการเปิดเกมเมื่อจำเป็น เกมที่ตั้งค่าด้วยวิธีเดิมจะย้ายไปใช้ HelixSR Scaler เมื่ออัปเดต โฟลเดอร์ HelixSR 1.8 / 1.9 ยังมีสามวิธีเหมือนเดิม
+- **HelixSR รุ่นก่อน**: 1.8.x ใช้ได้ทั้งสามวิธี (วิธี FSR, วิธี OptiScaler, วิธี DLSS) HelixSR 1.9.0 – 1.9.3 มีเฉพาะไฟล์ของวิธี FSR วิธี OptiScaler และวิธี DLSS จึงเป็นสีเทา ("ต้องใช้ HelixSR 1.8 หรือ 2.0") เกมที่ไม่มี FSR 3.1 ต้องใช้ HelixSR 2.0 (HelixSR Scaler) ไม่รองรับรุ่นก่อน 1.8.0
 - **วิธี DLSS ใช้ได้เฉพาะ GeForce**: กับ GPU ของ AMD หรือ Intel เกมจะไม่ให้เลือก DLSS วิธี DLSS (HelixSR 1.x) จึงเป็นสีเทาพร้อมเหตุผล
 - **แนะนำ FSR 4.1 Lossy** สำหรับกราฟิกในตัว (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) และ GPU ของ Intel: แสดง "★ แนะนำ" เฉพาะในตัวเลือก FSR 4.1
 

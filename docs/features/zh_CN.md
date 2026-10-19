@@ -133,6 +133,7 @@ Scaler 助手在一个窗口里完成这一切，并保留所有被替换的文�
 ## HelixSR 2.0 与显卡
 
 - **HelixSR 2.0 及以上**把构建好的 DLL 放在 `HelixSR-fsrfg`，并提供两种方式：**HelixSR Scaler**（HelixSR 自带、放在 `.exe` 旁的 OptiScaler：游戏内选 DLSS；DX11 和 Vulkan 游戏也能用）与 **FSR 方式**（FSR drop-in）。Scaler 助手通过你 HelixSR 文件夹里的安装程序（`setup/helixsr_bridge.py`，即 HelixSR 官方应用使用的那一个）安装这两种方式，所以 HelixSR 的 setup、它的应用和 Scaler 助手都能识别、更新、移除彼此的安装。文件名仍由 Scaler 助手选择，需要时也会加入启动选项。以旧方式设置的游戏在更新时会改用 HelixSR Scaler。HelixSR 1.8／1.9 文件夹仍是原来的三种方式。
+- **较旧的 HelixSR 版本**：1.8.x 三种方式（FSR 方式、OptiScaler 方式、DLSS 方式）都能用。HelixSR 1.9.0～1.9.3 只附 FSR 方式的文件，所以 OptiScaler 与 DLSS 方式会变灰（“需要 HelixSR 1.8 或 2.0”）；没有 FSR 3.1 的游戏需要 HelixSR 2.0（HelixSR Scaler）。1.8.0 以前的版本不支持。
 - **DLSS 方式仅限 GeForce**：使用 AMD 或 Intel GPU 时，游戏中无法选择 DLSS，所以（HelixSR 1.x 的）DLSS 方式会变灰并说明原因。
 - **推荐 FSR 4.1 Lossy**：集成显卡（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）与 Intel GPU 只会在 FSR 4.1 的选项中标示“★ 推荐”。
 

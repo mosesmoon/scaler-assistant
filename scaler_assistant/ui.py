@@ -1096,7 +1096,7 @@ class MainWindow(QMainWindow):
                 choice = f"helixsr:{way}"
                 reason = entry.blocked.get(choice)
                 if reason:
-                    action = sub.addAction(f"{tr('menu_install_' + way)}   ({tr('blk_short')})")
+                    action = sub.addAction(f"{tr('menu_install_' + way)}   ({tr(reason + '_short')})")
                     action.setEnabled(False)
                     action.setToolTip(tr(reason))
                 else:

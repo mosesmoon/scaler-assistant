@@ -266,7 +266,10 @@ class InstallTest(Base):
         with self.assertRaises(InstallError):
             self.service.apply(DLSS, "helixsr:direct")
         (self.hx / "dlss-loader" / "dxgi.dll").unlink()
-        self.assertEqual(self.entry(DLSS).ways, ["optiscaler"])
+        self.service._gpus = [gpu.Gpu("NVIDIA", 0x2684)]
+        entry = self.entry(DLSS)
+        self.assertEqual([c for c in entry.choices if c.startswith("helixsr")], ["helixsr:optiscaler"])
+        self.assertEqual(entry.blocked, {"helixsr:dlss": "blk_no_files"})
 
     def test_existing_optiscaler_ini_is_edited_and_restored(self):
         own = "[Upscalers]\nDx12Upscaler=xess\n[Libraries]\nFfxDx12Path=auto\n[Menu]\nScale=1.5\n"
@@ -831,3 +834,20 @@ class ModernHelixSRTest(Base):
         self.service.scan()
         self.assertEqual(self.entry(DLSS).layout.fsr_targets, [])
         self.assertEqual(self.entry(DLSS).status.route, "hscaler")
+
+
+class HelixSR19Test(Base):
+    def test_ways_without_their_files_are_greyed_out(self):
+        """HelixSR 1.9 releases carry neither optiscaler/ nor dlss-loader/: only the FSR way."""
+        import shutil
+        self.service._gpus = [gpu.Gpu("NVIDIA", 0x2684)]
+        shutil.rmtree(self.hx / "optiscaler")
+        shutil.rmtree(self.hx / "dlss-loader")
+        fsr = self.entry(FSR)
+        self.assertEqual([c for c in fsr.choices if c.startswith("helixsr")], ["helixsr:direct"])
+        self.assertEqual(fsr.blocked, {"helixsr:optiscaler": "blk_no_files",
+                                       "helixsr:dlss": "blk_no_files"})
+        with self.assertRaises(InstallError):
+            self.service.apply(DLSS, "helixsr:optiscaler")
+        self.service.apply(FSR, "helixsr:direct")
+        self.assertEqual(self.entry(FSR).status.choice, "helixsr:direct")

@@ -133,6 +133,7 @@ Con DLSS 3.7, «⚙ Impostazioni» modifica l'`helixsr.ini` del gioco con un mod
 ## HelixSR 2.0 e la GPU
 
 - **HelixSR 2.0 e successive** tengono la DLL costruita in `HelixSR-fsrfg` e offrono due metodi: **HelixSR Scaler** (l'OptiScaler di HelixSR accanto all'`.exe`: scegli DLSS nel gioco; anche giochi DX11 e Vulkan) e il **metodo FSR** (FSR drop-in). L'Assistente Scaler li installa con l'installer della tua cartella HelixSR (`setup/helixsr_bridge.py`, quello usato dall'app di HelixSR), così il setup di HelixSR, la sua app e l'Assistente Scaler riconoscono, aggiornano e rimuovono le installazioni degli altri. Il nome del file lo sceglie sempre l'Assistente Scaler, che aggiunge l'opzione di avvio quando serve. I giochi configurati con un metodo precedente passano a HelixSR Scaler all'aggiornamento. Le cartelle HelixSR 1.8 / 1.9 mantengono i loro tre metodi.
+- **Versioni precedenti di HelixSR**: 1.8.x offre tutti e tre i metodi (FSR, OptiScaler, DLSS). HelixSR 1.9.0 – 1.9.3 contengono solo i file del metodo FSR, quindi i metodi OptiScaler e DLSS sono in grigio («richiede HelixSR 1.8 o 2.0»); i giochi senza FSR 3.1 richiedono HelixSR 2.0 (HelixSR Scaler). Le versioni precedenti alla 1.8.0 non sono supportate.
 - **Metodo DLSS solo con una GeForce**: con una GPU AMD o Intel i giochi non offrono DLSS, quindi il metodo DLSS (HelixSR 1.x) è in grigio con il motivo.
 - **FSR 4.1 Lossy consigliato** con grafica integrata (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) e GPU Intel: indicato «★ Consigliato» solo tra le scelte FSR 4.1.
 

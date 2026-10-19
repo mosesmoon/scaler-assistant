@@ -44,7 +44,7 @@ Multilingual release notes for each version are in [`docs/releases/`](docs/relea
   | FSR 4.1 Exact / Lossy / AMD | DLSS, XeSS, FSR 2 or FSR 3.1 (DX12; DX11 and Vulkan through OptiScaler's DX12 path) | DLSS, FSR or XeSS |
   | FSR 3 | DLSS, XeSS, FSR 2 or FSR 3.1 (DX12, DX11, Vulkan) | DLSS, FSR or XeSS |
 
-- **HelixSR 2.0**: HelixSR Scaler (select DLSS in the game; also DX11 and Vulkan) and the FSR way, installed through the installer inside your HelixSR folder, so HelixSR's own setup and app recognise the games and the other way round. HelixSR 1.8 / 1.9 folders keep their three ways.
+- **HelixSR 2.0**: HelixSR Scaler (select DLSS in the game; also DX11 and Vulkan) and the FSR way, installed through the installer inside your HelixSR folder, so HelixSR's own setup and app recognise the games and the other way round. HelixSR 1.8.x keeps its three ways; 1.9.0 – 1.9.3 only carry the FSR way's files, so the other ways are greyed out there.
 - **Choices that fit your GPU**: the DLSS way is greyed out without a GeForce (AMD and Intel GPUs can't select DLSS in games); on built-in graphics (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) and Intel GPUs, FSR 4.1 Lossy is marked "★ Recommended" among the FSR 4.1 choices.
 - **Detects each game**: upscaler DLLs, the main `.exe` folder, the graphics API (from the `.exe`'s imports) and anti-cheat.
 - **OptiScaler's file name** picked for the game: your choice, an existing OptiScaler, OptiScaler's compatibility list, `winmm.dll` for Vulkan, a free name when `dxgi.dll` is taken (game, ReShade or your launch options), else `dxgi.dll`. Files already there go to a backup folder.
@@ -144,7 +144,7 @@ Scaler Assistant is an independent, unofficial tool, not affiliated with or endo
   | FSR 4.1 Exact／Lossy／AMD | DLSS、XeSS、FSR 2 或 FSR 3.1（DX12；DX11 與 Vulkan 經由 OptiScaler 的 DX12 路徑） | DLSS、FSR 或 XeSS |
   | FSR 3 | DLSS、XeSS、FSR 2 或 FSR 3.1（DX12、DX11、Vulkan） | DLSS、FSR 或 XeSS |
 
-- **HelixSR 2.0**：HelixSR Scaler（遊戲內選 DLSS；DX11 與 Vulkan 也能用）與 FSR 方式，透過你 HelixSR 資料夾內的安裝程式安裝，所以 HelixSR 本身的 setup 與 App 能辨識這些遊戲，反之亦然。HelixSR 1.8／1.9 資料夾仍是原本的三種方式。
+- **HelixSR 2.0**：HelixSR Scaler（遊戲內選 DLSS；DX11 與 Vulkan 也能用）與 FSR 方式，透過你 HelixSR 資料夾內的安裝程式安裝，所以 HelixSR 本身的 setup 與 App 能辨識這些遊戲，反之亦然。HelixSR 1.8.x 仍有三種方式；1.9.0～1.9.3 只附 FSR 方式的檔案，其他方式會反灰。
 - **依顯示卡提供選項**：沒有 GeForce 時 DLSS 方式會反灰（AMD 與 Intel GPU 在遊戲中無法選擇 DLSS）；內建顯示晶片（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）與 Intel GPU 會在 FSR 4.1 選項中把 Lossy 標示為「★ 推薦」。
 - **偵測每款遊戲**：升頻 DLL、主要 `.exe` 資料夾、繪圖 API（讀 `.exe` 的匯入表）與反作弊。
 - **替 OptiScaler 選檔名**：你的選擇、已存在的 OptiScaler、OptiScaler 相容性清單、Vulkan 用 `winmm.dll`、`dxgi.dll` 被占用（遊戲、ReShade 或你的啟動選項）時改用空著的名稱，否則 `dxgi.dll`。原本就在的檔案會移到備份資料夾。

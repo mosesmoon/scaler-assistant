@@ -181,7 +181,7 @@ class DeckBridge:
                 hint = tr("menu_" + choice.replace(":", "_"))
             reason = entry.blocked.get(choice)
             if reason:
-                result.append({"id": "", "label": f"{text} ({tr('blk_short')})",
+                result.append({"id": "", "label": f"{text} ({tr(reason + '_short')})",
                                "hint": tr(reason), "current": False, "recommended": False})
                 continue
             recommended = choice == entry.recommended
