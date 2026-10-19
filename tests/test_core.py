@@ -16,6 +16,7 @@ from scaler_assistant.installer import InstallError, original, set_ini_value
 from scaler_assistant.pe import graphics_api, imported_dlls
 from scaler_assistant.runtime import Watch, detect_running
 from scaler_assistant.service import (
+    LAYOUT_VERSION,
     AssistantService, GameRunningError, NeedsDownloadError, SteamMustCloseError,
 )
 
@@ -836,6 +837,95 @@ class ModernHelixSRTest(Base):
         self.assertEqual(self.entry(DLSS).status.route, "hscaler")
 
 
+class FrameGenerationTest(Base):
+    """HelixSR 2.0's frame generation switch: HelixSR Scaler in a game with DLSS Frame Generation."""
+
+    def setUp(self):
+        super().setUp()
+        from tests.fakes import make_helixsr_modern
+        self.hx2 = make_helixsr_modern(self.root / "HelixSR-2.0.0", fg=True)
+        make_components(self.root / "components")
+        self.service._gpus = [gpu.Gpu("AMD", 0x744c, (11, 0, 0))]
+        self.service.set_helixsr_folder(self.hx2)
+        (self.dlss_bin / "sl.dlss_g.dll").write_bytes(b"MZ Streamline DLSS-G")
+        self.service.scan()
+
+    def calls(self):
+        return (self.hx2 / "bridge-calls.txt").read_text()
+
+    def test_offered_only_with_helixsr_scaler_and_dlss_fg(self):
+        self.assertTrue(self.entry(DLSS).layout.dlss_fg)
+        self.assertFalse(self.entry(FSR).layout.dlss_fg)
+        self.assertIsNone(self.entry(DLSS).fg)              # nothing installed yet
+        self.service.apply(DLSS, "fsr3")
+        self.assertIsNone(self.entry(DLSS).fg)              # not HelixSR
+        self.service.apply(DLSS, "helixsr:hscaler")
+        entry = self.entry(DLSS)
+        self.assertEqual((entry.fg, entry.fg_block), (False, None))
+        self.assertNotIn("--fg", self.calls())               # a new install leaves it off
+        self.service.apply(FSR, "helixsr:hscaler")
+        self.assertIsNone(self.entry(FSR).fg)                # no DLSS Frame Generation there
+        with self.assertRaises(installer.InstallError):
+            self.service.set_frame_generation(FSR, True)
+
+    def test_switch_on_and_off(self):
+        self.service.apply(DLSS, "helixsr:hscaler")
+        before_fg = self.calls()
+        message = self.service.set_frame_generation(DLSS, True)
+        self.assertIn("scaler-fg --game", self.calls()[len(before_fg):])
+        self.assertIn("--on true", self.calls())
+        self.assertIn("HelixSR: fake bridge", message)
+        status = self.entry(DLSS).status
+        self.assertEqual((status.fg, status.fg_files, self.entry(DLSS).fg), (True, True, True))
+        # a new OptiScaler file name means a fresh install: frame generation stays on
+        self.service.set_opti_name(DLSS, "winmm.dll")
+        self.service.apply(DLSS, "helixsr:hscaler")
+        self.assertIn("--scaler-name winmm.dll", self.calls())
+        self.assertIn("--fg on", self.calls())
+        self.assertTrue(self.entry(DLSS).fg)
+        self.service.set_frame_generation(DLSS, False)
+        self.assertIn("--on false", self.calls())
+        self.assertFalse(self.entry(DLSS).fg)
+        self.service.uninstall(DLSS, False)
+        self.assertFalse((self.dlss_bin / "HelixSR-fsrfg").exists())
+
+    def test_not_built_greys_it_out(self):
+        for name in ("_nvngx.dll", "nvngx_dlssg.dll", "hxfg_data.bin"):
+            (self.hx2 / "HelixSR-fsrfg" / "helixsr-fg" / name).unlink()
+        self.assertFalse(helixsr.inspect(self.hx2).fg_ready)
+        self.service.apply(DLSS, "helixsr:hscaler")
+        entry = self.entry(DLSS)
+        self.assertEqual((entry.fg, entry.fg_block), (False, "fg_not_built_short"))
+        with self.assertRaises(installer.InstallError):
+            self.service.set_frame_generation(DLSS, True)
+        self.assertNotIn("scaler-fg", self.calls())
+
+
+class BridgeRunnerTest(unittest.TestCase):
+    """HelixSR's installer runs with unreadable folders counting as not there."""
+
+    def test_permission_error_is_not_there(self):
+        import subprocess, sys, tempfile
+        from scaler_assistant import hxbridge
+        with tempfile.TemporaryDirectory() as tmp:
+            script = Path(tmp) / "bridge.py"
+            script.write_text(
+                "import pathlib, sys\n"
+                "def denied(self, *a, **k):\n"
+                "    raise PermissionError(13, 'Permission denied', str(self))\n"
+                "pathlib.Path.stat = denied\n"
+                "pathlib.Path.lstat = denied\n"
+                "p = pathlib.Path(sys.argv[1])\n"
+                "print(p.exists(), p.is_file(), p.is_dir(), sys.argv[1:], __name__)\n"
+                "sys.exit(3)\n")
+            done = subprocess.run([sys.executable, "-I", "-c", hxbridge._RUNNER, str(script),
+                                   "/x/HelixSR/helixsr-install.json", "games"],
+                                  capture_output=True, text=True)
+            self.assertEqual(done.returncode, 3, done.stderr)
+            self.assertEqual(done.stdout.strip(),
+                             "False False False ['/x/HelixSR/helixsr-install.json', 'games'] __main__")
+
+
 class HelixSR19Test(Base):
     def test_ways_without_their_files_are_greyed_out(self):
         """HelixSR 1.9 releases carry neither optiscaler/ nor dlss-loader/: only the FSR way."""
@@ -900,4 +990,4 @@ class LayoutCacheTest(Base):
         self.service.state.pop("layout_version")
         self.service.scan(rescan_library=False)
         self.assertNotIn("dx11", {g["layout"]["api"] for g in self.service.state["games"]})
-        self.assertEqual(self.service.state["layout_version"], 2)
+        self.assertEqual(self.service.state["layout_version"], LAYOUT_VERSION)

@@ -36,6 +36,7 @@ class DeckBridgeTest(Base):
         self.assertEqual(overview["unsupported"], 1)
         dlss = self.game(overview, DLSS)
         self.assertEqual(dlss["anti_cheat"], ["Easy Anti-Cheat"])
+        self.assertEqual((dlss["fg"], dlss["fg_block"]), (None, ""))
         self.assertIn("fsr4:lossy", [c["id"] for c in dlss["choices"]])
         # DX12 only for HelixSR: offered for FSR's game, not explained away
         self.assertEqual(overview["downloads"]["missing"], ["optiscaler", "fsr4-igpu"])

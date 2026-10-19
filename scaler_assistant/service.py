@@ -39,7 +39,7 @@ from .steam_cef import CefError, SteamCef
 STAMP = f"Scaler Assistant {__version__}"
 FSR4_BUILDS = ("auto", "dgpu", "igpu", "native")
 # Raised when games.detect_layout changes what it finds, so cached scans are redone.
-LAYOUT_VERSION = 2
+LAYOUT_VERSION = 3
 
 
 def config_dir() -> Path:
@@ -103,6 +103,8 @@ class GameEntry:
     launch_missing: bool = False                            # OptiScaler's override is gone
     blocked: dict[str, str] = field(default_factory=dict)   # choice -> i18n key: why not here
     recommended: Optional[str] = None                       # the choice to suggest for this PC
+    fg: Optional[bool] = None            # HelixSR frame generation switch: None = not offered
+    fg_block: Optional[str] = None       # i18n key: why the switch can't be used now
 
     @property
     def display_name(self) -> str:
@@ -558,6 +560,7 @@ class AssistantService:
                 outdated = status.outdated(folder)
             ways = self._ways(layout, folder)
             choices = self.choices_for(layout, folder, ways)
+            fg, fg_block = self.frame_generation(layout, status, folder)
             result.append(GameEntry(
                 app_id=app_id,
                 name=game["name"],
@@ -572,8 +575,37 @@ class AssistantService:
                 names=dict(game.get("names") or {}),
                 launch_options=current,
                 launch_missing=missing,
+                fg=fg,
+                fg_block=fg_block,
             ))
         return result
+
+    @staticmethod
+    def frame_generation(layout: GameLayout, status: InstallState,
+                         folder: Optional[HelixSRFolder]) -> tuple[Optional[bool], Optional[str]]:
+        """(on, why it can't be switched) for HelixSR's frame generation: offered only with
+        HelixSR Scaler (HelixSR 2.0) in a game that has DLSS Frame Generation."""
+        if status.route != "hscaler" or not layout.dlss_fg:
+            return None, None
+        on = bool(status.fg)
+        if folder is None or not folder.modern:
+            return on, "fg_no_folder"
+        if not on and not status.fg_files and not folder.fg_ready:
+            return on, "fg_not_built_short"
+        return on, None
+
+    def set_frame_generation(self, app_id: int, on: bool) -> str:
+        """HelixSR's frame generation on or off in a game with HelixSR Scaler."""
+        folder = self.require_helixsr()
+        cached, layout = self._refresh_game(app_id)
+        name = self._name(cached)
+        self._ensure_closed(app_id, name)
+        notes = installer.set_frame_generation(layout, folder, on, cached["install_dir"])
+        head = tr("fg_done_on" if on else "fg_done_off", name=name)
+        lines = [head, *("  " + n for n in notes)]
+        if on:
+            lines.append(tr("fg_in_game"))
+        return "\n".join(lines)
 
     def _refresh_game(self, app_id: int) -> tuple[dict, GameLayout]:
         """Look at one game's folder again right before changing it."""

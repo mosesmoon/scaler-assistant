@@ -160,6 +160,9 @@ class DeckBridge:
             "shows_launch": bool(status.opti_name and needs_override(status.opti_name)
                                  or entry.launch_options),
             "has_log": entry.installed,
+            # HelixSR frame generation: null = not offered (HelixSR Scaler + DLSS Frame Generation only)
+            "fg": entry.fg,
+            "fg_block": plain(tr(entry.fg_block)) if entry.fg_block else "",
             "choices": self.choices(entry, self.service.helixsr()),
             "running": live,
         }
@@ -310,6 +313,9 @@ class DeckBridge:
 
     def apply(self, app_id: int, choice: str) -> dict[str, Any]:
         return self._run(lambda: self.service.apply(app_id, choice))
+
+    def set_frame_generation(self, app_id: int, on: bool) -> dict[str, Any]:
+        return self._run(lambda: self.service.set_frame_generation(app_id, on))
 
     def uninstall(self, app_id: int, remove_settings: bool = False) -> dict[str, Any]:
         return self._run(lambda: self.service.uninstall(app_id, remove_settings))

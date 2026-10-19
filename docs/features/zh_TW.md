@@ -133,6 +133,7 @@ Scaler 助手在一個視窗裡完成這一切，並保留所有被取代的檔�
 ## HelixSR 2.0 與顯示卡
 
 - **HelixSR 2.0 以上**把建好的 DLL 放在 `HelixSR-fsrfg`，並提供兩種方式：**HelixSR Scaler**（HelixSR 自帶、放在 `.exe` 旁的 OptiScaler：遊戲內選 DLSS；DX11 和 Vulkan 遊戲也能用）與 **FSR 方式**（FSR drop-in）。Scaler 助手透過你 HelixSR 資料夾裡的安裝程式（`setup/helixsr_bridge.py`，也就是 HelixSR 官方 App 使用的那一個）安裝這兩種方式，所以 HelixSR 的 setup、它的 App 和 Scaler 助手都能辨識、更新、移除彼此的安裝。檔名仍由 Scaler 助手選擇，需要時也會加入啟動選項。以舊方式設定的遊戲在更新時會改用 HelixSR Scaler。HelixSR 1.8.x 仍有三種方式；1.9.0～1.9.3 只有 FSR 方式（其他方式反灰）。
+- **HelixSR 影格生成**（HelixSR 2.0）：有 DLSS Frame Generation（Streamline 的 `sl.dlss_g.dll`）的 DirectX 12 遊戲，裝了 HelixSR Scaler 後卡片上（以及 Steam Deck 外掛中）會出現「HelixSR 影格生成」開關。它透過 HelixSR 自己的安裝程式（`scaler-fg`）切換，只改 OptiScaler.ini 的 `[FrameGen]` 選項；打開後在遊戲中開啟 DLSS Frame Generation。需要 `./helixsr-setup.sh` 建好的影格生成（會下載 NVIDIA 的 DLSS Frame Generation 檔案），在那之前開關會反灰並說明原因。新安裝時預設關閉；更新或改 OptiScaler 檔名會保留原本的狀態。其他 DX12 遊戲仍可在 HelixSR Scaler 選單（Insert）選 AMD FSR 或 XeSS 影格生成；DX11／Vulkan 遊戲與 FSR 方式只有升頻。
 - **較舊的 HelixSR 版本**：1.8.x 三種方式（FSR 方式、OptiScaler 方式、DLSS 方式）都能用。HelixSR 1.9.0～1.9.3 只附 FSR 方式的檔案，所以 OptiScaler 與 DLSS 方式會反灰（「需要 HelixSR 1.8 或 2.0」）；沒有 FSR 3.1 的遊戲需要 HelixSR 2.0（HelixSR Scaler）。1.8.0 以前的版本不支援。
 - **DLSS 方式僅限 GeForce**：使用 AMD 或 Intel GPU 時，遊戲中無法選擇 DLSS，所以（HelixSR 1.x 的）DLSS 方式會反灰並說明原因。
 - **推薦 FSR 4.1 Lossy**：內建顯示晶片（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）與 Intel GPU 只會在 FSR 4.1 的選項中標示「★ 推薦」。

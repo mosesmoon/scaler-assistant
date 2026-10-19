@@ -178,6 +178,8 @@ class InstallState:
     helper_files: list[Path] = field(default_factory=list)   # OptiScaler or the DLSS loader
     source: str = ""                     # FSR: the download the upscaler DLL came from
     opti_over_foreign: bool = False      # OptiScaler took the name of a file that was not OptiScaler
+    fg: Optional[bool] = None            # HelixSR Scaler: HelixSR's frame generation on / off
+    fg_files: bool = False               # HelixSR Scaler: frame generation's files are in the game
 
     @property
     def installed(self) -> bool:
@@ -241,6 +243,22 @@ def hscaler_record(exe: Path) -> Optional[dict]:
     return record
 
 
+def hscaler_fg(exe: Path) -> tuple[bool, bool]:
+    """(on, files in the game) for HelixSR's frame generation with HelixSR Scaler: on when
+    OptiScaler.ini's [FrameGen] picks it (FGInput = nvngxfg with FGNvngxReplacement = HelixSR)
+    and its files are in HelixSR-fsrfg/helixsr-fg."""
+    fg = exe / HX_FSRFG / "helixsr-fg"
+    files = fg.is_dir() and any(fg.glob("*.dll"))
+    try:
+        text = _read_text(exe / OPTI_INI)
+    except OSError:
+        return False, files
+    frame_gen = optiscaler.section_text(text, "FrameGen")
+    picked = ((optiscaler.get_value(frame_gen, "FGInput") or "").lower() == "nvngxfg"
+              and (optiscaler.get_value(frame_gen, "FGNvngxReplacement") or "").lower() == "helixsr")
+    return picked and files, files
+
+
 def _remove_hscaler(exe: Path) -> list[str]:
     """Take HelixSR Scaler out the way its record describes and put the game's files back."""
     record = hscaler_record(exe)
@@ -274,9 +292,11 @@ def state(layout: GameLayout) -> InstallState:
     if exe and hx is not None:
         dll, name = exe / HX_DLL, hx["name"]
         issues = [] if is_optiscaler(exe / name) and is_helixsr(dll) else ["is_files_replaced"]
+        fg, fg_files = hscaler_fg(exe)
         return InstallState("hscaler", dll_version(dll), issues, [dll], [],
                             [exe / HX_FSRFG / LOG, exe / OPTI_LOG], installed_by=hx["by"],
-                            upscaler="helixsr", opti_name=name, helper_files=[exe / name])
+                            upscaler="helixsr", opti_name=name, helper_files=[exe / name],
+                            fg=fg, fg_files=fg_files)
     folder = exe / FOLDER if exe else None
     record = read_record(folder) if folder else {}
     if folder and record and record.get("route") == "dlss":
@@ -798,6 +818,7 @@ def _install_modern(layout: GameLayout, folder: HelixSRFolder, route: str,
     if not has_network(folder.dll):
         raise InstallError(tr("hx_not_built", path=folder.path))
     current = state(layout)
+    keep_fg = route == "hscaler" and current.route == "hscaler" and bool(current.fg)
     notes: list[str] = []
     if current.installed and current.route != route:
         notes.append(tr("sw_from", way=_label(current)))
@@ -808,7 +829,8 @@ def _install_modern(layout: GameLayout, folder: HelixSRFolder, route: str,
     try:
         answer = hxbridge.install(folder, game_dir, "scaler" if route == "hscaler" else "fsr",
                                   opti_name if route == "hscaler" else None,
-                                  anti_cheat_ok=bool(layout.anti_cheat))
+                                  anti_cheat_ok=bool(layout.anti_cheat),
+                                  fg=True if keep_fg else None)
     except hxbridge.BridgeError as error:
         raise InstallError("\n".join([tr("err_bridge", error=error), *error.messages])) from error
     after = state(layout)
@@ -817,6 +839,28 @@ def _install_modern(layout: GameLayout, folder: HelixSRFolder, route: str,
     notes.append(tr("in_modern", way=tr("way_" + route), version=folder.version, folder=where))
     notes += ["HelixSR: " + m for m in answer.get("messages", [])]
     return notes
+
+
+def set_frame_generation(layout: GameLayout, folder: HelixSRFolder, on: bool,
+                         game_dir: str) -> list[str]:
+    """HelixSR's frame generation on or off in a game with HelixSR Scaler, through HelixSR's
+    own installer (it only changes OptiScaler.ini's [FrameGen] choice and, when they are
+    missing, copies frame generation's files from the HelixSR folder)."""
+    if not folder.modern:
+        raise InstallError(tr("fg_no_folder"))
+    current = state(layout)
+    if current.route != "hscaler":
+        raise InstallError(tr("rm_not_installed"))
+    if not layout.dlss_fg:
+        raise InstallError(tr("fg_no_dlssg"))
+    if on and not current.fg_files and not folder.fg_ready:
+        raise InstallError(tr("fg_not_built", path=folder.path))
+    try:
+        answer = hxbridge.run(folder, "scaler-fg", "--game", game_dir,
+                              "--on", "true" if on else "false")
+    except hxbridge.BridgeError as error:
+        raise InstallError("\n".join([tr("err_bridge", error=error), *error.messages])) from error
+    return ["HelixSR: " + m for m in answer.get("messages", [])]
 
 
 def install_helixsr(layout: GameLayout, folder: HelixSRFolder, route: str, stamp: str,

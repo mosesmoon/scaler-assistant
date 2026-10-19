@@ -276,6 +276,9 @@ class GameCard(QFrame):
             else:
                 detail = tr("st_opti_version", version=status.version or "?", name=status.opti_name)
             info.addWidget(_label(detail, "meta", wrap=True))
+        self.fg_switch: Optional[Switch] = None
+        if entry.fg is not None:
+            info.addLayout(self._fg_row(entry))
         notes = []
         if entry.outdated:
             notes.append(tr("st_outdated", version=helixsr_version or "?")
@@ -339,6 +342,29 @@ class GameCard(QFrame):
         self.details: Optional[QFrame] = None
         self._running = False
         self.set_runtime(None)
+
+    def _fg_row(self, entry) -> QHBoxLayout:
+        """HelixSR's frame generation switch (HelixSR Scaler in a game with DLSS Frame Generation)."""
+        row = QHBoxLayout()
+        row.setSpacing(8)
+        switch = Switch()
+        switch.setChecked(bool(entry.fg))
+        tip = tr("fg_switch_tip")
+        if entry.fg_block:
+            switch.setEnabled(False)
+            tip = tr(entry.fg_block) + "\n\n" + tip
+        switch.setToolTip(tip)
+        switch.toggled.connect(lambda checked: self.actions["frame_gen"](entry, checked))
+        label = _label(tr("fg_switch"), "meta")
+        label.setToolTip(tip)
+        row.addWidget(switch, 0, Qt.AlignmentFlag.AlignVCenter)
+        row.addWidget(label, 0, Qt.AlignmentFlag.AlignVCenter)
+        if entry.fg_block:
+            row.addWidget(_label("⚠ " + tr(entry.fg_block), "issue"), 0,
+                          Qt.AlignmentFlag.AlignVCenter)
+        row.addStretch(1)
+        self.fg_switch = switch
+        return row
 
     def wide_width(self) -> int:
         live = self.live.minimumWidth() + 16 if self._running else 0

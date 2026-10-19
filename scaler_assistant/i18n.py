@@ -478,6 +478,16 @@ STRINGS["en"] = {
     "blk_no_files": "Your HelixSR folder doesn't have this way's files: HelixSR 1.9 releases only install the FSR way. For games without FSR 3.1 use HelixSR 2.0 or newer (HelixSR Scaler), or 1.8.x.",
     "blk_no_files_short": "needs HelixSR 1.8 or 2.0",
     "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): Direct3D 12 only (this game: {api}). HelixSR 2.0 or newer runs it through HelixSR Scaler",
+    "fg_switch": "HelixSR frame generation",
+    "fg_switch_tip": "HelixSR's own frame generation, through HelixSR Scaler. It takes over the game's DLSS Frame Generation: after switching it on, start the game and turn on DLSS Frame Generation in its settings.",
+    "fg_no_folder": "Needs your HelixSR 2.0 (or newer) folder",
+    "fg_not_built": "HelixSR's setup hasn't built frame generation in {path}. Run ./helixsr-setup.sh there again and answer yes to frame generation (it downloads NVIDIA's DLSS Frame Generation files).",
+    "fg_not_built_short": "HelixSR's setup hasn't built frame generation yet",
+    "fg_no_dlssg": "This game has no DLSS Frame Generation, which HelixSR's frame generation needs",
+    "fg_done_on": "{name}: HelixSR frame generation on",
+    "fg_done_off": "{name}: HelixSR frame generation off",
+    "fg_in_game": "Start the game and turn on DLSS Frame Generation in its settings.",
+    "busy_fg": "Switching HelixSR frame generation…",
 }
 
 STRINGS["zh_TW"] = {
@@ -853,6 +863,16 @@ STRINGS["zh_TW"] = {
     "blk_no_files": "你的 HelixSR 資料夾沒有這種方式的檔案：HelixSR 1.9 版只能安裝 FSR 方式。沒有 FSR 3.1 的遊戲請改用 HelixSR 2.0 以上（HelixSR Scaler）或 1.8.x。",
     "blk_no_files_short": "需要 HelixSR 1.8 或 2.0",
     "menu_helixsr_api_hx2": "DLSS 3.7（HelixSR {version}）：只支援 Direct3D 12（這款遊戲：{api}）。HelixSR 2.0 以上可透過 HelixSR Scaler 使用",
+    "fg_switch": "HelixSR 影格生成",
+    "fg_switch_tip": "HelixSR 自己的影格生成，透過 HelixSR Scaler 執行，會接手遊戲的 DLSS Frame Generation。打開後請啟動遊戲，在遊戲設定中開啟 DLSS Frame Generation。",
+    "fg_no_folder": "需要 HelixSR 2.0 以上的資料夾",
+    "fg_not_built": "HelixSR 的 setup 還沒在 {path} 建好影格生成。請在該資料夾再執行一次 ./helixsr-setup.sh，影格生成的問題回答是（會下載 NVIDIA 的 DLSS Frame Generation 檔案）。",
+    "fg_not_built_short": "HelixSR 的 setup 還沒建好影格生成",
+    "fg_no_dlssg": "這款遊戲沒有 DLSS Frame Generation，HelixSR 影格生成需要它",
+    "fg_done_on": "{name}：已開啟 HelixSR 影格生成",
+    "fg_done_off": "{name}：已關閉 HelixSR 影格生成",
+    "fg_in_game": "請啟動遊戲，在遊戲設定中開啟 DLSS Frame Generation。",
+    "busy_fg": "正在切換 HelixSR 影格生成…",
 }
 
 STRINGS["zh_CN"] = {
@@ -1228,6 +1248,16 @@ STRINGS["zh_CN"] = {
     "blk_no_files": "你的 HelixSR 文件夹没有这种方式的文件：HelixSR 1.9 版只能安装 FSR 方式。没有 FSR 3.1 的游戏请改用 HelixSR 2.0 及以上（HelixSR Scaler）或 1.8.x。",
     "blk_no_files_short": "需要 HelixSR 1.8 或 2.0",
     "menu_helixsr_api_hx2": "DLSS 3.7（HelixSR {version}）：只支持 Direct3D 12（这款游戏：{api}）。HelixSR 2.0 及以上可通过 HelixSR Scaler 使用",
+    "fg_switch": "HelixSR 帧生成",
+    "fg_switch_tip": "HelixSR 自己的帧生成，通过 HelixSR Scaler 运行，会接管游戏的 DLSS Frame Generation。打开后请启动游戏，在游戏设置中开启 DLSS Frame Generation。",
+    "fg_no_folder": "需要 HelixSR 2.0 及以上的文件夹",
+    "fg_not_built": "HelixSR 的 setup 还没有在 {path} 生成帧生成文件。请在该文件夹再运行一次 ./helixsr-setup.sh，帧生成的问题回答是（会下载 NVIDIA 的 DLSS Frame Generation 文件）。",
+    "fg_not_built_short": "HelixSR 的 setup 还没有生成帧生成文件",
+    "fg_no_dlssg": "这款游戏没有 DLSS Frame Generation，HelixSR 帧生成需要它",
+    "fg_done_on": "{name}：已开启 HelixSR 帧生成",
+    "fg_done_off": "{name}：已关闭 HelixSR 帧生成",
+    "fg_in_game": "请启动游戏，在游戏设置中开启 DLSS Frame Generation。",
+    "busy_fg": "正在切换 HelixSR 帧生成…",
 }
 
 STRINGS["ja"] = {
@@ -1603,6 +1633,16 @@ STRINGS["ja"] = {
     "blk_no_files": "HelixSR フォルダーにこの方式のファイルがありません：HelixSR 1.9 は FSR 方式しかインストールできません。FSR 3.1 のないゲームには HelixSR 2.0 以降（HelixSR Scaler）か 1.8.x を使ってください。",
     "blk_no_files_short": "HelixSR 1.8 か 2.0 が必要",
     "menu_helixsr_api_hx2": "DLSS 3.7（HelixSR {version}）：Direct3D 12 のみ（このゲーム：{api}）。HelixSR 2.0 以降なら HelixSR Scaler で使えます",
+    "fg_switch": "HelixSR フレーム生成",
+    "fg_switch_tip": "HelixSR Scaler 経由で動く HelixSR 独自のフレーム生成で、ゲームの DLSS Frame Generation を置き換えます。オンにしたらゲームを起動し、設定で DLSS Frame Generation をオンにしてください。",
+    "fg_no_folder": "HelixSR 2.0 以降のフォルダーが必要です",
+    "fg_not_built": "HelixSR の setup が {path} にフレーム生成をまだ作成していません。そのフォルダーで ./helixsr-setup.sh をもう一度実行し、フレーム生成の質問に「はい」と答えてください（NVIDIA の DLSS Frame Generation ファイルをダウンロードします）。",
+    "fg_not_built_short": "HelixSR の setup がフレーム生成をまだ作成していません",
+    "fg_no_dlssg": "このゲームには HelixSR のフレーム生成に必要な DLSS Frame Generation がありません",
+    "fg_done_on": "{name}：HelixSR フレーム生成をオンにしました",
+    "fg_done_off": "{name}：HelixSR フレーム生成をオフにしました",
+    "fg_in_game": "ゲームを起動し、設定で DLSS Frame Generation をオンにしてください。",
+    "busy_fg": "HelixSR フレーム生成を切り替えています…",
 }
 
 STRINGS["de"] = {
@@ -1978,6 +2018,16 @@ STRINGS["de"] = {
     "blk_no_files": "Dein HelixSR-Ordner hat die Dateien dieses Wegs nicht: HelixSR 1.9 installiert nur den FSR-Weg. Für Spiele ohne FSR 3.1 nutze HelixSR 2.0 oder neuer (HelixSR Scaler) oder 1.8.x.",
     "blk_no_files_short": "braucht HelixSR 1.8 oder 2.0",
     "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): nur Direct3D 12 (dieses Spiel: {api}). HelixSR 2.0 oder neuer läuft hier über HelixSR Scaler",
+    "fg_switch": "HelixSR-Frame-Generation",
+    "fg_switch_tip": "HelixSRs eigene Frame-Generation über HelixSR Scaler. Sie übernimmt die DLSS Frame Generation des Spiels: Nach dem Einschalten das Spiel starten und dort DLSS Frame Generation aktivieren.",
+    "fg_no_folder": "Braucht deinen HelixSR-Ordner ab Version 2.0",
+    "fg_not_built": "HelixSRs Setup hat in {path} noch keine Frame-Generation erstellt. Führe dort ./helixsr-setup.sh erneut aus und beantworte die Frage zur Frame-Generation mit Ja (es lädt NVIDIAs DLSS-Frame-Generation-Dateien herunter).",
+    "fg_not_built_short": "HelixSRs Setup hat die Frame-Generation noch nicht erstellt",
+    "fg_no_dlssg": "Dieses Spiel hat keine DLSS Frame Generation, die HelixSRs Frame-Generation braucht",
+    "fg_done_on": "{name}: HelixSR-Frame-Generation ein",
+    "fg_done_off": "{name}: HelixSR-Frame-Generation aus",
+    "fg_in_game": "Starte das Spiel und aktiviere DLSS Frame Generation in seinen Einstellungen.",
+    "busy_fg": "HelixSR-Frame-Generation wird umgeschaltet…",
 }
 
 STRINGS["fr"] = {
@@ -2353,6 +2403,16 @@ STRINGS["fr"] = {
     "blk_no_files": "Votre dossier HelixSR n'a pas les fichiers de cette méthode : HelixSR 1.9 n'installe que la méthode FSR. Pour les jeux sans FSR 3.1, utilisez HelixSR 2.0 ou plus récent (HelixSR Scaler), ou 1.8.x.",
     "blk_no_files_short": "demande HelixSR 1.8 ou 2.0",
     "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}) : Direct3D 12 uniquement (ce jeu : {api}). HelixSR 2.0 ou plus récent fonctionne via HelixSR Scaler",
+    "fg_switch": "Génération d'images HelixSR",
+    "fg_switch_tip": "La génération d'images propre à HelixSR, via HelixSR Scaler. Elle remplace la DLSS Frame Generation du jeu : après l'avoir activée, lancez le jeu et activez DLSS Frame Generation dans ses options.",
+    "fg_no_folder": "Nécessite votre dossier HelixSR 2.0 ou plus récent",
+    "fg_not_built": "Le setup de HelixSR n'a pas encore créé la génération d'images dans {path}. Relancez ./helixsr-setup.sh dans ce dossier et répondez oui pour la génération d'images (il télécharge les fichiers DLSS Frame Generation de NVIDIA).",
+    "fg_not_built_short": "Le setup de HelixSR n'a pas encore créé la génération d'images",
+    "fg_no_dlssg": "Ce jeu n'a pas de DLSS Frame Generation, nécessaire à la génération d'images de HelixSR",
+    "fg_done_on": "{name} : génération d'images HelixSR activée",
+    "fg_done_off": "{name} : génération d'images HelixSR désactivée",
+    "fg_in_game": "Lancez le jeu et activez DLSS Frame Generation dans ses options.",
+    "busy_fg": "Changement de la génération d'images HelixSR…",
 }
 
 STRINGS["es"] = {
@@ -2728,6 +2788,16 @@ STRINGS["es"] = {
     "blk_no_files": "Tu carpeta de HelixSR no tiene los archivos de este método: HelixSR 1.9 solo instala el método FSR. Para juegos sin FSR 3.1 usa HelixSR 2.0 o posterior (HelixSR Scaler), o 1.8.x.",
     "blk_no_files_short": "necesita HelixSR 1.8 o 2.0",
     "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): solo Direct3D 12 (este juego: {api}). HelixSR 2.0 o posterior funciona con HelixSR Scaler",
+    "fg_switch": "Generación de fotogramas de HelixSR",
+    "fg_switch_tip": "La generación de fotogramas propia de HelixSR, a través de HelixSR Scaler. Sustituye a la DLSS Frame Generation del juego: tras activarla, inicia el juego y activa DLSS Frame Generation en sus ajustes.",
+    "fg_no_folder": "Necesita tu carpeta de HelixSR 2.0 o posterior",
+    "fg_not_built": "El setup de HelixSR aún no ha creado la generación de fotogramas en {path}. Vuelve a ejecutar ./helixsr-setup.sh en esa carpeta y responde sí a la generación de fotogramas (descarga los archivos DLSS Frame Generation de NVIDIA).",
+    "fg_not_built_short": "El setup de HelixSR aún no ha creado la generación de fotogramas",
+    "fg_no_dlssg": "Este juego no tiene DLSS Frame Generation, que la generación de fotogramas de HelixSR necesita",
+    "fg_done_on": "{name}: generación de fotogramas de HelixSR activada",
+    "fg_done_off": "{name}: generación de fotogramas de HelixSR desactivada",
+    "fg_in_game": "Inicia el juego y activa DLSS Frame Generation en sus ajustes.",
+    "busy_fg": "Cambiando la generación de fotogramas de HelixSR…",
 }
 
 STRINGS["it"] = {
@@ -3103,6 +3173,16 @@ STRINGS["it"] = {
     "blk_no_files": "La tua cartella HelixSR non ha i file di questo metodo: HelixSR 1.9 installa solo il metodo FSR. Per i giochi senza FSR 3.1 usa HelixSR 2.0 o successivo (HelixSR Scaler), oppure 1.8.x.",
     "blk_no_files_short": "richiede HelixSR 1.8 o 2.0",
     "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): solo Direct3D 12 (questo gioco: {api}). HelixSR 2.0 o successivo funziona tramite HelixSR Scaler",
+    "fg_switch": "Generazione di frame HelixSR",
+    "fg_switch_tip": "La generazione di frame di HelixSR, tramite HelixSR Scaler. Sostituisce la DLSS Frame Generation del gioco: dopo averla attivata, avvia il gioco e attiva DLSS Frame Generation nelle sue impostazioni.",
+    "fg_no_folder": "Richiede la tua cartella HelixSR 2.0 o successiva",
+    "fg_not_built": "Il setup di HelixSR non ha ancora creato la generazione di frame in {path}. Esegui di nuovo ./helixsr-setup.sh in quella cartella e rispondi sì alla generazione di frame (scarica i file DLSS Frame Generation di NVIDIA).",
+    "fg_not_built_short": "Il setup di HelixSR non ha ancora creato la generazione di frame",
+    "fg_no_dlssg": "Questo gioco non ha la DLSS Frame Generation, necessaria alla generazione di frame di HelixSR",
+    "fg_done_on": "{name}: generazione di frame HelixSR attivata",
+    "fg_done_off": "{name}: generazione di frame HelixSR disattivata",
+    "fg_in_game": "Avvia il gioco e attiva DLSS Frame Generation nelle sue impostazioni.",
+    "busy_fg": "Cambio della generazione di frame HelixSR…",
 }
 
 STRINGS["th"] = {
@@ -3478,6 +3558,16 @@ STRINGS["th"] = {
     "blk_no_files": "โฟลเดอร์ HelixSR ของคุณไม่มีไฟล์ของวิธีนี้: HelixSR 1.9 ติดตั้งได้เฉพาะวิธี FSR สำหรับเกมที่ไม่มี FSR 3.1 ให้ใช้ HelixSR 2.0 ขึ้นไป (HelixSR Scaler) หรือ 1.8.x",
     "blk_no_files_short": "ต้องใช้ HelixSR 1.8 หรือ 2.0",
     "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): รองรับเฉพาะ Direct3D 12 (เกมนี้: {api}) HelixSR 2.0 ขึ้นไปใช้ได้ผ่าน HelixSR Scaler",
+    "fg_switch": "การสร้างเฟรมของ HelixSR",
+    "fg_switch_tip": "การสร้างเฟรมของ HelixSR เอง ทำงานผ่าน HelixSR Scaler และเข้าแทน DLSS Frame Generation ของเกม หลังเปิดแล้วให้เริ่มเกมและเปิด DLSS Frame Generation ในการตั้งค่าของเกม",
+    "fg_no_folder": "ต้องใช้โฟลเดอร์ HelixSR 2.0 ขึ้นไป",
+    "fg_not_built": "setup ของ HelixSR ยังไม่ได้สร้างการสร้างเฟรมใน {path} ให้รัน ./helixsr-setup.sh ในโฟลเดอร์นั้นอีกครั้งและตอบใช่สำหรับการสร้างเฟรม (จะดาวน์โหลดไฟล์ DLSS Frame Generation ของ NVIDIA)",
+    "fg_not_built_short": "setup ของ HelixSR ยังไม่ได้สร้างการสร้างเฟรม",
+    "fg_no_dlssg": "เกมนี้ไม่มี DLSS Frame Generation ซึ่งการสร้างเฟรมของ HelixSR ต้องใช้",
+    "fg_done_on": "{name}: เปิดการสร้างเฟรมของ HelixSR แล้ว",
+    "fg_done_off": "{name}: ปิดการสร้างเฟรมของ HelixSR แล้ว",
+    "fg_in_game": "เริ่มเกมและเปิด DLSS Frame Generation ในการตั้งค่าของเกม",
+    "busy_fg": "กำลังสลับการสร้างเฟรมของ HelixSR…",
 }
 
 STRINGS["vi"] = {
@@ -3853,6 +3943,16 @@ STRINGS["vi"] = {
     "blk_no_files": "Thư mục HelixSR của bạn không có tệp của cách này: HelixSR 1.9 chỉ cài được cách FSR. Với game không có FSR 3.1, hãy dùng HelixSR 2.0 trở lên (HelixSR Scaler) hoặc 1.8.x.",
     "blk_no_files_short": "cần HelixSR 1.8 hoặc 2.0",
     "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): chỉ Direct3D 12 (game này: {api}). HelixSR 2.0 trở lên chạy được qua HelixSR Scaler",
+    "fg_switch": "Tạo khung hình HelixSR",
+    "fg_switch_tip": "Tính năng tạo khung hình riêng của HelixSR, chạy qua HelixSR Scaler, thay cho DLSS Frame Generation của game. Sau khi bật, hãy mở game và bật DLSS Frame Generation trong phần cài đặt.",
+    "fg_no_folder": "Cần thư mục HelixSR 2.0 trở lên",
+    "fg_not_built": "Setup của HelixSR chưa tạo tính năng tạo khung hình trong {path}. Hãy chạy lại ./helixsr-setup.sh trong thư mục đó và trả lời có cho phần tạo khung hình (sẽ tải các tệp DLSS Frame Generation của NVIDIA).",
+    "fg_not_built_short": "Setup của HelixSR chưa tạo tính năng tạo khung hình",
+    "fg_no_dlssg": "Game này không có DLSS Frame Generation mà tính năng tạo khung hình của HelixSR cần",
+    "fg_done_on": "{name}: đã bật tạo khung hình HelixSR",
+    "fg_done_off": "{name}: đã tắt tạo khung hình HelixSR",
+    "fg_in_game": "Hãy mở game và bật DLSS Frame Generation trong phần cài đặt.",
+    "busy_fg": "Đang chuyển tạo khung hình HelixSR…",
 }
 
 STRINGS["ms"] = {
@@ -4228,6 +4328,16 @@ STRINGS["ms"] = {
     "blk_no_files": "Folder HelixSR anda tiada fail cara ini: HelixSR 1.9 hanya memasang cara FSR. Untuk permainan tanpa FSR 3.1, gunakan HelixSR 2.0 atau lebih baharu (HelixSR Scaler), atau 1.8.x.",
     "blk_no_files_short": "perlu HelixSR 1.8 atau 2.0",
     "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): Direct3D 12 sahaja (permainan ini: {api}). HelixSR 2.0 atau lebih baharu berfungsi melalui HelixSR Scaler",
+    "fg_switch": "Penjanaan bingkai HelixSR",
+    "fg_switch_tip": "Penjanaan bingkai HelixSR sendiri, melalui HelixSR Scaler. Ia mengambil alih DLSS Frame Generation permainan: selepas menghidupkannya, mulakan permainan dan hidupkan DLSS Frame Generation dalam tetapannya.",
+    "fg_no_folder": "Memerlukan folder HelixSR 2.0 atau lebih baharu",
+    "fg_not_built": "Setup HelixSR belum membina penjanaan bingkai dalam {path}. Jalankan ./helixsr-setup.sh di folder itu sekali lagi dan jawab ya untuk penjanaan bingkai (ia memuat turun fail DLSS Frame Generation NVIDIA).",
+    "fg_not_built_short": "Setup HelixSR belum membina penjanaan bingkai",
+    "fg_no_dlssg": "Permainan ini tiada DLSS Frame Generation yang diperlukan oleh penjanaan bingkai HelixSR",
+    "fg_done_on": "{name}: penjanaan bingkai HelixSR dihidupkan",
+    "fg_done_off": "{name}: penjanaan bingkai HelixSR dimatikan",
+    "fg_in_game": "Mulakan permainan dan hidupkan DLSS Frame Generation dalam tetapannya.",
+    "busy_fg": "Menukar penjanaan bingkai HelixSR…",
 }
 
 STRINGS["hi"] = {
@@ -4603,4 +4713,14 @@ STRINGS["hi"] = {
     "blk_no_files": "आपके HelixSR फ़ोल्डर में इस तरीके की फ़ाइलें नहीं हैं: HelixSR 1.9 केवल FSR तरीका इंस्टॉल करता है। FSR 3.1 के बिना गेम के लिए HelixSR 2.0 या नया (HelixSR Scaler) या 1.8.x इस्तेमाल करें।",
     "blk_no_files_short": "HelixSR 1.8 या 2.0 चाहिए",
     "menu_helixsr_api_hx2": "DLSS 3.7 (HelixSR {version}): केवल Direct3D 12 (यह गेम: {api})। HelixSR 2.0 या नया HelixSR Scaler से चलता है",
+    "fg_switch": "HelixSR फ़्रेम जनरेशन",
+    "fg_switch_tip": "HelixSR का अपना फ़्रेम जनरेशन, HelixSR Scaler के ज़रिए। यह गेम के DLSS Frame Generation की जगह लेता है: चालू करने के बाद गेम शुरू करें और उसकी सेटिंग्स में DLSS Frame Generation चालू करें।",
+    "fg_no_folder": "HelixSR 2.0 या नए का फ़ोल्डर चाहिए",
+    "fg_not_built": "HelixSR के setup ने {path} में अभी फ़्रेम जनरेशन नहीं बनाया है। उस फ़ोल्डर में ./helixsr-setup.sh फिर से चलाएँ और फ़्रेम जनरेशन के लिए हाँ चुनें (यह NVIDIA की DLSS Frame Generation फ़ाइलें डाउनलोड करता है)।",
+    "fg_not_built_short": "HelixSR के setup ने अभी फ़्रेम जनरेशन नहीं बनाया है",
+    "fg_no_dlssg": "इस गेम में DLSS Frame Generation नहीं है, जो HelixSR के फ़्रेम जनरेशन के लिए ज़रूरी है",
+    "fg_done_on": "{name}: HelixSR फ़्रेम जनरेशन चालू",
+    "fg_done_off": "{name}: HelixSR फ़्रेम जनरेशन बंद",
+    "fg_in_game": "गेम शुरू करें और उसकी सेटिंग्स में DLSS Frame Generation चालू करें।",
+    "busy_fg": "HelixSR फ़्रेम जनरेशन बदला जा रहा है…",
 }

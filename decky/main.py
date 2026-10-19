@@ -94,6 +94,9 @@ class Plugin:
     async def uninstall(self, app_id: int, remove_settings: bool = False):
         return await self._work(self.bridge.uninstall, int(app_id), bool(remove_settings))
 
+    async def set_frame_generation(self, app_id: int, on: bool):
+        return await self._work(self.bridge.set_frame_generation, int(app_id), bool(on))
+
     async def update_all(self):
         return await self._work(self.bridge.update_all)
 

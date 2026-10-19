@@ -1048,7 +1048,7 @@ class MainWindow(QMainWindow):
         actions = {"launch": self.launch, "choose": self.choose, "uninstall": self.uninstall,
                    "menu": self._choice_menu, "settings": self.edit_settings,
                    "log": self.show_log, "folder": self.open_folder,
-                   "opti_name": self.choose_opti_name}
+                   "opti_name": self.choose_opti_name, "frame_gen": self.frame_gen}
         version = self.folder.version if self.folder else None
         installed = outdated = 0
         for index, entry in enumerate(self.entries):
@@ -1340,12 +1340,19 @@ class MainWindow(QMainWindow):
         except (LookupError, OSError) as error:
             self.error_box(str(error))
 
-    def _run_action(self, message: str, fn: Callable, *args) -> None:
+    def frame_gen(self, entry: GameEntry, on: bool) -> None:
+        self._run_action(tr("busy_fg"), self.service.set_frame_generation, entry.app_id, on,
+                         refresh_on_error=True)
+
+    def _run_action(self, message: str, fn: Callable, *args,
+                    refresh_on_error: bool = False) -> None:
         def done(result):
             self.write_log(result)
             self.refresh(rescan=False)
 
         def on_error(error):
+            if refresh_on_error:   # a switch flipped on the card goes back to what is true
+                QTimer.singleShot(0, lambda: self.refresh(rescan=False))
             if isinstance(error, GameRunningError):
                 self.write_log(str(error))
                 self.error_box(str(error))

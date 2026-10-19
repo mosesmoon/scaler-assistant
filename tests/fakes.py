@@ -213,9 +213,28 @@ if command == "install":
         files.append("HelixSR-fsrfg/amd_fidelityfx_dx12.dll")
         (t / "OptiScaler.ini").write_text("[HelixSR]\n")
         files.append("OptiScaler.ini")
+        if args.get("--fg") == "on":
+            (t / "HelixSR-fsrfg" / "helixsr-fg").mkdir(exist_ok=True)
+            (t / "HelixSR-fsrfg" / "helixsr-fg" / "nvexec64.dll").write_bytes(b"MZ fg")
+            files.append("HelixSR-fsrfg/helixsr-fg/nvexec64.dll")
+            (t / "OptiScaler.ini").write_text(
+                "[HelixSR]\n[FrameGen]\nFGInput=nvngxfg\nFGNvngxReplacement=HelixSR\n")
         (t / "HelixSR-Scaler.files").write_text(
             "# HelixSR Scaler, installed by HelixSR Desktop\n# version=" +
             args.get("--scaler-version", "") + "\nname=" + name + "\n" + "\n".join(files) + "\n")
+    answer(game={})
+elif command == "scaler-fg":
+    t = exe_dir(args["--game"])
+    on = args["--on"] == "true"
+    fg = t / "HelixSR-fsrfg" / "helixsr-fg"
+    if on and not fg.is_dir():
+        fg.mkdir(parents=True)
+        (fg / "nvexec64.dll").write_bytes(b"MZ fg")
+        with open(t / "HelixSR-Scaler.files", "a") as f:
+            f.write("HelixSR-fsrfg/helixsr-fg/nvexec64.dll\n")
+    (t / "OptiScaler.ini").write_text(
+        "[HelixSR]\n[FrameGen]\nFGInput=" + ("nvngxfg" if on else "auto") +
+        "\nFGNvngxReplacement=" + ("HelixSR" if on else "auto") + "\n")
     answer(game={})
 elif command == "remove":
     answer(game={})
@@ -224,7 +243,8 @@ else:
 '''
 
 
-def make_helixsr_modern(folder: Path, version: str = "2.0.0", built: bool = True) -> Path:
+def make_helixsr_modern(folder: Path, version: str = "2.0.0", built: bool = True,
+                        fg: bool = False) -> Path:
     """A HelixSR 2.0 style release: HelixSR-fsrfg, helixsr-scaler and the installer."""
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "helixsr-setup.sh").write_text("#!/bin/sh\n")
@@ -235,4 +255,10 @@ def make_helixsr_modern(folder: Path, version: str = "2.0.0", built: bool = True
         b"MZ OptiScaler HelixSR Scaler v1.1.0 (marker)")
     (folder / "setup").mkdir(exist_ok=True)
     (folder / "setup" / "helixsr_bridge.py").write_text(FAKE_BRIDGE)
+    fg_dir = folder / "HelixSR-fsrfg" / "helixsr-fg"
+    fg_dir.mkdir(exist_ok=True)
+    (fg_dir / "nvexec64.dll").write_bytes(b"MZ fg executor (marker)")
+    if fg:   # what HelixSR's setup adds when it builds frame generation (stand-ins)
+        for name in ("_nvngx.dll", "nvngx_dlssg.dll", "hxfg_data.bin"):
+            (fg_dir / name).write_bytes(b"marker")
     return folder

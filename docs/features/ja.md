@@ -133,6 +133,7 @@ DLSS 3.7 では「⚙ 設定」でゲームの `helixsr.ini`（シャープ化�
 ## HelixSR 2.0 と GPU
 
 - **HelixSR 2.0 以降**はビルド済み DLL を `HelixSR-fsrfg` に置き、2 つの方式があります：**HelixSR Scaler**（`.exe` の横に置く HelixSR 独自の OptiScaler。ゲームで DLSS を選択。DX11 と Vulkan のゲームにも対応）と **FSR 方式**（FSR ドロップイン）。Scaler アシスタントは HelixSR フォルダー内のインストーラー（`setup/helixsr_bridge.py`、HelixSR 公式アプリが使うもの）で両方をインストールするため、HelixSR のセットアップ、そのアプリ、Scaler アシスタントは互いのインストールを認識・更新・削除できます。ファイル名は引き続き Scaler アシスタントが選び、必要なら起動オプションも追加します。以前の方式で設定したゲームは更新時に HelixSR Scaler へ移ります。HelixSR 1.8／1.9 のフォルダーでは従来の 3 方式のままです。
+- **HelixSR フレーム生成**（HelixSR 2.0）：DLSS Frame Generation（Streamline の `sl.dlss_g.dll`）を持つ DirectX 12 ゲームでは、HelixSR Scaler を入れるとカード（と Steam Deck プラグイン）に「HelixSR フレーム生成」スイッチが表示されます。HelixSR 自身のインストーラー（`scaler-fg`）で切り替え、OptiScaler.ini の `[FrameGen]` の選択だけを変更します。オンにしたらゲームで DLSS Frame Generation をオンにしてください。`./helixsr-setup.sh` が作成するフレーム生成（NVIDIA の DLSS Frame Generation ファイルをダウンロード）が必要で、それまではスイッチが理由付きでグレー表示になります。新規インストールではオフ、更新や OptiScaler のファイル名変更では状態を保ちます。ほかの DX12 ゲームでは HelixSR Scaler のメニュー（Insert）で AMD FSR や XeSS のフレーム生成を選べます。DX11／Vulkan ゲームと FSR 方式はアップスケールのみです。
 - **以前の HelixSR**：1.8.x は 3 方式（FSR 方式、OptiScaler 方式、DLSS 方式）すべて使えます。HelixSR 1.9.0～1.9.3 は FSR 方式のファイルしか含まないため、OptiScaler 方式と DLSS 方式はグレー表示（「HelixSR 1.8 か 2.0 が必要」）。FSR 3.1 のないゲームには HelixSR 2.0（HelixSR Scaler）が必要です。1.8.0 より前は非対応です。
 - **DLSS 方式は GeForce のみ**：AMD や Intel の GPU ではゲームで DLSS を選べないため、（HelixSR 1.x の）DLSS 方式は理由つきでグレー表示になります。
 - **FSR 4.1 Lossy をおすすめ**：内蔵グラフィックス（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）と Intel GPU では、FSR 4.1 の選択肢の中だけで「★ おすすめ」と表示します。

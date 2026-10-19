@@ -45,6 +45,7 @@ interface Game {
   anti_cheat: string[]; outdated: boolean; issues: string[]; notes: string[]; hint: string;
   opti_name: string; opti_possible: boolean; launch_options: string; shows_launch: boolean;
   has_log: boolean; choices: Choice[]; running: Live | null;
+  fg: boolean | null; fg_block: string;   // HelixSR frame generation (null: not offered)
 }
 interface Component {
   key: string; name: string; version: string; size: number; ready: boolean; wanted: boolean;
@@ -76,6 +77,7 @@ const lossyText = callable<[], string>("lossy_text");
 const acceptLossy = callable<[], void>("accept_lossy");
 const applyCall = callable<[appId: number, choice: string], Result>("apply");
 const removalCall = callable<[appId: number], Removal>("removal");
+const setFgCall = callable<[appId: number, on: boolean], Result>("set_frame_generation");
 const uninstallCall = callable<[appId: number, removeSettings: boolean], Result>("uninstall");
 const updateAllCall = callable<[], Result>("update_all");
 const downloadCall = callable<[keys: string[]], Result>("download");
@@ -329,6 +331,18 @@ function GameModal({ game, closeModal, refresh }: {
             ))}
           </Focusable>
         </DialogControlsSection>
+        {game.fg !== null && (
+          <DialogControlsSection>
+            <ToggleField label={t("fg_switch")} checked={game.fg} disabled={!!game.fg_block}
+              description={<span style={{ whiteSpace: "pre-wrap" }}>
+                {game.fg_block ? `⚠ ${game.fg_block}\n${t("fg_switch_tip")}` : t("fg_switch_tip")}</span>}
+              onChange={(on) => run(async () => {
+                const result = await working(t("busy_fg"), () => setFgCall(game.app_id, on));
+                await report(result);
+                return result.ok;
+              })} />
+          </DialogControlsSection>
+        )}
         <DialogControlsSection>
           <Focusable style={{ display: "flex", flexWrap: "wrap", gap: "6px" }}>
             {game.opti_possible && (

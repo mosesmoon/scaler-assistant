@@ -23,6 +23,30 @@ from .helixsr import HelixSRFolder
 TIMEOUT = 900   # an install copies a few hundred MB at most; a full game scan is part of each call
 
 
+# Runs the installer as `python -I script ...` would, except that a file or folder the user may
+# not read counts as not there (as os.path.exists does). HelixSR's scan looks into every game's
+# folders, and one folder elsewhere without read permission (a mod's, a root-owned one) would
+# otherwise stop it with PermissionError before it reaches the game being installed.
+_RUNNER = r"""
+import pathlib, runpy, sys
+def _tolerant(name):
+    original = getattr(pathlib.Path, name)
+    def method(self, *args, **kwargs):
+        try:
+            return original(self, *args, **kwargs)
+        except PermissionError:
+            return False
+    method.__name__ = name
+    setattr(pathlib.Path, name, method)
+for _name in ("exists", "is_file", "is_dir", "is_symlink"):
+    _tolerant(_name)
+del _tolerant, _name
+script = sys.argv[1]
+sys.argv = sys.argv[1:]
+runpy.run_path(script, run_name="__main__")
+"""
+
+
 class BridgeError(RuntimeError):
     def __init__(self, message: str, messages: Optional[list[str]] = None) -> None:
         super().__init__(message)
@@ -47,7 +71,8 @@ def run(folder: HelixSRFolder, command: str, *args: str) -> dict:
     for name in ("PYTHONHOME", "PYTHONPATH"):
         env.pop(name, None)
     try:
-        done = subprocess.run([python(), "-I", str(script), str(folder.path), command, *args],
+        done = subprocess.run([python(), "-I", "-c", _RUNNER, str(script), str(folder.path),
+                               command, *args],
                               capture_output=True, text=True, timeout=TIMEOUT, env=env,
                               cwd=str(folder.path), stdin=subprocess.DEVNULL)
     except (OSError, subprocess.SubprocessError) as error:
@@ -72,8 +97,9 @@ def run(folder: HelixSRFolder, command: str, *args: str) -> dict:
 
 
 def install(folder: HelixSRFolder, game_dir: str, way: str, name: Optional[str] = None,
-            anti_cheat_ok: bool = False) -> dict:
-    """way: 'scaler' (HelixSR Scaler) or 'fsr' (the FSR drop-in)."""
+            anti_cheat_ok: bool = False, fg: Optional[bool] = None) -> dict:
+    """way: 'scaler' (HelixSR Scaler) or 'fsr' (the FSR drop-in). fg: HelixSR's frame
+    generation on or off (HelixSR Scaler; None: an update keeps it as it was, new is off)."""
     args = ["--game", game_dir, "--way", way]
     if way == "scaler":
         args += ["--scaler", str(folder.scaler_pkg)]
@@ -84,6 +110,8 @@ def install(folder: HelixSRFolder, game_dir: str, way: str, name: Optional[str] 
             args += ["--scaler-name", name]
         if anti_cheat_ok:
             args += ["--anticheat-ok", "yes"]
+        if fg is not None:
+            args += ["--fg", "on" if fg else "off"]
     return run(folder, "install", *args)
 
 

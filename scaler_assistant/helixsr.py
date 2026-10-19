@@ -33,6 +33,10 @@ FSRFG = "HelixSR-fsrfg"
 BRIDGE = "setup/helixsr_bridge.py"
 SCALER_PKG = "helixsr-scaler"
 SCALER_DLL = "OptiScaler.dll"
+FG_DIR = "helixsr-fg"                         # HelixSR's frame generation, in HelixSR-fsrfg
+# What the setup puts into helixsr-fg when it builds frame generation (the release only has
+# the executor): NVIDIA's NGX core, NVIDIA's DLSS Frame Generation DLL and its data.
+FG_BUILT = ("_nvngx.dll", "nvngx_dlssg.dll", "hxfg_data.bin")
 _SCALER_VERSION = re.compile(rb"HelixSR Scaler v(\d+\.\d+\.\d+)")
 
 NETWORK_TAG = b"HXSRNET1"                    # trailer of a DLL that carries the network
@@ -130,6 +134,15 @@ class HelixSRFolder:
     @property
     def scaler_pkg(self) -> Path:
         return self.path / SCALER_PKG
+
+    @property
+    def fg_ready(self) -> bool:
+        """HelixSR's setup built frame generation (HelixSR 2.0 and newer)."""
+        fg = self.path / FSRFG / FG_DIR
+        if not self.modern or not (fg / "nvexec64.dll").is_file():
+            return False
+        names = {p.name.lower() for p in fg.rglob("*") if p.is_file()}
+        return all(n.lower() in names for n in FG_BUILT)
 
     def scaler_version(self) -> Optional[str]:
         """HelixSR Scaler's version, from its DLL (HelixSR 2.0 and newer)."""

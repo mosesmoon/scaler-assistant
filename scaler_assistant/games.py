@@ -47,6 +47,7 @@ OPTI_INI = "OptiScaler.ini"
 HX_FSRFG = "HelixSR-fsrfg"            # HelixSR 2.0 in a game with HelixSR Scaler
 HX_SCALER_FILES = "HelixSR-Scaler.files"   # HelixSR Scaler's install record
 HX_SCALER_BACKUP = "HelixSR-Scaler-backup"
+DLSS_FG = "sl.dlss_g.dll"             # Streamline's DLSS Frame Generation: HelixSR's FG runs there
 HX_SCALER_SUB = "OptiScaler"          # HelixSR Scaler's own FidelityFX / XeSS DLLs
 APIS = ("dx12", "dx11", "vulkan")
 
@@ -68,6 +69,7 @@ class GameLayout:
     anti_cheat: list[str] = field(default_factory=list)
     api: str = ""                                         # dx12, dx11, vulkan or "" (unknown)
     exe: Optional[str] = None                             # the main .exe in exe_dir
+    dlss_fg: bool = False                                 # DLSS Frame Generation (sl.dlss_g.dll)
 
     @property
     def has_fsr31(self) -> bool:
@@ -119,7 +121,8 @@ class GameLayout:
                    exe_dir=data.get("exe_dir"),
                    anti_cheat=list(data.get("anti_cheat") or []),
                    api=api if api in APIS else "",
-                   exe=data.get("exe"))
+                   exe=data.get("exe"),
+                   dlss_fg=bool(data.get("dlss_fg")))
 
 
 def walk(folder: Path, depth: int = _WALK_DEPTH) -> list[tuple[Path, list[str], list[str]]]:
@@ -229,6 +232,7 @@ def detect_layout(install_dir: Path | str, appinfo: Optional[dict] = None) -> Ga
     upscaler: list[Path] = []
     combined: list[Path] = []
     anti_cheat: set[str] = set()
+    dlss_fg = False
     for directory, dirs, files in tree:
         for name in dirs:
             label = _ANTI_CHEAT_DIRS.get(name.lower())
@@ -242,6 +246,8 @@ def detect_layout(install_dir: Path | str, appinfo: Optional[dict] = None) -> Ga
                 upscaler.append(directory / name)
             elif lower == FSR_COMBINED:
                 combined.append(directory / name)
+            elif lower == DLSS_FG:
+                dlss_fg = True
             for pattern, label in _ANTI_CHEAT_FILES:
                 if pattern.match(name):
                     anti_cheat.add(label)
@@ -256,4 +262,5 @@ def detect_layout(install_dir: Path | str, appinfo: Optional[dict] = None) -> Ga
         anti_cheat=sorted(anti_cheat),
         api=detect_api(exe, tree, exe_dir) if exe else "",
         exe=str(exe) if exe and exe.is_file() else None,
+        dlss_fg=dlss_fg,
     )

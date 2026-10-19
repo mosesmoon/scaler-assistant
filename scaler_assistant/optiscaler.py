@@ -170,6 +170,13 @@ def set_value(text: str, section: str, key: str, value: str) -> str:
     return "".join(lines)
 
 
+def section_text(text: str, section: str) -> str:
+    """The lines of the first [section] ("" when there is none)."""
+    lines = text.splitlines(keepends=True)
+    found = _section(lines, section)
+    return "".join(lines[found[0]:found[1]]) if found else ""
+
+
 def get_value(text: str, key: str) -> Optional[str]:
     match = re.search(r"(?m)^\s*%s\s*=\s*([^\r\n;]*)" % re.escape(key), text)
     return match.group(1).strip() if match else None
