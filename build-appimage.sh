@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Build HelixSR_Assistant-<version>-x86_64.AppImage.
+# Build Scaler_Assistant-<version>-x86_64.AppImage.
 #
 # The AppImage bundles a relocatable CPython (python-build-standalone, via uv)
 # and PyQt6 wheels, so it runs without any Python/Qt packages on the host.
@@ -13,11 +13,14 @@ here="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 build="$here/build"
 appdir="$build/AppDir"
 python_version="${PYTHON_VERSION:-3.13}"
-version="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' "$here/helixsr_assistant/__init__.py")"
-output="$here/dist/HelixSR_Assistant-${version}-x86_64.AppImage"
+version="$(sed -n 's/^__version__ = "\(.*\)"/\1/p' "$here/scaler_assistant/__init__.py")"
+output="$here/dist/Scaler_Assistant-${version}-x86_64.AppImage"
 release_notes="$here/docs/releases/${version}.md"
-notes_output="$here/dist/HelixSR_Assistant-${version}-README.md"
+notes_output="$here/dist/Scaler_Assistant-${version}-README.md"
 appimagetool_url="https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage"
+# 7-Zip's static Linux build unpacks OptiScaler's .7z (BCJ2), which Python can't.
+seven_zip_url="https://github.com/ip7z/7zip/releases/download/25.01/7z2501-linux-x64.tar.xz"
+seven_zip_sha256="4ca3b7c6f2f67866b92622818b58233dc70367be2f36b498eb0bdeaaa44b53f4"
 
 command -v uv >/dev/null || { echo "需要 uv：https://docs.astral.sh/uv/" >&2; exit 1; }
 # Every release ships with its multilingual release notes.
@@ -55,8 +58,24 @@ find "$site" -mindepth 1 -maxdepth 1 ! -name README.txt -exec rm -rf {} +
 echo "==> 安裝 PyQt6"
 uv pip install --python "$py" --target "$site" --link-mode copy --no-cache PyQt6
 
-echo "==> 複製 HelixSR 助手"
-cp -r "$here/helixsr_assistant" "$site/"
+echo "==> 複製 Scaler 助手"
+cp -r "$here/scaler_assistant" "$site/"
+
+echo "==> 加入 7-Zip（解開 OptiScaler 的 .7z）"
+seven_zip_archive="$build/$(basename "$seven_zip_url")"
+if ! echo "$seven_zip_sha256  $seven_zip_archive" | sha256sum -c --status 2>/dev/null; then
+    curl -fL --progress-bar -o "$seven_zip_archive" "$seven_zip_url"
+    echo "$seven_zip_sha256  $seven_zip_archive" | sha256sum -c --status || {
+        echo "錯誤：7-Zip 下載檔的 SHA-256 不符" >&2; exit 1; }
+fi
+mkdir -p "$appdir/usr/7zip"
+tar -xJf "$seven_zip_archive" -C "$appdir/usr/7zip" 7zzs License.txt readme.txt
+cat > "$appdir/usr/7zip/SOURCE.txt" <<'SOURCE'
+7zzs is the static Linux x64 build of 7-Zip 25.01 by Igor Pavlov, unchanged.
+Its licence is in License.txt (GNU LGPL with the unRAR restriction, BSD 3-clause, BSD 2-clause).
+Source code: https://github.com/ip7z/7zip/releases/tag/25.01 (7z2501-src.tar.xz) and https://7-zip.org
+Scaler Assistant uses it only to unpack the OptiScaler release it downloads.
+SOURCE
 
 echo "==> 精簡體積"
 qt="$site/PyQt6/Qt6"
@@ -85,7 +104,7 @@ rm -rf "$appdir/usr/python/lib/python3"*/{test,idlelib,tkinter,turtledemo,ensure
        "$site/pip" "$site/pip-"* "$site/bin"  # bin: PyQt6 dev tools with build-path shebangs
 find "$appdir" -name '__pycache__' -prune -exec rm -rf {} +
 # Strip the build directory from the recorded source paths.
-"$py" -m compileall -q -s "$appdir" -p / "$site/helixsr_assistant" >/dev/null
+"$py" -m compileall -q -s "$appdir" -p / "$site/scaler_assistant" >/dev/null
 
 echo "==> 寫入 AppRun / desktop / icon"
 cat > "$appdir/AppRun" <<'APPRUN'
@@ -93,31 +112,33 @@ cat > "$appdir/AppRun" <<'APPRUN'
 here="$(dirname "$(readlink -f "${BASH_SOURCE[0]}")")"
 export PYTHONNOUSERSITE=1
 unset PYTHONHOME PYTHONPATH QT_PLUGIN_PATH QML2_IMPORT_PATH
-exec "$here/usr/python/bin/python3" -m helixsr_assistant "$@"
+export SCALER_ASSISTANT_7Z="$here/usr/7zip/7zzs"
+exec "$here/usr/python/bin/python3" -m scaler_assistant "$@"
 APPRUN
 chmod +x "$appdir/AppRun"
 
-cat > "$appdir/helixsr-assistant.desktop" <<'DESKTOP'
+cat > "$appdir/scaler-assistant.desktop" <<'DESKTOP'
 [Desktop Entry]
 Type=Application
-Name=HelixSR 助手
-Name[en]=HelixSR Assistant
-Comment=為 Steam 遊戲一鍵安裝、切換或移除 HelixSR
-Comment[en]=Install, switch or remove HelixSR in Steam games
-Exec=helixsr-assistant
-Icon=helixsr-assistant
+Name=Scaler 助手
+Name[en]=Scaler Assistant
+Comment=為 Steam 遊戲選擇 DLSS 3.7（HelixSR）、FSR 4.1 或 FSR 3 升頻
+Comment[en]=Choose DLSS 3.7 (HelixSR), FSR 4.1 or FSR 3 upscaling for Steam games
+Exec=scaler-assistant
+Icon=scaler-assistant
 Terminal=false
 Categories=Game;
-StartupWMClass=helixsr-assistant
+StartupWMClass=scaler-assistant
 DESKTOP
-cp "$here/packaging/helixsr-assistant.png" "$appdir/helixsr-assistant.png"
-ln -sf helixsr-assistant.png "$appdir/.DirIcon"
+cp "$here/packaging/scaler-assistant.png" "$appdir/scaler-assistant.png"
+ln -sf scaler-assistant.png "$appdir/.DirIcon"
 mkdir -p "$appdir/usr/share/icons/hicolor/256x256/apps"
-cp "$here/packaging/helixsr-assistant.png" "$appdir/usr/share/icons/hicolor/256x256/apps/"
+cp "$here/packaging/scaler-assistant.png" "$appdir/usr/share/icons/hicolor/256x256/apps/"
 
 echo "==> 自我檢查"
 # No bytecode from this run: it would record the build machine's paths.
-PYTHONDONTWRITEBYTECODE=1 QT_QPA_PLATFORM=offscreen "$appdir/AppRun" --self-test
+# From / so that python -m finds the bundled package, not this source tree.
+(cd / && PYTHONDONTWRITEBYTECODE=1 QT_QPA_PLATFORM=offscreen "$appdir/AppRun" --self-test)
 
 echo "==> 檢查是否含有建置機器的路徑"
 for leak in "$HOME" "$here"; do

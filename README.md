@@ -1,4 +1,4 @@
-# HelixSR Assistant (HelixSR 助手)
+# Scaler Assistant (Scaler 助手)
 
 **English** · [台灣正體中文](#台灣正體中文)
 
@@ -6,176 +6,194 @@
 
 ## English
 
-A desktop tool (PyQt6) that installs, switches, updates and removes [HelixSR](https://github.com/lonewolf0622/HelixSR) in your Steam games with one click, and shows whether HelixSR is actually running when you play. For Linux desktops, laptops and the Steam Deck's Desktop Mode.
+A desktop tool (PyQt6) that lets you choose the upscaler for each Steam game — **DLSS 3.7 ([HelixSR](https://github.com/lonewolf0622/HelixSR))**, **FSR 4.1 Exact / Lossy** ([fsr4-shader-performance-overrides](https://github.com/zgauthier2000/fsr4-shader-performance-overrides); AMD's own FSR 4.1 on RX 9000) or **FSR 3** — and installs, switches, updates, repairs and removes it with one click. It detects each game's graphics API and upscalers, picks a file name for OptiScaler that works in the game, sets OptiScaler.ini for your choice and adds the Steam launch option when one is needed, without touching anything else in your launch options. For Linux desktops, laptops and the Steam Deck's Desktop Mode, and as a **Steam Deck plugin for [Decky Loader](https://decky.xyz)** that does the same from the Quick Access menu in Game Mode. Formerly HelixSR Assistant.
 
-HelixSR runs NVIDIA's DLSS Model E upscaling network on AMD GPUs (RDNA 1 and newer) through Proton. It has no launch options or central settings: it is installed by putting DLLs into each game's folder, one of three ways per game. HelixSR Assistant does that for you, keeps everything it replaces, and puts it all back on removal.
+> ⚠ **Scaler Assistant contains no upscaler files.** FSR 4.1 and FSR 3 run through OptiScaler, which it downloads (with the FSR 4.1 DLLs for your GPU) only when you agree. For DLSS 3.7, download HelixSR 1.8.0 or newer from its [releases](https://github.com/lonewolf0622/HelixSR/releases) and run `./helixsr-setup.sh` in its folder once.
 
-> ⚠ **HelixSR Assistant does not include HelixSR.** Download HelixSR 1.8.0 or newer from its [releases](https://github.com/lonewolf0622/HelixSR/releases) and run `./helixsr-setup.sh` in its folder once (this builds HelixSR's network on your PC) before using it.
-
-**Download**: the AppImage is on the [Releases](https://github.com/mosesmoon/helixsr-assistant/releases) page.
+**Download**: the AppImage and the Decky plugin (`Scaler_Assistant-Decky-<version>.zip`) are on the [Releases](https://github.com/mosesmoon/scaler-assistant/releases) page.
 
 **Full feature guide** (12 languages): [English](docs/features/en.md) · [台灣正體中文](docs/features/zh_TW.md) · [简体中文](docs/features/zh_CN.md) · [日本語](docs/features/ja.md) · [Deutsch](docs/features/de.md) · [Français](docs/features/fr.md) · [Español](docs/features/es.md) · [Italiano](docs/features/it.md) · [ไทย](docs/features/th.md) · [Tiếng Việt](docs/features/vi.md) · [Bahasa Melayu](docs/features/ms.md) · [हिन्दी](docs/features/hi.md)
 
 ### Screenshots
 
-![Main window: one game running with HelixSR loaded, one with an update available](screenshot/01-game-list.png)
+![Main window: games with FSR 4.1 Exact, FSR 4.1 Lossy (OptiScaler as winmm.dll) and FSR 3, one running](screenshot/01-game-list.png)
 
 | | |
 |---|---|
-| ![Install ways](screenshot/02-install-ways.png)<br>Pick another way from the Install button's arrow | ![Settings](screenshot/03-settings.png)<br>HelixSR settings (helixsr.ini) as a form |
-| ![DLSS way warning](screenshot/04-dlss-warning.png)<br>The experimental DLSS way explains its risks first | ![Setup needed](screenshot/05-setup-needed.png)<br>Guidance until HelixSR's network is built |
+| ![Choose upscaler](screenshot/02-choose-upscaler.png)<br>The upscaler menu: DLSS 3.7 (HelixSR) with its ways, FSR 4.1 Exact / Lossy, FSR 3 | ![Downloads](screenshot/03-downloads.png)<br>OptiScaler and FSR 4.1 downloads and the FSR 4.1 build for your GPU |
+| ![OptiScaler file name](screenshot/04-optiscaler-name.png)<br>OptiScaler's file name, chosen automatically or by hand | ![HelixSR](screenshot/05-helixsr.png)<br>The HelixSR folder for DLSS 3.7 |
+| ![Light theme](screenshot/06-light-theme.png)<br>The light theme (Auto follows the desktop) | |
 
 The games in these screenshots are made up.
 
 ### Changelog
 
-Multilingual release notes for each version are in [`docs/releases/`](docs/releases/). The build attaches them next to the AppImage (`dist/HelixSR_Assistant-<version>-README.md`).
+Multilingual release notes for each version are in [`docs/releases/`](docs/releases/). The build attaches them next to the AppImage (`dist/Scaler_Assistant-<version>-README.md`).
 
 | Version | Date | Summary |
 |---|---|---|
-| [1.0.0](docs/releases/1.0.0.md) | 2026-10-14 | First release |
+| [1.0.0](docs/releases/1.0.0.md) | 2026-10-19 | First release: DLSS 3.7 (HelixSR), FSR 4.1 Exact / Lossy, FSR 3; Liquid Glass window; Decky plugin for the Steam Deck |
 
 ### Features
 
-- **Scans Steam games and their upscalers**: finds the FSR 3.1, DLSS, XeSS and FSR 2 DLLs in every game, the folder of its main `.exe`, and whether it has anti-cheat. Lists which of HelixSR's ways work for each game.
-- **One-click install** of the three ways HelixSR offers, the default first:
+- **One menu per game**: DLSS 3.7 (HelixSR: FSR way, OptiScaler way, experimental DLSS way), FSR 4.1 Exact, FSR 4.1 Lossy (FSR 4.1 by AMD on RX 9000), FSR 3, or remove. Only what works for the game is offered.
 
-  | Way | The game needs | What changes | Select in the game |
-  |---|---|---|---|
-  | FSR way (f) | FSR 3.1 | The game's FSR 3.1 DLL is replaced by HelixSR (kept as `*.original.dll`) | AMD FSR |
-  | OptiScaler way (o) | DLSS, XeSS or FSR 2 | OptiScaler next to the `.exe`, pointed at a `HelixSR` folder; replaced files go to `HelixSR/backup` | DLSS |
-  | DLSS way (d, experimental) | DLSS | HelixSR's DLSS loader (`dxgi.dll`) and HelixSR as `nvngx.dll` next to the `.exe` | DLSS |
+  | Choice | The game needs | In the game, select |
+  |---|---|---|
+  | DLSS 3.7 (HelixSR) | Direct3D 12 with FSR 3.1, DLSS, XeSS or FSR 2 | AMD FSR (FSR way) or DLSS |
+  | FSR 4.1 Exact / Lossy / AMD | DLSS, XeSS, FSR 2 or FSR 3.1 (DX12; DX11 and Vulkan through OptiScaler's DX12 path) | DLSS, FSR or XeSS |
+  | FSR 3 | DLSS, XeSS, FSR 2 or FSR 3.1 (DX12, DX11, Vulkan) | DLSS, FSR or XeSS |
 
-- **Switch, update, repair, remove**: switch ways (settings move along), update games to the build in your HelixSR folder ("Update all"), repair games after a game update or "Verify integrity" put the game's files back, and remove with every file restored.
-- **HelixSR settings as a form**: sharpening, int8 network, Ultra Performance final pass and wave size in each game's `helixsr.ini`; other lines and comments are kept.
-- **Live HelixSR status**: running games are checked every 3 seconds; `/proc/<pid>/maps` shows whether HelixSR (and OptiScaler or the DLSS loader) is really loaded, and `helixsr.log` from the current run shows the wave size and errors. On RDNA 3 and newer with the OptiScaler way, "Set WaveSize = 64" is offered when the log says wave32.
-- **Overlay on game start**: a card in the bottom-right corner when HelixSR loads (or a hint if it has not loaded after 90 seconds). Separate X11 window, never takes focus, can be turned off.
-- **Safe by design**: nothing changes unless the HelixSR folder is set up and the game is closed; the DLSS way and games with anti-cheat need confirmation; every copy is verified byte for byte.
-- **Works with HelixSR's own setup**: the same install record (`helixsr-install.json`), backups and file names, so `helixsr-setup.sh` / `helixsr-uninstall.sh` and HelixSR Assistant recognise each other's games.
+- **Detects each game**: upscaler DLLs, the main `.exe` folder, the graphics API (from the `.exe`'s imports) and anti-cheat.
+- **OptiScaler's file name** picked for the game: your choice, an existing OptiScaler, OptiScaler's compatibility list, `winmm.dll` for Vulkan, a free name when `dxgi.dll` is taken (game, ReShade or your launch options), else `dxgi.dll`. Files already there go to a backup folder.
+- **Launch options left intact**: names other than `dxgi.dll` / `d3d12.dll` need `WINEDLLOVERRIDES`; only that one entry is inserted (inside your existing `WINEDLLOVERRIDES` if you have one) and later only that entry is taken out. Written live through Steam when possible, otherwise Steam is closed and restarted first (with your confirmation).
+- **Downloads on request**: OptiScaler 0.9.4 and FSR 4.1 Exact / Lossy (graphics-card or integrated-graphics build, chosen from your GPU), pinned releases checked by SHA-256. RDNA 4 uses AMD's own FSR 4.1; other GPUs get FSR 4's INT8 model. FSR 4.1 Lossy shows its `WARNING.txt` first.
+- **OptiScaler.ini** edited section by section: only the upscaler keys, `UpscalerIndex`, `Fsr4Update`, `Fsr4ForceEnableInt8` and the FidelityFX DLL paths change.
+- **Switch, update, repair, remove**: switching removes the current choice first; "Update all" brings games to your HelixSR build and the current downloads; "Repair" fixes games after a game update (and a missing launch option); removal puts every file back.
+- **HelixSR settings** (`helixsr.ini`) as a form, **live status** of what is really loaded in a running game, and an **overlay** when a game starts.
+- **Works with HelixSR's own setup**: same install record (`helixsr-install.json`) and backups for DLSS 3.7.
+- **Liquid Glass look** (after MAKO Assistant): a card per game with its cover, status and a details panel; clear crystal buttons without gradients; dark, light or automatic theme.
+- **Steam Deck plugin (Decky Loader)**: the same choices, downloads, OptiScaler name and launch-option handling from the Quick Access menu in Game Mode, with a notification when a game starts. It shares settings and downloads with the desktop app. HelixSR's own `helixsr.ini` settings stay in the desktop app.
 - **Languages**: 台灣正體中文, 简体中文, English, 日本語, Deutsch, Français, Español, Italiano, ไทย, Tiếng Việt, Bahasa Melayu, हिन्दी.
 
 ### Install and run
 
-**AppImage (recommended)**: Python and Qt are included, so nothing else needs to be installed.
+**AppImage (recommended)**: Python, Qt and 7-Zip are included.
 
-1. Download `HelixSR_Assistant-<version>-x86_64.AppImage` from the [Releases](https://github.com/mosesmoon/helixsr-assistant/releases) page.
+1. Download `Scaler_Assistant-<version>-x86_64.AppImage` from the [Releases](https://github.com/mosesmoon/scaler-assistant/releases) page.
 2. Make it executable: right-click the file → Properties → Permissions, and turn on "Allow executing file as program" (the wording varies by file manager).
-3. Double-click it to open HelixSR Assistant.
-
-Or in a terminal:
+3. Double-click it.
 
 ```bash
-chmod +x HelixSR_Assistant-*-x86_64.AppImage
-./HelixSR_Assistant-*-x86_64.AppImage
+chmod +x Scaler_Assistant-*-x86_64.AppImage
+./Scaler_Assistant-*-x86_64.AppImage
 ```
 
-**From source**: Python 3.11+ and PyQt6 (Arch: `sudo pacman -S python-pyqt6`).
+**Steam Deck (Decky Loader)**: install [Decky Loader](https://decky.xyz) first.
+
+1. Download `Scaler_Assistant-Decky-<version>.zip` from the [Releases](https://github.com/mosesmoon/scaler-assistant/releases) page.
+2. In Game Mode open the Quick Access menu → Decky → ⚙ → Developer (turn on Developer mode in Decky's General settings first) → "Install Plugin from ZIP File", and pick the zip.
+3. Open Scaler Assistant in the Quick Access menu's Decky tab. For DLSS 3.7, set up HelixSR once in Desktop Mode (`./helixsr-setup.sh`) and choose its folder in the plugin.
+
+**From source**: Python 3.11+, PyQt6 (Arch: `sudo pacman -S python-pyqt6`) and 7-Zip or bsdtar to unpack OptiScaler (`sudo pacman -S 7zip`).
 
 ```bash
-./install.sh           # install to ~/.local/share/helixsr-assistant and add a menu entry
-helixsr-assistant      # or run ./helixsr-assistant from the source folder
+./install.sh           # install to ~/.local/share/scaler-assistant and add a menu entry
+scaler-assistant       # or run ./scaler-assistant from the source folder
 ```
 
 ### Development
 
 ```bash
-python3 -m unittest discover -s . -p "test_*.py" -v   # tests (no PyQt6 needed)
-./build-appimage.sh                                    # dist/HelixSR_Assistant-<version>-x86_64.AppImage
+python3 -m unittest discover -s tests -t . -v   # tests (no PyQt6 needed)
+./build-appimage.sh                              # dist/Scaler_Assistant-<version>-x86_64.AppImage
+./build-decky.sh                                 # dist/Scaler_Assistant-Decky-<version>.zip (needs Node.js)
 ```
 
-The AppImage bundles a portable CPython 3.13 (uv / python-build-standalone) and a trimmed PyQt6. Building needs `uv` and network access (PyQt6 wheels and appimagetool).
+The Decky plugin is in `decky/`: a React panel (`src/index.tsx`, built with `@decky/rollup`) and a Python backend (`main.py`) that runs the same `scaler_assistant` package (its `deck.py` bridge) without the desktop window.
 
-HelixSR Assistant's own state is in `~/.config/helixsr-assistant/state.json`.
+The AppImage bundles a portable CPython 3.13 (uv / python-build-standalone), a trimmed PyQt6 and 7-Zip's static `7zzs` (with its licence). Building needs `uv` and network access.
+
+Scaler Assistant's state is in `~/.config/scaler-assistant/state.json` (taken over once from `~/.config/helixsr-assistant`); downloads are in `~/.local/share/scaler-assistant/components/`.
 
 ### Licences
 
-HelixSR Assistant is an independent, unofficial tool, not affiliated with or endorsed by HelixSR's author, NVIDIA, AMD or the OptiScaler project, and it contains none of their files. Its installer is its own code following the manual steps HelixSR's README documents. HelixSR is free to use under the HelixSR Freeware License. After HelixSR's setup, HelixSR's DLLs contain NVIDIA's network: HelixSR Assistant only copies them between folders on your own PC. Never share or upload them.
+Scaler Assistant is an independent, unofficial tool, not affiliated with or endorsed by HelixSR's author, NVIDIA, AMD, the OptiScaler project or the fsr4-shader-performance-overrides project, and it contains none of their files. On request it downloads OptiScaler (GPL-3.0; fakenvapi MIT; AMD's FidelityFX DLLs under AMD's licence) and the FSR 4.1 DLLs (GPL-2.0-or-later, modified AMD DLLs with AMD's notice) from their GitHub releases. The AppImage and the Decky plugin include 7-Zip's `7zzs` (GNU LGPL with the unRAR restriction, BSD). HelixSR is free to use under the HelixSR Freeware License; after its setup, HelixSR's DLLs contain NVIDIA's network, so Scaler Assistant only copies them between folders on your own PC. Never share or upload them.
 
 ---
 
 ## 台灣正體中文
 
-一套桌面工具（PyQt6），能一鍵為 Steam 遊戲安裝、切換、更新或移除 [HelixSR](https://github.com/lonewolf0622/HelixSR)，並在你玩遊戲時顯示 HelixSR 是否真的在運作。適用於一般 Linux 桌機、筆電，以及 Steam Deck 的桌面模式。
+一套桌面工具（PyQt6），讓你替每款 Steam 遊戲選擇升頻技術——**DLSS 3.7（[HelixSR](https://github.com/lonewolf0622/HelixSR)）**、**FSR 4.1 Exact／Lossy**（[fsr4-shader-performance-overrides](https://github.com/zgauthier2000/fsr4-shader-performance-overrides)；RX 9000 用 AMD 原生 FSR 4.1）或 **FSR 3**——並一鍵安裝、切換、更新、修復、移除。它會偵測每款遊戲的繪圖 API 和升頻技術，替 OptiScaler 選擇遊戲能用的檔名，依你的選擇設定 OptiScaler.ini，需要時加入 Steam 啟動選項，而且不會動到啟動選項的其他內容。適用於 Linux 桌機、筆電與 Steam Deck 桌面模式，也有 **[Decky Loader](https://decky.xyz) 的 Steam Deck 外掛**，在遊戲模式的快速存取選單中做同樣的事。前身為 HelixSR 助手。
 
-HelixSR 透過 Proton，把 NVIDIA DLSS Model E 的升頻神經網路跑在 AMD 顯示卡（RDNA 1 以上）上。它沒有啟動選項，也沒有集中的設定檔：安裝方式是把 DLL 放進每款遊戲的資料夾，每款遊戲有三種方式可選。HelixSR 助手替你完成這些步驟，保留所有被取代的檔案，移除時全部放回原處。
+> ⚠ **Scaler 助手不含任何升頻檔案。** FSR 4.1 和 FSR 3 透過 OptiScaler 執行，只有在你同意時才會下載它（以及適合你顯示卡的 FSR 4.1 DLL）。使用 DLSS 3.7 前，請從 [HelixSR 的 Releases](https://github.com/lonewolf0622/HelixSR/releases) 下載 HelixSR 1.8.0 以上，並在它的資料夾執行一次 `./helixsr-setup.sh`。
 
-> ⚠ **HelixSR 助手不包含 HelixSR。** 使用前請先從 [HelixSR 的 Releases](https://github.com/lonewolf0622/HelixSR/releases) 下載 HelixSR 1.8.0 以上，並在它的資料夾執行一次 `./helixsr-setup.sh`（這會在你的電腦上建立 HelixSR 的神經網路）。
-
-**下載**：AppImage 放在 [Releases](https://github.com/mosesmoon/helixsr-assistant/releases) 頁面。
+**下載**：AppImage 與 Decky 外掛（`Scaler_Assistant-Decky-<版本>.zip`）放在 [Releases](https://github.com/mosesmoon/scaler-assistant/releases) 頁面。
 
 **完整功能介紹**（12 種語言）：[English](docs/features/en.md) · [台灣正體中文](docs/features/zh_TW.md) · [简体中文](docs/features/zh_CN.md) · [日本語](docs/features/ja.md) · [Deutsch](docs/features/de.md) · [Français](docs/features/fr.md) · [Español](docs/features/es.md) · [Italiano](docs/features/it.md) · [ไทย](docs/features/th.md) · [Tiếng Việt](docs/features/vi.md) · [Bahasa Melayu](docs/features/ms.md) · [हिन्दी](docs/features/hi.md)
 
 ### 截圖
 
-![主視窗：一款遊戲執行中且已載入 HelixSR，另一款有新版可更新](screenshot/01-game-list.png)
+![主視窗：使用 FSR 4.1 Exact、FSR 4.1 Lossy（OptiScaler 名稱 winmm.dll）與 FSR 3 的遊戲，其中一款執行中](screenshot/01-game-list.png)
 
 | | |
 |---|---|
-| ![安裝方式](screenshot/02-install-ways.png)<br>從「安裝 HelixSR」按鈕的箭頭選擇其他方式 | ![設定](screenshot/03-settings.png)<br>以表單編輯 HelixSR 設定（helixsr.ini） |
-| ![DLSS 方式警告](screenshot/04-dlss-warning.png)<br>實驗性的 DLSS 方式會先說明風險 | ![需要先執行 setup](screenshot/05-setup-needed.png)<br>HelixSR 網路建立前的引導說明 |
+| ![選擇升頻](screenshot/02-choose-upscaler.png)<br>升頻選單：DLSS 3.7（HelixSR）及其方式、FSR 4.1 Exact／Lossy、FSR 3 | ![下載檔](screenshot/03-downloads.png)<br>OptiScaler 與 FSR 4.1 下載檔，以及適合你顯示卡的 FSR 4.1 版本 |
+| ![OptiScaler 檔名](screenshot/04-optiscaler-name.png)<br>OptiScaler 的檔名可自動或手動選擇 | ![HelixSR](screenshot/05-helixsr.png)<br>DLSS 3.7 使用的 HelixSR 資料夾 |
+| ![淺色主題](screenshot/06-light-theme.png)<br>淺色主題（「自動」跟隨桌面設定） | |
 
 截圖中的遊戲都是虛構的。
 
 ### 更新紀錄
 
-各版本的多語系更新說明放在 [`docs/releases/`](docs/releases/)。建置時會附在 AppImage 旁（`dist/HelixSR_Assistant-<版本>-README.md`）。
+各版本的多語系更新說明放在 [`docs/releases/`](docs/releases/)。建置時會附在 AppImage 旁（`dist/Scaler_Assistant-<版本>-README.md`）。
 
 | 版本 | 日期 | 摘要 |
 |---|---|---|
-| [1.0.0](docs/releases/1.0.0.md) | 2026-10-14 | 第一版 |
+| [1.0.0](docs/releases/1.0.0.md) | 2026-10-19 | 第一版：DLSS 3.7（HelixSR）、FSR 4.1 Exact／Lossy、FSR 3；Liquid Glass 視窗；Steam Deck 的 Decky 外掛 |
 
 ### 功能
 
-- **掃描 Steam 遊戲及其升頻技術**：在每款遊戲中找出 FSR 3.1、DLSS、XeSS 和 FSR 2 的 DLL、主要 `.exe` 所在資料夾，以及是否含有反作弊。列出每款遊戲可用的 HelixSR 安裝方式。
-- **一鍵安裝** HelixSR 提供的三種方式，預設方式排第一：
+- **每款遊戲一個選單**：DLSS 3.7（HelixSR：FSR 方式、OptiScaler 方式、實驗性 DLSS 方式）、FSR 4.1 Exact、FSR 4.1 Lossy（RX 9000 為 AMD 的 FSR 4.1）、FSR 3，或移除。只列出這款遊戲能用的項目。
 
-  | 方式 | 遊戲需要具備 | 變更內容 | 遊戲內選擇 |
-  |---|---|---|---|
-  | FSR 方式（f） | FSR 3.1 | 遊戲的 FSR 3.1 DLL 被 HelixSR 取代（原檔保留為 `*.original.dll`） | AMD FSR |
-  | OptiScaler 方式（o） | DLSS、XeSS 或 FSR 2 | 在 `.exe` 旁放入 OptiScaler，指向 `HelixSR` 資料夾；被取代的檔案移到 `HelixSR/backup` | DLSS |
-  | DLSS 方式（d，實驗性） | DLSS | 在 `.exe` 旁放入 HelixSR 的 DLSS 載入器（`dxgi.dll`）及以 `nvngx.dll` 為名的 HelixSR | DLSS |
+  | 選項 | 遊戲需要 | 遊戲內選擇 |
+  |---|---|---|
+  | DLSS 3.7（HelixSR） | Direct3D 12，且有 FSR 3.1、DLSS、XeSS 或 FSR 2 | AMD FSR（FSR 方式）或 DLSS |
+  | FSR 4.1 Exact／Lossy／AMD | DLSS、XeSS、FSR 2 或 FSR 3.1（DX12；DX11 與 Vulkan 經由 OptiScaler 的 DX12 路徑） | DLSS、FSR 或 XeSS |
+  | FSR 3 | DLSS、XeSS、FSR 2 或 FSR 3.1（DX12、DX11、Vulkan） | DLSS、FSR 或 XeSS |
 
-- **切換、更新、修復、移除**：切換方式（設定一併帶過去）、把遊戲更新到 HelixSR 資料夾中的版本（「全部更新」）、在遊戲更新或「驗證遊戲檔案」把遊戲原檔放回後修復，移除時所有檔案恢復原狀。
-- **以表單調整 HelixSR 設定**：每款遊戲 `helixsr.ini` 中的銳利化、int8 網路、超高效能模式的最後縮放和 wave 大小；檔案中的其他設定和註解都會保留。
-- **HelixSR 即時狀態**：每 3 秒檢查執行中的遊戲；從 `/proc/<pid>/maps` 確認 HelixSR（以及 OptiScaler 或 DLSS 載入器）是否真的載入，並從本次執行的 `helixsr.log` 顯示 wave 大小和錯誤。RDNA 3 以上顯示卡使用 OptiScaler 方式時，若記錄顯示 wave32，會提供「設定 WaveSize = 64」。
-- **遊戲啟動時的浮動提示**：HelixSR 載入時在右下角顯示小卡片（90 秒後仍未載入則提示要選什麼）。獨立的 X11 視窗，不會搶焦點，可關閉。
-- **以安全為設計原則**：HelixSR 資料夾尚未設定好或遊戲正在執行時不做任何變更；DLSS 方式和含反作弊的遊戲需要確認；每次複製都逐位元組比對。
-- **與 HelixSR 本身的 setup 互通**：使用相同的安裝紀錄（`helixsr-install.json`）、備份和檔名，`helixsr-setup.sh`／`helixsr-uninstall.sh` 與 HelixSR 助手都認得對方安裝的遊戲。
+- **偵測每款遊戲**：升頻 DLL、主要 `.exe` 資料夾、繪圖 API（讀 `.exe` 的匯入表）與反作弊。
+- **替 OptiScaler 選檔名**：你的選擇、已存在的 OptiScaler、OptiScaler 相容性清單、Vulkan 用 `winmm.dll`、`dxgi.dll` 被占用（遊戲、ReShade 或你的啟動選項）時改用空著的名稱，否則 `dxgi.dll`。原本就在的檔案會移到備份資料夾。
+- **啟動選項保持原樣**：`dxgi.dll`／`d3d12.dll` 以外的檔名需要 `WINEDLLOVERRIDES`；只插入這一項（若你已有 `WINEDLLOVERRIDES` 就加在它裡面），之後也只移除這一項。可以時透過 Steam 即時寫入，否則先經你確認再關閉並重新開啟 Steam。
+- **按需下載**：OptiScaler 0.9.4 與 FSR 4.1 Exact／Lossy（依顯示卡選獨立顯示卡版或內建顯示晶片版），固定版本並核對 SHA-256。RDNA 4 使用 AMD 原生 FSR 4.1；其他 GPU 使用 FSR 4 的 INT8 模型。FSR 4.1 Lossy 會先顯示它的 `WARNING.txt`。
+- **OptiScaler.ini** 依區段修改：只改升頻 key、`UpscalerIndex`、`Fsr4Update`、`Fsr4ForceEnableInt8` 和 FidelityFX DLL 路徑。
+- **切換、更新、修復、移除**：切換時先移除目前的選項；「全部更新」把遊戲更新到你的 HelixSR 版本與目前的下載檔；「修復」處理遊戲更新後的問題（以及消失的啟動選項）；移除時所有檔案恢復原狀。
+- 以表單調整 **HelixSR 設定**（`helixsr.ini`）、顯示執行中遊戲真正載入了什麼的**即時狀態**，以及遊戲啟動時的**浮動提示**。
+- **與 HelixSR 本身的 setup 互通**：DLSS 3.7 使用相同的安裝紀錄（`helixsr-install.json`）和備份。
+- **Liquid Glass 外觀**（參考 MAKO Assistant）：每款遊戲一張卡片，含封面、狀態與詳細資訊面板；按鈕為不帶漸層的水晶通透風格；深色、淺色或自動主題。
+- **Steam Deck 外掛（Decky Loader）**：在遊戲模式的快速存取選單中做同樣的選擇、下載、OptiScaler 檔名與啟動選項處理，遊戲啟動時會顯示通知。設定與下載檔和桌面版共用。HelixSR 本身的 `helixsr.ini` 設定仍在桌面版調整。
 - **語言**：台灣正體中文、简体中文、English、日本語、Deutsch、Français、Español、Italiano、ไทย、Tiếng Việt、Bahasa Melayu、हिन्दी。
 
 ### 安裝與執行
 
-**AppImage（建議）**：已內含 Python 和 Qt，不需要另外安裝任何東西。
+**AppImage（建議）**：已內含 Python、Qt 和 7-Zip。
 
-1. 從 [Releases](https://github.com/mosesmoon/helixsr-assistant/releases) 頁面下載 `HelixSR_Assistant-<版本>-x86_64.AppImage`。
+1. 從 [Releases](https://github.com/mosesmoon/scaler-assistant/releases) 頁面下載 `Scaler_Assistant-<版本>-x86_64.AppImage`。
 2. 設定為可執行：對檔案按右鍵 →「內容」→「權限」，勾選「允許以程式執行檔案」（各檔案管理員的用詞略有不同）。
-3. 按兩下即可開啟 HelixSR 助手。
-
-或在終端機執行：
+3. 按兩下開啟。
 
 ```bash
-chmod +x HelixSR_Assistant-*-x86_64.AppImage
-./HelixSR_Assistant-*-x86_64.AppImage
+chmod +x Scaler_Assistant-*-x86_64.AppImage
+./Scaler_Assistant-*-x86_64.AppImage
 ```
 
-**從原始碼執行**：需要 Python 3.11 以上和 PyQt6（Arch：`sudo pacman -S python-pyqt6`）。
+**Steam Deck（Decky Loader）**：請先安裝 [Decky Loader](https://decky.xyz)。
+
+1. 從 [Releases](https://github.com/mosesmoon/scaler-assistant/releases) 頁面下載 `Scaler_Assistant-Decky-<版本>.zip`。
+2. 在遊戲模式開啟快速存取選單 → Decky → ⚙ →「開發者」（先在 Decky 的一般設定開啟開發者模式）→「Install Plugin from ZIP File」，選擇這個 zip。
+3. 在快速存取選單的 Decky 分頁開啟 Scaler 助手。使用 DLSS 3.7 前，請在桌面模式設定一次 HelixSR（`./helixsr-setup.sh`），再於外掛中選擇它的資料夾。
+
+**從原始碼執行**：需要 Python 3.11 以上、PyQt6（Arch：`sudo pacman -S python-pyqt6`），以及解開 OptiScaler 用的 7-Zip 或 bsdtar（`sudo pacman -S 7zip`）。
 
 ```bash
-./install.sh           # 安裝到 ~/.local/share/helixsr-assistant，並建立選單項目
-helixsr-assistant      # 或直接在原始碼目錄執行 ./helixsr-assistant
+./install.sh           # 安裝到 ~/.local/share/scaler-assistant，並建立選單項目
+scaler-assistant       # 或直接在原始碼目錄執行 ./scaler-assistant
 ```
 
 ### 開發
 
 ```bash
-python3 -m unittest discover -s . -p "test_*.py" -v   # 測試（不需要 PyQt6）
-./build-appimage.sh                                    # 輸出 dist/HelixSR_Assistant-<版本>-x86_64.AppImage
+python3 -m unittest discover -s tests -t . -v   # 測試（不需要 PyQt6）
+./build-appimage.sh                              # 輸出 dist/Scaler_Assistant-<版本>-x86_64.AppImage
+./build-decky.sh                                 # 輸出 dist/Scaler_Assistant-Decky-<版本>.zip（需要 Node.js）
 ```
 
-AppImage 內含可攜式 CPython 3.13（uv / python-build-standalone）與精簡過的 PyQt6。建置需要 `uv` 與網路（下載 PyQt6 wheel 與 appimagetool）。
+Decky 外掛位於 `decky/`：React 面板（`src/index.tsx`，以 `@decky/rollup` 建置）與 Python 後端（`main.py`），後端執行同一套 `scaler_assistant` 套件（透過 `deck.py`），但不含桌面視窗。
 
-HelixSR 助手本身的狀態存在 `~/.config/helixsr-assistant/state.json`。
+AppImage 內含可攜式 CPython 3.13（uv / python-build-standalone）、精簡過的 PyQt6，以及 7-Zip 的靜態 `7zzs`（附授權檔）。建置需要 `uv` 與網路。
+
+Scaler 助手的狀態存在 `~/.config/scaler-assistant/state.json`（第一次會從 `~/.config/helixsr-assistant` 接手）；下載檔存在 `~/.local/share/scaler-assistant/components/`。
 
 ### 授權
 
-HelixSR 助手是獨立的非官方工具，與 HelixSR 作者、NVIDIA、AMD 或 OptiScaler 專案沒有關聯，也未經其認可，且不含它們的任何檔案。它的安裝程式是自行撰寫的程式碼，依照 HelixSR README 記載的手動安裝步驟運作。HelixSR 依 HelixSR Freeware License 免費使用。HelixSR 的 setup 執行後，HelixSR 的 DLL 會包含 NVIDIA 的神經網路：HelixSR 助手只會在你自己電腦上的資料夾之間複製它們。請勿分享或上傳這些檔案。
+Scaler 助手是獨立的非官方工具，與 HelixSR 作者、NVIDIA、AMD、OptiScaler 專案或 fsr4-shader-performance-overrides 專案沒有關聯，也未經其認可，且不含它們的任何檔案。在你同意時，它會從各自的 GitHub Releases 下載 OptiScaler（GPL-3.0；fakenvapi 為 MIT；AMD 的 FidelityFX DLL 依 AMD 授權）和 FSR 4.1 DLL（GPL-2.0-or-later，附 AMD 聲明的修改版 AMD DLL）。AppImage 與 Decky 外掛內附 7-Zip 的 `7zzs`（GNU LGPL 附 unRAR 限制、BSD）。HelixSR 依 HelixSR Freeware License 免費使用；執行 setup 後，HelixSR 的 DLL 會包含 NVIDIA 的神經網路，所以 Scaler 助手只會在你自己電腦上的資料夾之間複製它們。請勿分享或上傳這些檔案。

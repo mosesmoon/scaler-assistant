@@ -18,3 +18,7 @@ venv/
 HANDOFF.md
 CLAUDE.md
 .ruff_cache/
+
+# Decky plugin build
+decky/node_modules/
+decky/dist/

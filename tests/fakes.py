@@ -7,9 +7,12 @@ a few bytes carrying the markers the tool looks for.
 from __future__ import annotations
 
 import hashlib
+import json
 import os
 import struct
 from pathlib import Path
+
+from scaler_assistant import components
 
 OPTI_INI = (
     "[Upscalers]\r\n"
@@ -49,6 +52,43 @@ def make_helixsr(folder: Path, version: str = "1.9.0", built: bool = True) -> Pa
     return folder
 
 
+# The comment lines OptiScaler 0.9.4 writes above the keys Scaler Assistant sets.
+OPTI_INI_FULL = (
+    "[Upscalers]\r\n"
+    "; fsr22 (native DX11), fsr31 (native DX11), xess_12 (dx11on12), fsr31_12 (dx11on12, FSR4), dlss\r\n"
+    "Dx11Upscaler=auto\r\n"
+    "; xess, fsr21, fsr22, fsr31 (also for FSR4), dlss - Default (auto) is xess\r\n"
+    "Dx12Upscaler=auto\r\n"
+    "; fsr21 (native VK), fsr31 (native VK), fsr31_12 (VKon12, FSR4), dlss\r\n"
+    "VulkanUpscaler=auto\r\n"
+    "\r\n[FSR]\r\nUpscalerIndex=auto\r\nFsr4Update=auto\r\nFsr4ForceEnableInt8=auto\r\n"
+    "\r\n[Libraries]\r\nFfxDx12Path=auto\r\nFfxDx12SRPath=auto\r\nFfxDx12FGPath=auto\r\n"
+    "FfxVkPath=auto\r\n\r\n[Menu]\r\nScale=auto\r\n"
+)
+
+
+def make_components(root: Path) -> Path:
+    """Downloaded OptiScaler and FSR 4.1 packs as Scaler Assistant keeps them (fake bytes)."""
+    for component in components.ALL:
+        base = components.folder(component, root)
+        files = {}
+        for member in component.members:
+            path = base / member
+            path.parent.mkdir(parents=True, exist_ok=True)
+            if member == "OptiScaler.ini":
+                with open(path, "w", newline="") as handle:
+                    handle.write(OPTI_INI_FULL)
+            elif member == "OptiScaler.dll":
+                path.write_bytes(b"MZ OptiScaler 0.9.4")
+            elif member.endswith(".txt") or member.endswith(".md") or member.endswith(".ini"):
+                path.write_text(f"{component.key} {member}\n")
+            else:
+                path.write_bytes(f"MZ ffxCreateContext {component.key} {member}".encode())
+            files[member] = components.sha256_file(path)
+        (base / components.MANIFEST).write_text(json.dumps({"files": files}))
+    return root
+
+
 def make_steam(root: Path) -> Path:
     """A Steam root with three games:
 
@@ -83,7 +123,51 @@ def make_steam(root: Path) -> Path:
     for app_id, name in ((100, "FsrGame"), (200, "DlssGame"), (300, "PlainGame")):
         (apps / f"appmanifest_{app_id}.acf").write_text(
             f'"AppState"\n{{\n"appid" "{app_id}"\n"name" "{name}"\n"installdir" "{name}"\n}}\n')
+    write_launch_options(steam, {200: "-dx12 %command% -skipintro"})
     return steam
+
+
+def write_launch_options(steam: Path, options: dict[int, str]) -> Path:
+    """localconfig.vdf of one Steam user with these launch options."""
+    config = steam / "userdata" / "12345" / "config"
+    config.mkdir(parents=True, exist_ok=True)
+
+    def quoted(value: str) -> str:
+        return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
+
+    apps = "".join(f'\t\t\t\t\t"{app_id}"\n\t\t\t\t\t{{\n'
+                   f'\t\t\t\t\t\t"LaunchOptions"\t\t{quoted(value)}\n\t\t\t\t\t}}\n'
+                   for app_id, value in options.items())
+    path = config / "localconfig.vdf"
+    path.write_text('"UserLocalConfigStore"\n{\n\t"Software"\n\t{\n\t\t"Valve"\n\t\t{\n'
+                    '\t\t\t"Steam"\n\t\t\t{\n\t\t\t\t"apps"\n\t\t\t\t{\n' + apps +
+                    '\t\t\t\t}\n\t\t\t}\n\t\t}\n\t}\n}\n')
+    return path
+
+
+def pe_exe(imports: list[str]) -> bytes:
+    """A minimal PE32+ executable whose import table names these DLLs."""
+    section_va, section_raw = 0x1000, 0x200
+    names = b""
+    offsets = []
+    descriptors_size = 20 * (len(imports) + 1)
+    for name in imports:
+        offsets.append(section_va + descriptors_size + len(names))
+        names += name.encode() + b"\x00"
+    descriptors = b"".join(struct.pack("<IIIII", 0, 0, 0, rva, 0) for rva in offsets) + b"\x00" * 20
+    section = (descriptors + names).ljust(0x200, b"\x00")
+    optional = bytearray(240)
+    struct.pack_into("<H", optional, 0, 0x20B)
+    struct.pack_into("<I", optional, 108, 16)
+    struct.pack_into("<II", optional, 112 + 8, section_va, descriptors_size)
+    coff = struct.pack("<HHIIIHH", 0x8664, 1, 0, 0, 0, len(optional), 0x22)
+    header = struct.pack("<8sIIIIIIHHI", b".idata", len(section), section_va, len(section),
+                         section_raw, 0, 0, 0, 0, 0x40000040)
+    pe = b"PE\x00\x00" + coff + bytes(optional) + header
+    mz = bytearray(0x40)
+    mz[:2] = b"MZ"
+    struct.pack_into("<I", mz, 0x3C, 0x40)
+    return (bytes(mz) + pe).ljust(section_raw, b"\x00") + section
 
 
 def snapshot(folder: Path) -> dict[str, str]:

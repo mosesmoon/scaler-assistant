@@ -1,166 +1,191 @@
-# HelixSR 助手 — 功能介紹
+# Scaler 助手 — 功能介紹
 
 [English](en.md) · **台灣正體中文** · [简体中文](zh_CN.md) · [日本語](ja.md) · [Deutsch](de.md) · [Français](fr.md) · [Español](es.md) · [Italiano](it.md) · [ไทย](th.md) · [Tiếng Việt](vi.md) · [Bahasa Melayu](ms.md) · [हिन्दी](hi.md)
 
-**HelixSR 助手**是一套 Linux 桌面工具，能一鍵為 Steam 遊戲安裝、切換、更新或移除 **[HelixSR](https://github.com/lonewolf0622/HelixSR)**，並在你玩遊戲時顯示 HelixSR 是否真的在運作。
+**Scaler 助手**是一套 Linux 桌面工具，讓你替每款 Steam 遊戲選擇升頻技術——**DLSS 3.7（[HelixSR](https://github.com/lonewolf0622/HelixSR)）**、**FSR 4.1**（來自 [fsr4-shader-performance-overrides](https://github.com/zgauthier2000/fsr4-shader-performance-overrides) 的 Exact 或 Lossy，RX 9000 則用 AMD 原生版）或 **FSR 3**——並一鍵安裝、切換、更新、修復、移除。玩遊戲時還會顯示升頻是否真的在運作。
 
-HelixSR 透過 Proton，把 NVIDIA DLSS Model E 的升頻神經網路，以一般的 Direct3D 12 運算著色器跑在 AMD 顯示卡（RDNA 1 以上）上。
+## 適合誰使用
 
-## 這套工具是給誰用的
+在 Linux 上手動替遊戲換上更好的升頻，需要：
 
-HelixSR 沒有啟動選項，也沒有集中的設定檔。它的做法是把 DLL 放進每款遊戲的資料夾，每款遊戲有三種方式可選。手動安裝代表你得：
+1. 查出遊戲內建哪些升頻技術（DLSS、XeSS、FSR 2、FSR 3.1）、用哪種繪圖 API，以及主要 `.exe` 在哪裡。
+2. 把 OptiScaler 以遊戲能接受的檔名放到 `.exe` 旁，附上需要的 FidelityFX DLL，並依想用的升頻技術修改 `OptiScaler.ini`。
+3. 檔名需要時，在遊戲的 Steam 啟動選項加入 `WINEDLLOVERRIDES`——而且不能弄壞原本的內容。
+4. 依顯示卡下載正確的 FSR 4.1 DLL，或照 HelixSR README 的說明設定 HelixSR。
+5. 每次更新都再做一次；遊戲更新蓋掉檔案時也要再做一次。
 
-1. 查出每款遊戲內建哪些升頻技術（FSR 3.1、DLSS、XeSS、FSR 2），以及主要 `.exe` 在哪裡。
-2. 為遊戲挑對安裝方式，把遊戲原本的檔案改名保留，再把 HelixSR 的檔案複製到正確位置。
-3. 若用 OptiScaler 方式，還要在 `OptiScaler.ini` 填入正確路徑。
-4. 每次 HelixSR 更新都要重做一次；遊戲更新蓋掉 HelixSR 時也要再做一次。
-5. 打開 `helixsr.log`，才能確認 HelixSR 到底有沒有在跑。
+Scaler 助手在一個視窗裡完成這一切，並保留所有被取代的檔案，移除時遊戲會完全恢復原狀。
 
-HelixSR 助手把這些都整合在一個視窗裡。HelixSR 自己的 setup 是在終端機逐一詢問每款遊戲；HelixSR 助手則把它們列成清單，按一下就好。
+## 每款遊戲可選的項目
 
-## 使用前必須先準備
+可選項目取決於遊戲的繪圖 API 和升頻技術。遊戲本身必須至少內建一種升頻技術（DLSS、XeSS、FSR 2 或 FSR 3.1）：OptiScaler 和 HelixSR 就是接手這些技術。
 
-> ⚠ **HelixSR 助手不包含 HelixSR，也不會替你下載。** 它只會從你自己設定好的 HelixSR 資料夾複製檔案。
-
-1. **下載 HelixSR**（1.8.0 以上）：從它的 [GitHub Releases](https://github.com/lonewolf0622/HelixSR/releases) 下載，解壓縮到會保留的資料夾，例如家目錄。
-2. **在該資料夾執行一次 `./helixsr-setup.sh`**。它會詢問是否下載 NVIDIA 的 DLSS DLL，再用它建立 HelixSR 的神經網路（約一分鐘）。當它開始逐一詢問遊戲時，可以全部回答 `n` 或直接關閉視窗：遊戲交給 HelixSR 助手處理。如果助手找到資料夾但尚未設定，會提供「在終端機執行 setup」按鈕。
-3. **AMD 顯示卡，RDNA 1 以上**（Radeon RX 5000 以上、Steam Deck、搭載 RDNA 內顯的 Ryzen）。Radeon Vega 在 HelixSR 1.9.0 屬實驗性支援。
-4. **透過 Proton 執行、內建 FSR 3.1、DLSS、XeSS 或 FSR 2 的 Direct3D 12 遊戲**。
-
-第一次啟動時，HelixSR 助手會在家目錄、下載、桌面和 Games 資料夾中尋找已設定好的 HelixSR 資料夾。你隨時可以按「選擇 HelixSR 資料夾…」或上方的 HelixSR 標籤改選別的資料夾。
-
-## HelixSR 進入遊戲的三種方式
-
-以下是 HelixSR 本身的三種方式（英文字母是 HelixSR setup 使用的回答）。HelixSR 助手只會列出該遊戲可用的方式，並把預設方式放在第一個。
-
-| 方式 | 遊戲需要具備 | 遊戲資料夾中的變更 | 遊戲內選擇 |
+| 選項 | 遊戲需要 | 放進遊戲資料夾的內容 | 遊戲內選擇 |
 |---|---|---|---|
-| **FSR 方式**（f，FSR 3.1 遊戲的預設） | FSR 3.1 | 遊戲的 `amd_fidelityfx_upscaler_dx12.dll`（或 `amd_fidelityfx_dx12.dll`）被 HelixSR 取代；遊戲原檔保留為 `*.original.dll` | **AMD FSR** |
-| **OptiScaler 方式**（o） | DLSS、XeSS 或 FSR 2 | 在遊戲 `.exe` 旁放入 OptiScaler（你 HelixSR 資料夾中的官方版本），把它的 FSR 3.1 後端指向旁邊的 `HelixSR` 資料夾；被取代的檔案都會移到 `HelixSR/backup` | **DLSS**（FSR 或 XeSS 也可以） |
-| **DLSS 方式**（d，實驗性） | DLSS | 在遊戲 `.exe` 旁放入 HelixSR 的 DLSS 載入器（`dxgi.dll`），並以 `nvngx.dll` 名稱放入 HelixSR | **DLSS** |
+| **DLSS 3.7（HelixSR）· FSR 方式** | Direct3D 12、FSR 3.1 | 遊戲的 FSR 3.1 DLL 換成 HelixSR（遊戲原檔保留為 `*.original.dll`） | AMD FSR |
+| **DLSS 3.7（HelixSR）· OptiScaler 方式** | Direct3D 12、DLSS／XeSS／FSR 2 | `.exe` 旁放入 OptiScaler，指向 `HelixSR` 資料夾 | DLSS |
+| **DLSS 3.7（HelixSR）· DLSS 方式**（實驗性） | Direct3D 12、DLSS | HelixSR 的 DLSS 載入器（`dxgi.dll`）和以 `nvngx.dll` 為名的 HelixSR | DLSS |
+| **FSR 4.1 Exact** | 四種升頻技術任一種 | `.exe` 旁放入 OptiScaler；FidelityFX DLL 和 Exact 版 FSR 4.1 DLL 放在 `ScalerAssistant` 資料夾 | DLSS、FSR 或 XeSS |
+| **FSR 4.1 Lossy** | 同上 | 同上，改用 Lossy 版 FSR 4.1 DLL | DLSS、FSR 或 XeSS |
+| **FSR 4.1（AMD）**——RX 9000（RDNA 4）以此取代 Exact／Lossy | 同上 | 同上，改用 AMD 原生 FSR 4.1 DLL | DLSS、FSR 或 XeSS |
+| **FSR 3** | 同上 | 同上；OptiScaler 使用 FSR 3.1.5 | DLSS、FSR 或 XeSS |
+
+- **Exact** 的畫面與 AMD 的 FSR 4.1 逐位元組相同，只是著色器更快。**Lossy** 更快，但畫面會略有不同；第一次使用前，Scaler 助手會先顯示一次它的 `WARNING.txt`。不確定的話就選 Exact。
+- HelixSR 只能用於 **Direct3D 12** 遊戲，所以只有這類遊戲會出現 DLSS 3.7。FSR 4.1 和 FSR 3 也能用於 **Direct3D 11 與 Vulkan** 遊戲：FSR 3 原生支援，FSR 4.1 則透過 OptiScaler 的 Direct3D 12 路徑（測試程度不如 Direct3D 12 遊戲）。
+- 在遊戲那一列按 **「選擇升頻」**（已安裝的遊戲按 **「升頻」**）：DLSS 3.7（HelixSR）會展開子選單列出它的方式，目前的選擇會打勾。切換時會先移除目前的項目並全部還原。
+
+## 開始之前
+
+- **FSR 4.1 和 FSR 3** 不需要其他東西：第一次選擇時，Scaler 助手會詢問是否下載 OptiScaler 及適合你顯示卡的 FSR 4.1 DLL（見下方「下載檔」）。
+- **DLSS 3.7** 需要 HelixSR，Scaler 助手並不包含它。請從 [HelixSR 的 GitHub Releases](https://github.com/lonewolf0622/HelixSR/releases) 下載 1.8.0 以上版本，解壓縮到會保留的資料夾，並在那裡執行一次 `./helixsr-setup.sh`（它會在你的電腦上建立 HelixSR 的神經網路；開始逐一詢問遊戲時可以回答 `n`）。按上方的 **HelixSR** 標籤可看到這些說明；Scaler 助手會自動在家目錄、下載、桌面或 Games 資料夾中尋找已設定好的 HelixSR 資料夾。
+- 遊戲透過 **Proton** 執行。HelixSR 是為 AMD 顯示卡（RDNA 1 以上）設計的。FSR 4.1 Exact／Lossy 是為 Radeon RX 7000／RX 6000 及 Radeon 內建顯示晶片（含 Steam Deck）製作；其他 GPU 應該也能執行，但原作者尚未測試。
 
 ## 功能
 
-### 1. 掃描 Steam 遊戲與其升頻技術
+### 1. 掃描 Steam 遊戲
 
-- 第一次開啟時會掃描所有 Steam 遊戲庫（包含其他硬碟上的遊戲庫）。安裝新遊戲後請按「⟳ 重新掃描 Steam 遊戲」。
-- 在每款遊戲的資料夾中尋找 FSR 3.1、DLSS、XeSS 和 FSR 2 的 DLL，並從 Steam 的啟動資訊找出主要 `.exe` 所在資料夾（能處理啟動器和 Unreal 的 `*-Shipping.exe`）。
-- 會標示含有**反作弊**（Easy Anti-Cheat、BattlEye）的遊戲。
-- 遊戲名稱依介面語言顯示 Steam 的在地化名稱，並依該語言的習慣排序。可使用 HelixSR 的遊戲排在前面；預設啟用「可使用 HelixSR 的遊戲」篩選。
+- 第一次啟動時掃描所有 Steam 遊戲庫（包含其他磁碟上的遊戲庫）。安裝新遊戲後按「⟳ 重新掃描 Steam 遊戲」。
+- 每款遊戲都會找出：內建的升頻 DLL、主要 `.exe` 的資料夾（依 Steam 的啟動資訊；也能處理啟動器和 Unreal 的 `*-Shipping.exe`）、**繪圖 API**（讀 `.exe` 的匯入表：DX12、DX11 或 Vulkan），以及是否含有**反作弊**（Easy Anti-Cheat、BattlEye）。
+- 遊戲名稱跟隨介面語言（Steam 的在地化名稱）。可以升頻的遊戲排在前面。
 
-### 2. 一鍵安裝
+### 2. 替 OptiScaler 選一個遊戲能用的檔名
 
-- 按「安裝 HelixSR」以預設方式安裝，或按旁邊的箭頭選擇其他方式。每種方式都會告訴你遊戲內要選什麼。
-- 在做任何變更前，會先確認 HelixSR 資料夾已設定好（網路已建立），以及遊戲沒有在執行。
-- DLSS 方式會先說明風險並要求確認。含反作弊的遊戲也會要求確認。
-- 完成後，記錄區會列出取代了哪些檔案、遊戲原檔保留在哪裡，以及遊戲內要選什麼。
+遊戲會把放在 `.exe` 旁的 OptiScaler 當成系統 DLL 載入。Scaler 助手依下列順序決定檔名：
 
-### 3. 切換方式、更新與修復
+1. 你替這款遊戲選的檔名（「更多」→「OptiScaler 檔名…」），
+2. 遊戲中已經存在的 OptiScaler 所用的檔名，
+3. [OptiScaler 相容性清單](https://github.com/optiscaler/OptiScaler/wiki)對這款遊戲指定的檔名（例如 `d3d12.dll` 或 `winmm.dll`），
+4. Vulkan 遊戲用 `winmm.dll`，
+5. 遊戲或其他模組（例如 ReShade）已有 `dxgi.dll`，或你的啟動選項把這個名稱設為內建版本時，改用其他空著的檔名（`winmm.dll`、`version.dll`…），
+6. 其他情況用 `dxgi.dll`。
 
-- **切換**：「更多」→「改用…」會先移除目前的方式（把檔案全部放回），再安裝新方式。你的 HelixSR 設定會跟著遊戲一起帶過去。
-- **更新**：當你的 HelixSR 資料夾版本比遊戲中的新（HelixSR 新版本，或重新建立了網路），遊戲會顯示「↑ 有新版 HelixSR …」和「↑ 更新」按鈕；「↑ 全部更新」可一次更新所有遊戲。
-- **修復**：遊戲更新或在 Steam「驗證遊戲檔案完整性」可能會用遊戲自己的檔案蓋掉 HelixSR。這時遊戲會說明發生什麼事並顯示「修復」按鈕：它會把 HelixSR 放回原位，並把遊戲的新檔案保留為備份。
-- 當下載資料夾（或其他常見位置）出現較新且已設定好的 HelixSR 資料夾時，助手會詢問一次是否改用。
+已存在的檔案絕不會被覆蓋：它會移到 `ScalerAssistant/backup`（DLSS 3.7 則是 `HelixSR/backup`），移除時再放回。
 
-### 4. 移除
+### 3. Steam 啟動選項：只加需要的，你原本的內容保持不變
 
-- 「移除」會拿掉 HelixSR，並把它取代或搬移過的每個檔案都恢復原狀。
-- 遊戲的 HelixSR 設定（`helixsr.ini`）預設保留，除非勾選「一併移除這款遊戲的 HelixSR 設定」。
-- 你自己放進遊戲 `my-fsr` 資料夾的檔案絕不會被刪除。
+在 Proton 下，`dxgi.dll` 和 `d3d12.dll` 不需要其他設定就會載入。其他檔名都需要在遊戲的啟動選項加入 `WINEDLLOVERRIDES="<名稱>=n,b"`，Scaler 助手會替你加上：
 
-### 5. 不必編輯檔案就能調整 HelixSR 設定
+- **只插入這一項。** 如果你已經有 `WINEDLLOVERRIDES`，就在它的值裡加上 `;winmm=n,b`；沒有的話就在最前面加上 `WINEDLLOVERRIDES="winmm=n,b"`（原本沒有 `%command%` 時一併補上）。啟動選項的其他內容一律不動。例如 `-dx12 %command%` 會變成 `WINEDLLOVERRIDES="winmm=n,b" -dx12 %command%`。
+- **移除 OptiScaler 或改檔名時，只拿掉這一項。** 如果期間你沒改過啟動選項，會完全回到原本的內容；如果你改過，只會移除當初插入的文字，你的修改都會保留。
+- 你原本就有的同名設定不會被改動，之後也不會被移除。如果你的啟動選項把這個名稱設為 Wine 內建版本，Scaler 助手會改用其他檔名，而不是修改你的設定。
+- 如果這一項之後不見了，遊戲會顯示「缺少啟動選項」，按「修復」就會重新加入。
+- Steam 執行中時，若 Steam 的除錯連接埠可用（Decky Loader 也是用這個），會直接透過 Steam 修改。否則 Scaler 助手會詢問是否關閉 Steam、寫入變更後再重新開啟 Steam——這一步發生在修改任何遊戲檔案之前。
 
-「⚙ 設定」以表單編輯遊戲的 `helixsr.ini`。只提供 HelixSR README 有記載的設定：
+### 4. 下載檔（FSR 4.1 與 FSR 3）
 
-| 群組 | 設定 | 可選值 |
+按上方的 **OptiScaler** 標籤（或 GPU 標籤）：
+
+- **OptiScaler 0.9.4**（含 AMD 的 FidelityFX DLL：FSR 3 與 AMD 的 FSR 4.1，以及 fakenvapi），以及給獨立顯示卡或內建顯示晶片用的 **FSR 4.1 Exact／Lossy**。
+- 你同意之前不會下載任何東西。每個下載檔都是固定的版本，解開前會核對大小和 SHA-256；只保留遊戲需要的檔案，存在 `~/.local/share/scaler-assistant/components/`。
+- **FSR 4.1 版本**：依顯示卡自動選擇（RX 9000／RDNA 4 → AMD 原生 FSR 4.1；內建顯示晶片與 Steam Deck → 內建顯示晶片版；其他 GPU → 獨立顯示卡版），也可以手動指定。RDNA 4 絕不會使用修改過的 DLL。其他 GPU 會把 OptiScaler 設為使用 FSR 4 的 INT8 模型。
+- 「移除下載檔」會刪除它們；遊戲裡的複本不受影響。
+
+### 5. OptiScaler.ini 會改哪些地方
+
+只改這個選項需要的那幾行，而且只改在各自的區段；其他每一行和註解都會保留：
+
+| Key | FSR 4.1 | FSR 3 |
 |---|---|---|
-| 銳利化 | 銳利化方式 | 預設、關閉、NVIDIA、RCAS |
-| | 銳利度 | 0.00 – 1.00 |
-| | 跟隨遊戲的銳利度滑桿 | 預設、是、否 |
-| 升頻（HelixSR 1.9.0 以上） | int8 網路 | 預設（自動）、自動、開啟、關閉 |
-| | 超高效能模式的最後縮放 | 預設（Lanczos）、Lanczos、EASU（FSR 1） |
-| 相容性 | Wave 大小 | 預設、64、32 |
+| `Dx12Upscaler` | `fsr31` | `fsr31` |
+| `Dx11Upscaler`、`VulkanUpscaler` | `fsr31_12`（經由 Direct3D 12） | `fsr31`（原生） |
+| `UpscalerIndex` | `0`（FSR 4） | `1`（FSR 3.1.5） |
+| `Fsr4Update` | `true` | `false` |
+| `Fsr4ForceEnableInt8` | RDNA 4 之前為 `true` | `auto` |
+| `FfxDx12Path`、`FfxDx12SRPath`、`FfxDx12FGPath`、`FfxVkPath` | 遊戲 `ScalerAssistant` 資料夾中的 DLL | 同左 |
 
-選「預設」就不寫入該行，HelixSR 會使用自己的預設值。檔案中的註解和其他設定都會原樣保留。檔案會寫在該遊戲安裝方式下 HelixSR DLL 的旁邊（遊戲的 `HelixSR` 資料夾、遊戲 FSR DLL 旁，或 `.exe` 旁）。
+原本就存在的 `OptiScaler.ini` 會先備份，移除時放回。
 
-### 6. HelixSR 即時狀態（實際在運作的內容）
+### 6. 切換、更新、修復、移除
 
-每 3 秒檢查一次執行中的 Steam 遊戲：
+- 從升頻選單**切換**：先移除目前的選項，再安裝新的。FSR 4.1 Exact、Lossy 與 FSR 3 之間切換時，只會換 FSR DLL 和修改 `OptiScaler.ini`。
+- **更新**：HelixSR 資料夾有較新的版本時，遊戲會顯示「↑ 有 HelixSR … 可用」；使用中的 OptiScaler／FSR 4.1 有較新的下載檔（或改了 FSR 4.1 版本）時會顯示「↑ 有較新的下載檔」。「↑ 全部更新」一次更新所有遊戲。
+- **修復**：遊戲更新或在 Steam「驗證遊戲檔案的完整性」可能把遊戲原本的檔案放回去。這時遊戲會顯示發生了什麼，按「修復」就會把升頻放回去，並把遊戲的新檔案保留為備份。
+- **移除**會放回所有被取代或移走的檔案，並把加入啟動選項的那一項拿掉。
 
-- Proton 是直接從檔案載入 Windows DLL，所以助手能從 `/proc/<pid>/maps` 看出遊戲是否**真的載入了 HelixSR**（以及 OptiScaler 或 DLSS 載入器）。
-- 遊戲要開始使用升頻技術才會載入 HelixSR。因此「HelixSR 尚未載入」會告訴你要在遊戲的畫面設定選什麼。
-- 讀取本次執行的 `helixsr.log`：顯示網路核心的 wave 大小和錯誤訊息。「更多」→「檢視 helixsr.log」可以看完整記錄並複製。
-- 在 **RDNA 3 以上**顯示卡、使用 OptiScaler 方式的遊戲中，若記錄顯示 wave32，HelixSR 的 README 建議設定 `WaveSize = 64`。助手會偵測到這種情況，提供一鍵「設定 WaveSize = 64」。
-- 上方的顯示卡標籤會顯示你的顯示卡世代（例如「AMD RDNA 3 (gfx1100)」）。
+### 7. 不必編輯檔案就能調整 HelixSR 設定
 
-### 7. 遊戲啟動時的浮動提示
+使用 DLSS 3.7 時，「⚙ 設定」以表單編輯遊戲的 `helixsr.ini`（銳利化、int8 網路、超高效能模式的最後縮放、wave 大小）。「預設」會省略該行；檔案中的其他行和註解都會保留。
 
-如果裝有 HelixSR 的遊戲啟動時 HelixSR 助手開著，HelixSR 一載入就會在右下角顯示約 10 秒的小卡片，列出版本、安裝方式和 wave 大小（每次啟動只顯示一次；助手開啟前就在執行的遊戲不會顯示）。如果 90 秒後 HelixSR 仍未載入，卡片會提示你在遊戲中要選什麼。浮動提示是獨立的 X11（XWayland）視窗，不會搶走焦點，滑鼠點擊會直接穿透。可用工具列的核取方塊關閉。在 Steam Deck 遊戲模式（gamescope）中不會顯示。
+### 8. 即時狀態與浮動提示
 
-### 8. 啟動遊戲、搜尋與篩選
+- 每 3 秒檢查執行中的 Steam 遊戲：從 `/proc/<pid>/maps` 確認遊戲是否**真的載入了** HelixSR 或 FSR DLL（以及 OptiScaler 或 DLSS 載入器）。遊戲開始使用升頻之前不會載入，所以「尚未載入」會告訴你要在遊戲中選什麼。
+- 使用 HelixSR 時，會從本次執行的 `helixsr.log` 顯示 wave 大小和錯誤；RDNA 3 以上使用 OptiScaler 方式、記錄顯示 wave32 時，會提供「設定 WaveSize = 64」。
+- 遊戲卡片上的 ⌄ 按鈕會打開詳細資訊面板，裡面有「檢視 …log」（`helixsr.log` 或 `OptiScaler.log`）、開啟遊戲資料夾、OptiScaler 檔名，以及 DLSS 3.7 的「⚙ 設定」。
+- 遊戲啟動時，右下角會出現小卡片顯示結果約 10 秒（90 秒後仍未載入則顯示提示）。它是獨立的 X11 視窗，不會搶焦點；可用工具列的開關關閉。
 
-- 每一列都有「▶ 啟動」按鈕（透過 `steam://rungameid/<AppID>`）；遊戲執行時會顯示「執行中」。
-- 可用遊戲名稱（任何語言）或 App ID 搜尋。篩選：可使用 HelixSR 的遊戲、已安裝、未安裝、需要更新或修復、執行中、全部遊戲。
+### 9. 啟動、搜尋、篩選、語言
 
-### 9. 12 種介面語言
-
-台灣正體中文、简体中文、English、日本語、Deutsch、Français、Español、Italiano、ไทย、Tiếng Việt、Bahasa Melayu、हिन्दी。第一次啟動時使用系統語言；可在右上角切換（立即生效並記住）。
+- 「▶ 啟動」透過 Steam 開啟遊戲。可用名稱（任何語言）或 App ID 搜尋；篩選：可以升頻的遊戲、已安裝升頻、尚未安裝升頻、需要更新或修復、執行中、所有遊戲。
+- 12 種介面語言：台灣正體中文、简体中文、English、日本語、Deutsch、Français、Español、Italiano、ไทย、Tiếng Việt、Bahasa Melayu、हिन्दी。
 
 ### 10. 以安全為設計原則
 
-- HelixSR 資料夾尚未設定好、或遊戲正在執行時，不會做任何變更。
-- HelixSR 取代的每個檔案都會保留（`*.original.dll` 或 `HelixSR/backup`），每個複製的檔案都會逐位元組比對確認。
-- 你原本就有的 `OptiScaler.ini` 會先備份，移除時還原；你在遊戲 `HelixSR` 資料夾中手動替換的 FSR DLL，更新時會保留。
-- DLSS 方式和含反作弊的遊戲都需要你明確確認。
+- 遊戲執行中時不做任何變更；修改任何檔案之前都會先確認下載檔和 HelixSR 資料夾。
+- 每個被取代的檔案都會保留，每次複製都逐位元組比對，啟動選項只會依上面說明增減那一項。
+- DLSS 方式、FSR 4.1 Lossy 以及含反作弊的遊戲都會先詢問。請勿在線上遊戲使用修改過的升頻：反作弊可能視為竄改。
+
+### 11. 外觀
+
+- 參考 MAKO Assistant 的「Liquid Glass」風格：每款遊戲一張卡片，含 Steam 封面、狀態標籤、遊戲支援的技術，執行時還會顯示真正載入了什麼。⌄ 按鈕會展開詳細資訊（繪圖 API、升頻技術、`.exe` 資料夾、OptiScaler 檔名、啟動選項）和較少用的操作。
+- 按鈕為水晶通透風格：淡淡的色調、細邊框與較亮的上緣，不帶漸層。青綠色為安裝、藍色為切換、琥珀色為更新、紅色為移除。
+- 深色、淺色或自動主題（跟隨桌面）。活動紀錄在視窗底部的抽屜。
 
 ## 與 HelixSR 本身的 setup 互通
 
-HelixSR 助手寫入的安裝紀錄（`helixsr-install.json`）、備份和檔名都和 HelixSR 的 setup 相同。因此：
+使用 DLSS 3.7 時，Scaler 助手寫入與 HelixSR setup 相同的安裝紀錄（`helixsr-install.json`）、備份和檔名，所以 `helixsr-setup.sh`／`helixsr-uninstall.sh` 與 Scaler 助手都認得對方安裝的遊戲。HelixSR 的 setup 會把遊戲 `ScalerAssistant` 資料夾中的 FSR DLL 當成遊戲自己的 FSR 3.1 DLL，可能把它換成 HelixSR；這時 Scaler 助手會把遊戲標示為需要修復，按「修復」即可把 HelixSR 移除。想在這類遊戲使用 DLSS 3.7，請直接在 Scaler 助手中選擇。
 
-- 用 `helixsr-setup.sh` 安裝的遊戲，在 HelixSR 助手中會顯示為已安裝（含安裝方式），也能在這裡切換、更新或移除。
-- 用 HelixSR 助手安裝的遊戲，HelixSR 的 setup 和 `helixsr-uninstall.sh` 也認得，可以更新或移除。
+## Steam Deck 外掛（Decky Loader）
 
-## 安裝 HelixSR 助手
+同一套程式也能在遊戲模式中使用：[Decky Loader](https://decky.xyz) 的外掛，位於快速存取選單。
 
-**AppImage（建議）**：已內含 Python 和 Qt，不需要另外安裝任何東西。
+- **遊戲**：可升頻的遊戲，執行中的排在最前，各自顯示狀態標籤，執行時還會顯示真正載入了什麼。選擇遊戲即可選用 DLSS 3.7（HelixSR，各種方式）、FSR 4.1 Exact／Lossy 或 FSR 3，或是更新、修復、移除、修改 OptiScaler 檔名、查看記錄檔。事前詢問與桌面版相同：下載檔、Lossy 警告、DLSS 方式與反作弊。
+- **設定**：HelixSR 資料夾（檔案選擇器）、下載檔與 FSR 4.1 版本（Steam Deck 使用內建顯示晶片版）、遊戲啟動時通知（顯示升頻是否已載入），以及語言（預設與 Steam 相同）。
+- 與桌面版共用 `state.json`、下載檔與啟動選項紀錄，在其中一邊設定的遊戲另一邊也看得到。啟動選項透過 Steam 即時寫入。
+- 外掛不包含：HelixSR 設定表單（請用桌面版），以及 HelixSR 本身的 `helixsr-setup.sh`（請在桌面模式執行一次）。
 
-1. 從 [Releases](https://github.com/mosesmoon/helixsr-assistant/releases) 頁面下載 `HelixSR_Assistant-<版本>-x86_64.AppImage`。
-2. 設定為可執行：對檔案按右鍵 →「內容」→「權限」，勾選「允許以程式執行檔案」（各檔案管理員的用詞略有不同）。
-3. 按兩下即可開啟 HelixSR 助手。
+安裝：先在 Steam Deck 安裝 Decky Loader，從 [Releases](https://github.com/mosesmoon/scaler-assistant/releases) 頁面下載 `Scaler_Assistant-Decky-<版本>.zip`，再到 Decky 設定 →「開發者」（先在「一般」開啟開發者模式）→「Install Plugin from ZIP File」。
 
-或在終端機執行：
+## 安裝 Scaler 助手
+
+**AppImage（建議）**：已內含 Python、Qt 和 7-Zip。
+
+1. 從 [Releases](https://github.com/mosesmoon/scaler-assistant/releases) 頁面下載 `Scaler_Assistant-<版本>-x86_64.AppImage`。
+2. 設定為可執行：按右鍵 →「內容」→「權限」→「允許以程式執行檔案」（各檔案管理員的用詞略有不同）。
+3. 按兩下開啟。
 
 ```bash
-chmod +x HelixSR_Assistant-*-x86_64.AppImage
-./HelixSR_Assistant-*-x86_64.AppImage
+chmod +x Scaler_Assistant-*-x86_64.AppImage
+./Scaler_Assistant-*-x86_64.AppImage
 ```
 
-如果無法啟動，可能是系統缺少 FUSE；請改用 `./HelixSR_Assistant-*-x86_64.AppImage --appimage-extract-and-run` 執行。
+無法啟動時，系統可能缺少 FUSE；請加上 `--appimage-extract-and-run` 執行。
 
-**從原始碼執行**：需要 Python 3.11 以上和 PyQt6（Arch：`sudo pacman -S python-pyqt6`）。
+**從原始碼執行**：需要 Python 3.11 以上和 PyQt6（Arch：`sudo pacman -S python-pyqt6`），以及解開 OptiScaler 用的 7-Zip 或 bsdtar（`sudo pacman -S 7zip`）。
 
 ```bash
-./helixsr-assistant    # 直接執行
-./install.sh           # 安裝到 ~/.local/share/helixsr-assistant，並建立應用程式選單項目
+./scaler-assistant     # 直接執行
+./install.sh           # 安裝到 ~/.local/share/scaler-assistant，並建立選單項目
 ```
 
 ## 已知限制
 
-- **只支援 Steam 遊戲。** 其他商店的遊戲請用 HelixSR 本身的 setup（把遊戲資料夾拖進去）。
-- HelixSR 本身只支援 Direct3D 12 遊戲。清單中有 DLSS 或 FSR DLL 的遊戲仍可能是 Vulkan 或 Direct3D 11，這時 HelixSR 不會有作用。
-- HelixSR 更新非常快。HelixSR 助手需要 HelixSR 1.8.0 以上，並依 1.8.x、1.9.x 的安裝結構製作；如果之後的 HelixSR 改變了安裝方式，在 HelixSR 助手更新前請先用 HelixSR 本身的 setup。
-- 浮動提示在 Steam Deck 遊戲模式（gamescope）中不會顯示；原生 Wayland 獨佔全螢幕的遊戲可能會蓋住它。
-- 泰文、越南文、馬來文和印地文介面中，右鍵選單為英文（Qt 沒有這些語言的官方翻譯）。Steam 沒有馬來文和印地文的遊戲名稱，所以這兩種語言一律顯示原始名稱。
+- **只支援 Steam 遊戲。** FSR 4.1／FSR 3 的安裝方式已用 OptiScaler 0.9.4 逐一核對過檔案；但每款遊戲的表現不同，遊戲出問題時請查 OptiScaler 的相容性清單，或替 OptiScaler 換個檔名。
+- Direct3D 11 與 Vulkan 遊戲的 FSR 4.1 經由 OptiScaler 的 Direct3D 12 路徑，測試程度較低。
+- HelixSR 變化很快。Scaler 助手需要 HelixSR 1.8.0 以上，並依照 1.8.x／1.9.x 的檔案配置。
+- Steam Deck 遊戲模式（gamescope）下不會顯示浮動提示。Decky 外掛會改以 Steam 通知顯示。
+- 泰文、越南文、馬來文和印地文的右鍵選單是英文（Qt 沒有官方翻譯）。Steam 沒有馬來文和印地文的遊戲名稱。
 
-## 資料儲存位置
+## 資料存放位置
 
 | 位置 | 內容 |
 |---|---|
-| `~/.config/helixsr-assistant/state.json` | HelixSR 助手自己的狀態：HelixSR 資料夾、遊戲清單快取、介面語言、浮動提示設定 |
-| `<遊戲>/…/HelixSR/helixsr-install.json`、遊戲 FSR DLL 旁 | HelixSR 的安裝紀錄（與 HelixSR 本身的 setup 共用） |
-| `<遊戲>/…/helixsr.ini` | 該遊戲的 HelixSR 設定 |
-| `<遊戲>/…/helixsr.log` | 遊戲上次執行時 HelixSR 的回報 |
+| `~/.config/scaler-assistant/state.json` | Scaler 助手的狀態：HelixSR 資料夾、遊戲清單、語言、FSR 4.1 版本、你選的 OptiScaler 檔名、它加入啟動選項的項目（第一次會從 HelixSR 助手接手） |
+| `~/.local/share/scaler-assistant/components/` | 下載的 OptiScaler 與 FSR 4.1 檔案 |
+| `~/homebrew/plugins/scaler-assistant/` | Steam Deck 上的 Decky 外掛（使用與上面相同的狀態和下載檔） |
+| `<遊戲>/…/ScalerAssistant/` | FSR 4.1／FSR 3：FidelityFX DLL、`scaler-install.json`、`backup/` |
+| `<遊戲>/…/HelixSR/helixsr-install.json`、遊戲 FSR DLL 旁 | DLSS 3.7：HelixSR 的安裝紀錄（與 HelixSR setup 共用） |
+| `<遊戲>/…/helixsr.ini`、`helixsr.log`、`OptiScaler.ini`、`OptiScaler.log` | 設定與記錄 |
 
 ## 授權
 
-HelixSR 助手是獨立的非官方工具，與 HelixSR 作者、NVIDIA、AMD 或 OptiScaler 專案沒有關聯，也未經其認可，且不含它們的任何檔案。HelixSR 依 HelixSR Freeware License 免費使用。HelixSR 的 setup 執行後，HelixSR 的 DLL 會包含 NVIDIA 的神經網路：HelixSR 助手只會在你自己電腦上的資料夾之間複製它們。請勿分享或上傳這些檔案。
+Scaler 助手是獨立的非官方工具，與 HelixSR 作者、NVIDIA、AMD、OptiScaler 專案或 fsr4-shader-performance-overrides 專案沒有關聯，也未經其認可，且不含它們的任何檔案。在你同意時，它會從各自的 GitHub Releases 下載 OptiScaler（GPL-3.0；fakenvapi 為 MIT；AMD 的 FidelityFX DLL 依 AMD 授權）和 FSR 4.1 DLL（GPL-2.0-or-later，附 AMD 聲明的修改版 AMD DLL）。AppImage 內附 7-Zip 的 `7zzs`（GNU LGPL 附 unRAR 限制、BSD；附授權檔）。HelixSR 依 HelixSR Freeware License 免費使用；執行 setup 後，HelixSR 的 DLL 會包含 NVIDIA 的神經網路，所以 Scaler 助手只會在你自己電腦上的資料夾之間複製它們。請勿分享或上傳這些檔案。Decky 外掛也內附同一個 `7zzs`。

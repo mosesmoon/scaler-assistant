@@ -1,12 +1,19 @@
-"""Install, switch, update, repair and remove HelixSR in one game.
+"""Install, switch, update, repair and remove an upscaler in one game.
 
-This is HelixSR Assistant's own code. It carries out the steps HelixSR's README
-documents for installing by hand, and keeps HelixSR's install record
-(``helixsr-install.json``), backups (``HelixSR/backup``, ``*.original.dll``)
-and file names, so HelixSR's own setup and uninstaller recognise games set up
-here, and HelixSR Assistant recognises games set up with HelixSR's setup.
+Two families, both written by Scaler Assistant itself:
 
-Every file copied into a game comes from the user's HelixSR folder.
+* **DLSS 3.7 (HelixSR)** in HelixSR's three ways. It carries out the steps
+  HelixSR's README documents for installing by hand, and keeps HelixSR's
+  install record (``helixsr-install.json``), backups (``HelixSR/backup``,
+  ``*.original.dll``) and file names, so HelixSR's own setup and uninstaller
+  recognise games set up here, and the other way round. Every HelixSR file
+  comes from the user's own HelixSR folder.
+* **FSR 4.1 and FSR 3** through OptiScaler. OptiScaler goes next to the game's
+  .exe under the name ``optiscaler.choose_name`` picked, and the FFX DLLs it
+  uses go into a ``ScalerAssistant`` folder beside it; OptiScaler.ini points
+  at them. Switching between FSR 4.1 Exact, Lossy and FSR 3 only swaps the
+  upscaler DLL and changes OptiScaler.ini. Everything replaced is kept in
+  ``ScalerAssistant/backup`` and put back on removal.
 """
 
 from __future__ import annotations
@@ -14,14 +21,13 @@ from __future__ import annotations
 import hashlib
 import json
 import os
-import re
 import shutil
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
-from . import settings
-from .games import FOLDER, MARKER, OPTI_INI, GameLayout
+from . import optiscaler, settings
+from .games import FOLDER, MARKER, OPTI_INI, SCALER_FOLDER, SCALER_MARKER, GameLayout
 from .helixsr import (
     AMD_DIR, AMD_FG, DLL, LOADER, LOADER_DIR, OPTI_DIR, OPTI_DLL, OPTI_EXTRA, HelixSRFolder,
     dll_version, has_network, is_helixsr, is_loader, is_optiscaler,
@@ -35,20 +41,35 @@ AMD_FSR_COPY = "amd_fidelityfx_upscaler_dx12.amd.dll"   # AMD's FSR, listed next
 CORE = "nvngx.dll"                      # HelixSR under the DLSS core's name (DLSS way)
 LOG = "helixsr.log"
 LOADER_LOG = "helixsr_loader.log"
-OPTI_LOG = "OptiScaler.log"
+OPTI_LOG = optiscaler.LOG
 MY_FSR = "my-fsr"
 MY_FSR_NOTE = "README.txt"
 # The names OptiScaler can be loaded under (the game may already have one).
-OPTI_NAMES = ("dxgi.dll", "winmm.dll", "version.dll", "dbghelp.dll", "d3d12.dll",
-              "wininet.dll", "winhttp.dll", "OptiScaler.asi")
+OPTI_NAMES = optiscaler.NAMES + ("OptiScaler.asi",)
 # Separate network files of HelixSR 1.4-1.7; one-file DLLs read their own copy.
 NETWORK_FILES = ("helixsr_weights.bin", "helixsr_kernels.pak")
 # HelixSR DLLs that older versions left in the game's HelixSR folder.
 OLD_COPIES = (CORE, DLL, "amd_fidelityfx_upscaler_dx12.dll")
-TEMP_SUFFIX = ".helixsr-assistant.tmp"
+TEMP_SUFFIX = ".scaler-assistant.tmp"
+
+# FSR 4.1 / FSR 3: the files in the game's ScalerAssistant folder, by OptiScaler.ini role.
+FFX_FILES = {
+    "loader": "amd_fidelityfx_dx12.dll",
+    "upscaler": "amd_fidelityfx_upscaler_dx12.dll",
+    "framegeneration": "amd_fidelityfx_framegeneration_dx12.dll",
+    "vulkan": "amd_fidelityfx_vk.dll",
+}
+SCALER_NOTE = "README.txt"
+SCALER_NOTE_TEXT = (
+    "Scaler Assistant made this folder: the FidelityFX DLLs OptiScaler uses in this game\r\n"
+    "(OptiScaler.ini points at them) and, in backup, the files OptiScaler replaced.\r\n"
+    "Remove the upscaler in Scaler Assistant to put everything back.\r\n"
+)
+CHOICES = ("helixsr:direct", "helixsr:optiscaler", "helixsr:dlss",
+           "fsr4:exact", "fsr4:lossy", "fsr4:native", "fsr3")
 
 MY_FSR_TEXT = (
-    "HelixSR Assistant made this folder for HelixSR.\r\n\r\n"
+    "Scaler Assistant made this folder for HelixSR.\r\n\r\n"
     "Put an FSR upscaler DLL here (for example FSR 4) and start the game again: OptiScaler lists\r\n"
     "it next to HelixSR (press Insert in the game: Upscaling > Upscalers > FFX Upscaler).\r\n"
     "Delete the DLL to go back. This folder is left in place on removal if you put files here.\r\n"
@@ -71,17 +92,17 @@ def sha256(path: Path) -> str:
     return digest.hexdigest()
 
 
-def read_record(directory: Path) -> dict:
+def read_record(directory: Path, marker: str = MARKER) -> dict:
     try:
-        data = json.loads((directory / MARKER).read_text(encoding="utf-8"))
+        data = json.loads((directory / marker).read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
     return data if isinstance(data, dict) else {}
 
 
-def write_record(directory: Path, record: dict) -> None:
+def write_record(directory: Path, record: dict, marker: str = MARKER) -> None:
     directory.mkdir(parents=True, exist_ok=True)
-    (directory / MARKER).write_text(json.dumps(record, indent=1) + "\n", encoding="utf-8")
+    (directory / marker).write_text(json.dumps(record, indent=1) + "\n", encoding="utf-8")
 
 
 def copy_verified(src: Path, dst: Path) -> None:
@@ -111,33 +132,15 @@ def _rmdir(path: Path) -> None:
         pass
 
 
-def win_path(path: Path) -> str:
-    """A path as OptiScaler (running under Proton) reads it: the Linux root is Z:."""
-    return "Z:" + str(Path(path).resolve()).replace("/", "\\")
+win_path = optiscaler.win_path
 
 
 def set_ini_value(text: str, section: str, key: str, value: str) -> str:
     """Set ``key=value`` in an OptiScaler.ini, keeping every other line as it is."""
-    newline = "\r\n" if "\r\n" in text else "\n"
-    lines = text.splitlines(keepends=True)
-    pattern = re.compile(r"^(\s*)%s(\s*)=" % re.escape(key))
-    hits = [i for i, line in enumerate(lines) if pattern.match(line)]
-    if len(hits) > 1:
-        raise InstallError(tr("err_ini_duplicate", name=key, file=OPTI_INI))
-    if hits:
-        line = lines[hits[0]]
-        ending = line[len(line.rstrip("\r\n")):] or newline
-        lines[hits[0]] = f"{key}={value}{ending}"
-        return "".join(lines)
-    header = re.compile(r"^\s*\[%s\]\s*$" % re.escape(section), re.I)
-    for i, line in enumerate(lines):
-        if header.match(line):
-            lines.insert(i + 1, f"{key}={value}{newline}")
-            return "".join(lines)
-    if lines and not lines[-1].endswith(("\n", "\r")):
-        lines[-1] += newline
-    lines.append(f"[{section}]{newline}{key}={value}{newline}")
-    return "".join(lines)
+    try:
+        return optiscaler.set_value(text, section, key, value)
+    except optiscaler.IniError as error:
+        raise InstallError(tr("err_ini_duplicate", name=str(error), file=OPTI_INI)) from error
 
 
 def _read_text(path: Path) -> str:
@@ -154,22 +157,38 @@ def _write_text(path: Path, text: str) -> None:
 
 @dataclass
 class InstallState:
-    route: Optional[str] = None
-    version: Optional[str] = None
+    route: Optional[str] = None          # HelixSR: direct / optiscaler / dlss; FSR: "scaler"
+    version: Optional[str] = None        # HelixSR's version, or OptiScaler's for FSR 4.1 / FSR 3
     issues: list[str] = field(default_factory=list)     # i18n keys
-    dll_files: list[Path] = field(default_factory=list)  # HelixSR's DLL(s) inside the game
-    ini_dirs: list[Path] = field(default_factory=list)   # where helixsr.ini is read
+    dll_files: list[Path] = field(default_factory=list)  # the upscaler DLL(s) inside the game
+    ini_dirs: list[Path] = field(default_factory=list)   # where helixsr.ini is read (HelixSR)
     log_files: list[Path] = field(default_factory=list)
     chosen: bool = False                                 # OptiScaler picked for an FSR 3.1 game
     installed_by: str = ""
+    upscaler: Optional[str] = None       # helixsr / fsr4 / fsr3
+    variant: Optional[str] = None        # fsr4: exact / lossy / native
+    opti_name: Optional[str] = None      # OptiScaler's file name next to the .exe
+    files: dict[str, str] = field(default_factory=dict)  # FSR: sha256 of the copies made
+    helper_files: list[Path] = field(default_factory=list)   # OptiScaler or the DLSS loader
+    source: str = ""                     # FSR: the download the upscaler DLL came from
+    opti_over_foreign: bool = False      # OptiScaler took the name of a file that was not OptiScaler
 
     @property
     def installed(self) -> bool:
         return self.route is not None
 
+    @property
+    def choice(self) -> Optional[str]:
+        if self.upscaler == "helixsr":
+            return f"helixsr:{self.route}"
+        if self.upscaler == "fsr4":
+            return f"fsr4:{self.variant or 'exact'}"
+        return self.upscaler
+
+
     def outdated(self, folder: Optional[HelixSRFolder]) -> bool:
-        """True when the HelixSR folder holds a different build than the game."""
-        if not self.installed or folder is None or not folder.ready:
+        """HelixSR only: True when the HelixSR folder holds a different build than the game."""
+        if self.upscaler != "helixsr" or folder is None or not folder.ready:
             return False
         try:
             size = folder.dll.stat().st_size
@@ -184,6 +203,11 @@ class InstallState:
         return False
 
 
+def _over_foreign(record: dict, store: Path, name: str) -> bool:
+    saved = store / name
+    return name in (record.get("moved") or []) and saved.exists() and not is_optiscaler(saved)
+
+
 def state(layout: GameLayout) -> InstallState:
     exe = Path(layout.exe_dir) if layout.exe_dir else None
     folder = exe / FOLDER if exe else None
@@ -193,9 +217,11 @@ def state(layout: GameLayout) -> InstallState:
         issues = [] if is_helixsr(core) and is_loader(loader) else ["is_files_replaced"]
         return InstallState("dlss", dll_version(core) or record.get("helixsr"), issues, [core],
                             [exe], [exe / LOG, exe / LOADER_LOG, folder / LOG],
-                            installed_by=str(record.get("installed_by") or ""))
+                            installed_by=str(record.get("installed_by") or ""),
+                            upscaler="helixsr", helper_files=[loader])
     if folder and (folder / MARKER).is_file():
-        opti = exe / str(record.get("optiscaler") or "dxgi.dll")
+        name = str(record.get("optiscaler") or "dxgi.dll")
+        opti = exe / name
         own = folder / OWN
         issues = []
         if not (is_optiscaler(opti) and is_helixsr(own)):
@@ -203,7 +229,27 @@ def state(layout: GameLayout) -> InstallState:
         return InstallState("optiscaler", dll_version(own) or record.get("helixsr"), issues,
                             [own, folder / OWN_SR], [folder], [folder / LOG, exe / OPTI_LOG],
                             chosen=record.get("chosen") == "optiscaler",
-                            installed_by=str(record.get("installed_by") or ""))
+                            installed_by=str(record.get("installed_by") or ""),
+                            upscaler="helixsr", opti_name=name, helper_files=[opti],
+                            opti_over_foreign=_over_foreign(record, folder / BACKUP, name))
+    scaler = exe / SCALER_FOLDER if exe else None
+    if scaler and (scaler / SCALER_MARKER).is_file():
+        record = read_record(scaler, SCALER_MARKER)
+        name = str(record.get("optiscaler") or "dxgi.dll")
+        upscaler = record.get("upscaler") if record.get("upscaler") in ("fsr4", "fsr3") else "fsr3"
+        dll = scaler / FFX_FILES["upscaler"]
+        issues = []
+        # HelixSR's own setup takes the FSR DLL here for a game's FSR 3.1 DLL and replaces it.
+        if not (is_optiscaler(exe / name) and dll.is_file()) or is_helixsr(dll):
+            issues.append("is_files_replaced")
+        return InstallState("scaler", str(record.get("optiscaler_version") or ""), issues, [dll],
+                            [], [exe / OPTI_LOG],
+                            installed_by=str(record.get("installed_by") or ""),
+                            upscaler=upscaler,
+                            variant=record.get("variant") if upscaler == "fsr4" else None,
+                            opti_name=name, files=dict(record.get("files") or {}),
+                            helper_files=[exe / name], source=str(record.get("source") or ""),
+                            opti_over_foreign=_over_foreign(record, scaler / BACKUP, name))
     targets = [Path(t) for t in layout.fsr_targets]
     dropped = [t for t in targets if original(t).exists() or is_helixsr(t)]
     if dropped:
@@ -218,7 +264,8 @@ def state(layout: GameLayout) -> InstallState:
         return InstallState("direct", version, issues, helixsr_files or dropped,
                             sorted({t.parent for t in dropped}),
                             [t.parent / LOG for t in dropped],
-                            installed_by=str(record.get("installed_by") or ""))
+                            installed_by=str(record.get("installed_by") or ""),
+                            upscaler="helixsr")
     return InstallState()
 
 
@@ -296,7 +343,8 @@ def _copy_tracked(src: Path, dst: Path, record: dict, key: str, notes: list[str]
     record[key] = sha256(dst)
 
 
-def _install_optiscaler(layout: GameLayout, folder: HelixSRFolder, stamp: str) -> list[str]:
+def _install_optiscaler(layout: GameLayout, folder: HelixSRFolder, stamp: str,
+                        name: Optional[str] = None) -> list[str]:
     if not layout.exe_dir:
         raise InstallError(tr("err_route_unavailable"))
     exe = Path(layout.exe_dir)
@@ -308,7 +356,7 @@ def _install_optiscaler(layout: GameLayout, folder: HelixSRFolder, stamp: str) -
     record.setdefault("created", [])
     hx.mkdir(exist_ok=True)
     notes = []
-    opti = record.get("optiscaler") or next(
+    opti = record.get("optiscaler") or name or next(
         (n for n in OPTI_NAMES if (exe / n).is_file() and is_optiscaler(exe / n)), "dxgi.dll")
     source = folder.path / OPTI_DIR
     if "optiscaler" not in record:   # first install: keep what the game had
@@ -493,9 +541,183 @@ def _settings_of(current: InstallState) -> dict[str, str]:
     return {}
 
 
+# ---- FSR 4.1 and FSR 3 (through OptiScaler) ---------------------------------------------------
+
+@dataclass
+class ScalerPlan:
+    """What an FSR 4.1 / FSR 3 install copies, prepared by the service from the downloads."""
+    choice: str                  # fsr4:exact / fsr4:lossy / fsr4:native / fsr3
+    opti_name: str               # OptiScaler's file name next to the .exe
+    optiscaler: Path             # the downloaded OptiScaler folder
+    optiscaler_version: str
+    upscaler_dll: Path           # the amd_fidelityfx_upscaler_dx12.dll to use
+    force_int8: bool             # FSR 4 on a GPU before RDNA 4
+    source: str = ""             # "<download>-<version>" the upscaler DLL comes from
+
+    @property
+    def upscaler(self) -> str:
+        return self.choice.partition(":")[0]
+
+    @property
+    def variant(self) -> Optional[str]:
+        return self.choice.partition(":")[2] or None
+
+
+def _put_back(exe: Path, store: Path, name: str) -> None:
+    """Return a file moved into ``store`` (unless the game has its own there again)."""
+    saved = store / name
+    if not (saved.exists() or saved.is_symlink()):
+        return
+    if (exe / name).exists() or (exe / name).is_symlink():
+        saved.unlink()
+    else:
+        os.replace(saved, exe / name)
+
+
+def _clear_helixsr_dropin(sc: Path) -> list[str]:
+    """HelixSR's own setup (FSR way) may have replaced the FSR DLL in the ScalerAssistant
+    folder, taking it for a game's FSR 3.1 DLL: take its files out again."""
+    record = read_record(sc)
+    upscaler = sc / FFX_FILES["upscaler"]
+    if record.get("route") != "direct" and not original(upscaler).exists():
+        return []
+    notes = _finish_settings(sc, record, False)
+    for path in (original(upscaler), sc / MARKER, sc / LOG, *(sc / n for n in NETWORK_FILES)):
+        _remove(path)
+    if is_helixsr(upscaler):
+        _remove(upscaler)
+    return [tr("in_sc_helixsr_removed")] + notes
+
+
+def _install_scaler(layout: GameLayout, plan: ScalerPlan, stamp: str) -> list[str]:
+    if not layout.exe_dir:
+        raise InstallError(tr("err_route_unavailable"))
+    exe = Path(layout.exe_dir)
+    sc = exe / SCALER_FOLDER
+    store = sc / BACKUP
+    record = read_record(sc, SCALER_MARKER)
+    record.setdefault("moved", [])
+    record.setdefault("created", [])
+    sc.mkdir(exist_ok=True)
+    notes: list[str] = []
+    name = plan.opti_name
+    previous = record.get("optiscaler")
+    if previous and previous != name:   # another file name for OptiScaler: undo the old one
+        if is_optiscaler(exe / previous):
+            _remove(exe / previous)
+        if previous in record["moved"]:
+            _put_back(exe, store, previous)
+            record["moved"].remove(previous)
+        notes.append(tr("in_sc_renamed", old=previous, name=name))
+    if "ini" not in record:   # first install: keep what the game had
+        if (exe / OPTI_INI).is_file():
+            store.mkdir(parents=True, exist_ok=True)
+            shutil.copy2(exe / OPTI_INI, store / OPTI_INI)
+            record["ini"] = "edited"
+        else:
+            shutil.copyfile(plan.optiscaler / OPTI_INI, exe / OPTI_INI)
+            record["ini"] = "created"
+    target = exe / name
+    ours = previous == name and is_optiscaler(target)
+    if (target.exists() or target.is_symlink()) and not ours:
+        # the game's own file, another mod's, or an OptiScaler set up by hand: kept aside
+        if previous == name:   # a game update put its own file back
+            notes.append(tr("in_opti_repaired", name=name))
+        store.mkdir(parents=True, exist_ok=True)
+        os.replace(target, store / name)
+        if name not in record["moved"]:
+            record["moved"].append(name)
+    record["optiscaler"] = name
+    notes += _clear_helixsr_dropin(sc)
+    for extra in OPTI_EXTRA:
+        if not (exe / extra).exists():
+            shutil.copyfile(plan.optiscaler / extra, exe / extra)
+            if extra not in record["created"]:
+                record["created"].append(extra)
+    copy_verified(plan.optiscaler / OPTI_DLL, target)
+    files = {OPTI_DLL: sha256(target)}
+    paths: dict[str, Path] = {}
+    for role, file_name in FFX_FILES.items():
+        source = plan.upscaler_dll if role == "upscaler" else plan.optiscaler / file_name
+        copy_verified(source, sc / file_name)
+        files[file_name] = sha256(sc / file_name)
+        paths[role] = sc / file_name
+    (sc / SCALER_NOTE).write_text(SCALER_NOTE_TEXT, encoding="utf-8")
+    if not (exe / OPTI_INI).is_file():   # deleted by hand since the last install
+        shutil.copyfile(plan.optiscaler / OPTI_INI, exe / OPTI_INI)
+        notes.append(tr("in_opti_ini_new"))
+    try:
+        text = optiscaler.configure(_read_text(exe / OPTI_INI), plan.upscaler, paths,
+                                    plan.force_int8)
+    except optiscaler.IniError as error:
+        raise InstallError(tr("err_ini_duplicate", name=str(error), file=OPTI_INI)) from error
+    _write_text(exe / OPTI_INI, text)
+    record.update({"tool": "Scaler Assistant", "installed_by": stamp, "upscaler": plan.upscaler,
+                   "variant": plan.variant, "optiscaler_version": plan.optiscaler_version,
+                   "source": plan.source, "files": files})
+    write_record(sc, record, SCALER_MARKER)
+    notes.insert(0, tr("in_sc_installed", name=name, folder=exe))
+    if name in record["moved"]:
+        notes.insert(1, tr("in_sc_backup", name=name, folder=f"{SCALER_FOLDER}/{BACKUP}"))
+    if record["ini"] == "edited":
+        notes.append(tr("in_sc_ini_edited"))
+    return notes
+
+
+def _remove_scaler(exe: Path) -> list[str]:
+    sc = exe / SCALER_FOLDER
+    if not (sc / SCALER_MARKER).is_file():
+        return []
+    record = read_record(sc, SCALER_MARKER)
+    store = sc / BACKUP
+    notes: list[str] = []
+    name = str(record.get("optiscaler") or "dxgi.dll")
+    if is_optiscaler(exe / name) or not (exe / name).exists():
+        _remove(exe / name)
+    else:
+        notes.append(tr("rm_sc_replaced", name=name))
+    if record.get("ini") == "created":
+        _remove(exe / OPTI_INI)
+        _remove(exe / OPTI_LOG)
+    elif (store / OPTI_INI).is_file():
+        os.replace(store / OPTI_INI, exe / OPTI_INI)
+    for extra in record.get("created") or []:
+        _remove(exe / extra)
+    for moved in record.get("moved") or []:
+        _put_back(exe, store, moved)
+    notes += _clear_helixsr_dropin(sc)
+    for file_name in (*FFX_FILES.values(), SCALER_NOTE, SCALER_MARKER):
+        _remove(sc / file_name)
+    _rmdir(store)
+    _rmdir(sc)
+    notes.insert(0, tr("rm_sc_done", folder=exe))
+    if sc.exists():
+        notes.append(tr("rm_sc_kept", folder=sc))
+    return notes
+
+
 # ---- entry points ------------------------------------------------------------------------------
 
-def install(layout: GameLayout, folder: HelixSRFolder, route: str, stamp: str) -> list[str]:
+def _remove_current(layout: GameLayout, current: InstallState,
+                    remove_settings: bool | str) -> list[str]:
+    exe = Path(layout.exe_dir) if layout.exe_dir else None
+    if current.route == "scaler" and exe:
+        return _remove_scaler(exe)
+    if current.route == "dlss" and exe:
+        return _remove_dlss(exe, remove_settings)
+    if current.route == "optiscaler" and exe:
+        return _remove_optiscaler(exe, remove_settings)
+    if current.route == "direct":
+        return _remove_direct(layout, remove_settings)
+    return []
+
+
+def _label(current: InstallState) -> str:
+    return tr("choice_" + (current.choice or "").replace(":", "_"))
+
+
+def install_helixsr(layout: GameLayout, folder: HelixSRFolder, route: str, stamp: str,
+                    opti_name: Optional[str] = None) -> list[str]:
     """Install HelixSR the given way; also switches, updates and repairs."""
     if route not in layout.ways(folder.has_loader):
         raise InstallError(tr("err_route_unavailable"))
@@ -505,22 +727,23 @@ def install(layout: GameLayout, folder: HelixSRFolder, route: str, stamp: str) -
     if not has_network(folder.dll):
         raise InstallError(tr("hx_not_built", path=folder.path))
     current = state(layout)
-    carried = _settings_of(current) if current.route not in (None, route) else {}
+    renamed = (route == "optiscaler" and current.route == "optiscaler" and opti_name
+               and current.opti_name != opti_name)
+    switching = current.route not in (None, route) or renamed
+    carried = _settings_of(current) if switching and current.upscaler == "helixsr" else {}
     notes: list[str] = []
     exe = Path(layout.exe_dir) if layout.exe_dir else None
-    if current.route and current.route != route:
-        notes.append(tr("sw_from", way=tr("way_" + current.route)))
+    if switching:
+        if current.upscaler == "helixsr" and not renamed:
+            notes.append(tr("sw_from", way=tr("way_" + str(current.route))))
+        elif current.upscaler != "helixsr":
+            notes.append(tr("sw_from", way=_label(current)))
         drop = "moved" if carried else False   # settings are written again below
-        if current.route == "dlss" and exe:
-            notes += _remove_dlss(exe, drop)
-        elif current.route == "optiscaler" and exe:
-            notes += _remove_optiscaler(exe, drop)
-        elif current.route == "direct":
-            notes += _remove_direct(layout, drop)
+        notes += _remove_current(layout, current, drop)
     if route == "direct":
         notes += _install_direct(layout, folder, stamp)
     elif route == "optiscaler":
-        notes += _install_optiscaler(layout, folder, stamp)
+        notes += _install_optiscaler(layout, folder, stamp, opti_name)
     else:
         notes += _install_dlss(layout, folder, stamp)
     if carried:
@@ -532,13 +755,37 @@ def install(layout: GameLayout, folder: HelixSRFolder, route: str, stamp: str) -
     return notes
 
 
+def install_scaler(layout: GameLayout, plan: ScalerPlan, stamp: str) -> list[str]:
+    """Install FSR 4.1 or FSR 3 through OptiScaler; also switches between them, updates and repairs."""
+    if plan.choice not in CHOICES or plan.upscaler == "helixsr":
+        raise InstallError(tr("err_route_unavailable"))
+    if not layout.optiscaler_possible:
+        raise InstallError(tr("err_route_unavailable"))
+    needed = [plan.optiscaler / n for n in (OPTI_DLL, OPTI_INI, *OPTI_EXTRA)]
+    needed += [plan.optiscaler / n for r, n in FFX_FILES.items() if r != "upscaler"]
+    needed.append(plan.upscaler_dll)
+    missing = [p for p in needed if not p.is_file()]
+    if missing:
+        raise InstallError(tr("err_missing_files", files=", ".join(str(p) for p in missing)))
+    current = state(layout)
+    notes: list[str] = []
+    if current.installed and current.route != "scaler":
+        notes.append(tr("sw_from", way=tr("way_" + str(current.route))))
+        notes += _remove_current(layout, current, False)
+    elif current.route == "scaler" and current.choice != plan.choice:
+        notes.append(tr("sw_from", way=_label(current)))
+    notes += _install_scaler(layout, plan, stamp)
+    return notes
+
+
+def install(layout: GameLayout, folder: HelixSRFolder, route: str, stamp: str,
+            opti_name: Optional[str] = None) -> list[str]:
+    """HelixSR the given way (kept for callers of the HelixSR-only versions)."""
+    return install_helixsr(layout, folder, route, stamp, opti_name)
+
+
 def remove(layout: GameLayout, remove_settings: bool) -> list[str]:
     current = state(layout)
-    exe = Path(layout.exe_dir) if layout.exe_dir else None
-    if current.route == "dlss" and exe:
-        return _remove_dlss(exe, remove_settings)
-    if current.route == "optiscaler" and exe:
-        return _remove_optiscaler(exe, remove_settings)
-    if current.route == "direct":
-        return _remove_direct(layout, remove_settings)
-    return [tr("rm_not_installed")]
+    if not current.installed:
+        return [tr("rm_not_installed")]
+    return _remove_current(layout, current, remove_settings)

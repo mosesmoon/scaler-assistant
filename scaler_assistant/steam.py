@@ -1,14 +1,18 @@
-"""Discover the local Steam installation, its libraries and installed games."""
+"""Discover the local Steam installation, its libraries, games and launch options."""
 
 from __future__ import annotations
 
 import os
+import shutil
+import time
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
 
 from . import vdf_text
 from .appinfo import AppInfoError, read_appinfo
+
+STEAM_ID64_BASE = 76561197960265728
 
 _STEAM_ROOT_CANDIDATES = (
     "~/.local/share/Steam",
@@ -130,6 +134,82 @@ class SteamInstallation:
         games.sort(key=lambda g: g.name.casefold())
         return games
 
+    # ---- users & launch options -------------------------------------------
+
+    def active_user_dirs(self) -> list[Path]:
+        userdata = self.root / "userdata"
+        try:
+            users = [d for d in userdata.iterdir() if d.is_dir() and d.name.isdigit() and d.name != "0"]
+        except OSError:
+            return []
+        try:
+            login = vdf_text.loads((self.root / "config" / "loginusers.vdf").read_text(
+                encoding="utf-8", errors="replace"))
+            entries = vdf_text.get_ci(login, "users") or {}
+            best = None
+            for steam_id, info in entries.items():
+                if not isinstance(info, dict) or not steam_id.isdigit():
+                    continue
+                rank = (info.get("MostRecent") == "1", int(info.get("Timestamp") or 0))
+                if best is None or rank > best[0]:
+                    best = (rank, int(steam_id) - STEAM_ID64_BASE)
+            if best is not None:
+                preferred = userdata / str(best[1])
+                if preferred.is_dir():
+                    return [preferred]
+        except (OSError, vdf_text.VdfError, ValueError):
+            pass
+        return users
+
+    def localconfig_paths(self) -> list[Path]:
+        return [d / "config" / "localconfig.vdf" for d in self.active_user_dirs()
+                if (d / "config" / "localconfig.vdf").is_file()]
+
+    @staticmethod
+    def _apps_node(data: dict, create: bool) -> Optional[dict]:
+        node = data
+        for key in ("UserLocalConfigStore", "Software", "Valve", "Steam", "apps"):
+            child = vdf_text.get_ci(node, key)
+            if not isinstance(child, dict):
+                if not create:
+                    return None
+                child = vdf_text.child_ci(node, key)
+            node = child
+        return node
+
+    def read_launch_options(self) -> dict[int, str]:
+        result: dict[int, str] = {}
+        for path in self.localconfig_paths():
+            try:
+                data = vdf_text.loads(path.read_text(encoding="utf-8", errors="replace"))
+            except (OSError, vdf_text.VdfError):
+                continue
+            apps = self._apps_node(data, create=False) or {}
+            for key, value in apps.items():
+                if key.isdigit() and isinstance(value, dict):
+                    options = vdf_text.get_ci(value, "LaunchOptions")
+                    if isinstance(options, str):
+                        result.setdefault(int(key), options)
+        return result
+
+    def write_launch_options_offline(self, changes: dict[int, str]) -> None:
+        """Edit localconfig.vdf directly. Only valid while Steam is closed."""
+        paths = self.localconfig_paths()
+        if not paths:
+            raise FileNotFoundError("localconfig.vdf not found for any Steam user")
+        for path in paths:
+            data = vdf_text.loads(path.read_text(encoding="utf-8", errors="replace"))
+            apps = self._apps_node(data, create=True)
+            for app_id, options in changes.items():
+                app = vdf_text.child_ci(apps, str(app_id))
+                existing_key = next((k for k in app if k.lower() == "launchoptions"), "LaunchOptions")
+                app[existing_key] = options
+            backup = path.with_name(path.name + ".scaler-assistant.bak")
+            shutil.copy2(path, backup)
+            tmp = path.with_name(path.name + ".tmp")
+            tmp.write_text(vdf_text.dumps(data), encoding="utf-8")
+            os.replace(tmp, path)
+
     def header_image(self, app_id: int) -> Optional[Path]:
         cache = self.root / "appcache" / "librarycache"
         folder = cache / str(app_id)
@@ -139,3 +219,27 @@ class SteamInstallation:
                 return match
         legacy = cache / f"{app_id}_header.jpg"
         return legacy if legacy.is_file() else None
+
+    # ---- process state ----------------------------------------------------
+
+    def is_running(self) -> bool:
+        for proc in Path("/proc").iterdir():
+            if not proc.name.isdigit():
+                continue
+            try:
+                if (proc / "comm").read_text().strip() != "steam":
+                    continue
+                exe = os.readlink(proc / "exe")
+            except OSError:
+                continue
+            if exe.endswith("/steam") and "ubuntu12_32" in exe:
+                return True
+        return False
+
+    def wait_until_closed(self, timeout: float = 60.0) -> bool:
+        deadline = time.monotonic() + timeout
+        while time.monotonic() < deadline:
+            if not self.is_running():
+                return True
+            time.sleep(0.5)
+        return not self.is_running()

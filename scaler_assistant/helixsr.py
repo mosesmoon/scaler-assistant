@@ -1,6 +1,6 @@
 """The user's HelixSR folder: the official release they downloaded and set up.
 
-HelixSR Assistant ships none of HelixSR's files. It only copies files from the
+Scaler Assistant ships none of HelixSR's files. It only copies files from the
 folder the user extracted HelixSR into, after HelixSR's own ``helixsr-setup``
 has built the network into ``amd_fidelityfx_dx12.dll`` on their PC (that DLL
 then carries NVIDIA's network and must never leave the user's computer).

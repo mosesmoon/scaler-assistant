@@ -1,9 +1,15 @@
-"""Which GPUs this PC has, and which AMD generation each one is.
+"""Which GPUs this PC has, which AMD generation each one is, and whether it is
+built into the processor.
 
-HelixSR targets AMD RDNA 1 and newer. RDNA 3 and newer run HelixSR's network
-with 64 lanes, which matters for the OptiScaler way (see HelixSR's README,
-"check the wave size"). The generation comes from the graphics IP version that
-the amdgpu driver reports (KFD topology, else IP discovery in sysfs).
+* HelixSR targets AMD RDNA 1 and newer. RDNA 3 and newer run HelixSR's network
+  with 64 lanes, which matters for the OptiScaler way (see HelixSR's README,
+  "check the wave size").
+* FSR 4: RDNA 4 (RX 9000) runs AMD's own FSR 4. Other GPUs run the INT8 model,
+  for which the FSR 4.1 Exact / Lossy DLLs exist in a build for graphics cards
+  and one for graphics built into the processor (also the Steam Deck).
+
+The generation comes from the graphics IP version the amdgpu driver reports
+(KFD topology, else IP discovery in sysfs).
 """
 
 from __future__ import annotations
@@ -13,6 +19,11 @@ from pathlib import Path
 from typing import Optional
 
 VENDORS = {0x1002: "AMD", 0x10DE: "NVIDIA", 0x8086: "Intel"}
+# Graphics IP versions only found in processors (APUs), including the Steam Deck (gfx1033).
+_APU_GFX = {
+    (9, 0, 2), (9, 0, 9), (9, 0, 12), (10, 3, 3), (10, 3, 5), (10, 3, 6), (10, 3, 7),
+    (11, 0, 3), (11, 0, 4), (11, 5, 0), (11, 5, 1), (11, 5, 2), (11, 5, 3),
+}
 
 
 @dataclass
@@ -21,6 +32,11 @@ class Gpu:
     device_id: int
     gfx: Optional[tuple[int, int, int]] = None   # (major, minor, stepping)
     name: str = ""
+    apu: bool = False                            # built into the processor
+
+    @property
+    def rdna4(self) -> bool:
+        return self.vendor == "AMD" and bool(self.gfx) and self.gfx[0] >= 12
 
     @property
     def family(self) -> str:
@@ -59,9 +75,28 @@ class Gpu:
         parts = [self.vendor]
         if self.family:
             parts.append(self.family)
+        if self.apu:
+            parts.append("APU")
         text = " ".join(parts)
         detail = self.gfx_name or f"{self.device_id:04x}"
         return f"{text} ({detail})"
+
+
+def main_gpu(gpus: list[Gpu]) -> Optional[Gpu]:
+    """The GPU games most likely use: a graphics card over built-in graphics, AMD first."""
+    if not gpus:
+        return None
+    return sorted(gpus, key=lambda g: (g.apu, g.vendor != "AMD", g.gfx is None))[0]
+
+
+def fsr4_pack(gpu: Optional[Gpu]) -> Optional[str]:
+    """Which FSR 4.1 Exact / Lossy build fits: 'dgpu', 'igpu', or None on RDNA 4
+    (AMD's own FSR 4 runs there and the modified DLLs must not be used)."""
+    if gpu is None:
+        return "dgpu"
+    if gpu.rdna4:
+        return None
+    return "igpu" if gpu.apu else "dgpu"
 
 
 def _read(path: Path) -> str:
@@ -71,9 +106,9 @@ def _read(path: Path) -> str:
         return ""
 
 
-def _kfd_gpus(root: Path) -> dict[int, tuple[int, int, int]]:
-    """device id -> gfx version, from the amdgpu compute topology."""
-    found: dict[int, tuple[int, int, int]] = {}
+def _kfd_gpus(root: Path) -> dict[int, tuple[tuple[int, int, int], bool]]:
+    """device id -> (gfx version, built into the processor), from the amdgpu compute topology."""
+    found: dict[int, tuple[tuple[int, int, int], bool]] = {}
     nodes = root / "class/kfd/kfd/topology/nodes"
     try:
         entries = sorted(nodes.iterdir())
@@ -87,10 +122,12 @@ def _kfd_gpus(root: Path) -> dict[int, tuple[int, int, int]]:
         try:
             version = int(props.get("gfx_target_version", "0"))
             device = int(props.get("device_id", "0"))
+            cpu_cores = int(props.get("cpu_cores_count", "0"))
         except ValueError:
             continue
         if version and device:
-            found[device] = (version // 10000, (version // 100) % 100, version % 100)
+            # An APU's GPU node also carries the processor's cores.
+            found[device] = ((version // 10000, (version // 100) % 100, version % 100), cpu_cores > 0)
     return found
 
 
@@ -127,6 +164,9 @@ def detect(root: Path = Path("/sys")) -> list[Gpu]:
         if vendor not in VENDORS or key in seen:
             continue
         seen.add(key)
-        gfx = kfd.get(device_id) or (_ip_discovery(device) if vendor == 0x1002 else None)
-        gpus.append(Gpu(VENDORS[vendor], device_id, gfx, _read(device / "product_name")))
+        gfx, apu = kfd.get(device_id) or (_ip_discovery(device) if vendor == 0x1002 else None, False)
+        apu = apu or (gfx in _APU_GFX)
+        if vendor == 0x8086:   # Intel's built-in graphics sit on the processor's own bus
+            apu = "PCI_SLOT_NAME=0000:00:" in _read(device / "uevent")
+        gpus.append(Gpu(VENDORS[vendor], device_id, gfx, _read(device / "product_name"), apu))
     return gpus

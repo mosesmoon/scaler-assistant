@@ -1,0 +1,11 @@
+{
+  "name": "Scaler Assistant",
+  "author": "mosesmoon",
+  "flags": [],
+  "api_version": 1,
+  "publish": {
+    "tags": ["upscaling", "fsr", "dlss", "optiscaler"],
+    "description": "Choose DLSS 3.7 (HelixSR), FSR 4.1 Exact / Lossy or FSR 3 for each Steam game: OptiScaler's file name, its settings and the launch options are handled for you.",
+    "image": ""
+  }
+}

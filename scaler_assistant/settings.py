@@ -14,7 +14,7 @@ from pathlib import Path
 from typing import Optional
 
 INI = "helixsr.ini"
-HEADER = "; HelixSR settings (edited with HelixSR Assistant). HelixSR reads this file next to its DLL."
+HEADER = "; HelixSR settings (edited with Scaler Assistant). HelixSR reads this file next to its DLL."
 
 
 @dataclass(frozen=True)

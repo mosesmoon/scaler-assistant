@@ -1,7 +1,7 @@
 import string
 import unittest
 
-from helixsr_assistant import i18n
+from scaler_assistant import i18n
 
 
 def _fields(text):

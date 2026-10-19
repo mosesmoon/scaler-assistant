@@ -1,11 +1,11 @@
-"""Detect what HelixSR is *actually* doing inside running Steam games.
+"""Detect what the installed upscaler is *actually* doing inside running Steam games.
 
 * ``/proc/<pid>/environ``: ``SteamAppId`` & co. tie a process to a Steam app.
 * ``/proc/<pid>/maps``: Proton (Wine) maps Windows DLLs from their files, so a
-  game that has loaded HelixSR (or OptiScaler, or HelixSR's DLSS loader) shows
-  the DLL's path there. The DLL is only loaded once the game uses the upscaler,
-  so "installed but not loaded" usually means the game has not been switched to
-  AMD FSR (or DLSS) in its graphics settings yet.
+  game that has loaded HelixSR or the FSR 4.1 / FSR 3 DLL (and OptiScaler, or
+  HelixSR's DLSS loader) shows the DLL's path there. The DLL is only loaded once
+  the game uses the upscaler, so "installed but not loaded" usually means the
+  game has not been switched to it in its graphics settings yet.
 * ``helixsr.log``: written by HelixSR when it starts in the game; only counted
   when it is newer than the game's processes.
 """
@@ -25,7 +25,7 @@ _APP_ID_ENV_KEYS = ("SteamAppId", "SteamGameId", "STEAM_COMPAT_APP_ID")
 @dataclass
 class Watch:
     """The files to look for in one game's processes."""
-    helixsr: list[str] = field(default_factory=list)   # HelixSR's DLL(s) in the game
+    helixsr: list[str] = field(default_factory=list)   # the upscaler DLL(s) in the game
     helpers: list[str] = field(default_factory=list)   # OptiScaler / DLSS loader
     logs: list[str] = field(default_factory=list)
 

@@ -1,166 +1,191 @@
-# HelixSR-Assistent — Funktionsübersicht
+# Scaler-Assistent — Funktionsübersicht
 
 [English](en.md) · [台灣正體中文](zh_TW.md) · [简体中文](zh_CN.md) · [日本語](ja.md) · **Deutsch** · [Français](fr.md) · [Español](es.md) · [Italiano](it.md) · [ไทย](th.md) · [Tiếng Việt](vi.md) · [Bahasa Melayu](ms.md) · [हिन्दी](hi.md)
 
-Der **HelixSR-Assistent** ist ein Linux-Desktop-Werkzeug, das **[HelixSR](https://github.com/lonewolf0622/HelixSR)** mit einem Klick in deine Steam-Spiele installiert, umstellt, aktualisiert und wieder entfernt – und beim Spielen zeigt, ob HelixSR wirklich läuft.
+Der **Scaler-Assistent** ist ein Linux-Desktopwerkzeug, mit dem du für jedes Steam-Spiel den Upscaler wählst — **DLSS 3.7 ([HelixSR](https://github.com/lonewolf0622/HelixSR))**, **FSR 4.1** (Exact oder Lossy aus [fsr4-shader-performance-overrides](https://github.com/zgauthier2000/fsr4-shader-performance-overrides), auf RX 9000 AMDs eigenes) oder **FSR 3** — und ihn mit einem Klick installierst, wechselst, aktualisierst, reparierst und entfernst. Beim Spielen zeigt er, ob der Upscaler wirklich läuft.
 
-HelixSR lässt NVIDIAs DLSS-Model-E-Upscaling-Netz über Proton als gewöhnliche Direct3D-12-Compute-Shader auf AMD-GPUs (RDNA 1 und neuer) laufen.
+## Für wen
 
-## Für wen ist das Werkzeug?
+Einen besseren Upscaler unter Linux von Hand in ein Spiel zu bringen heißt:
 
-HelixSR hat weder Startoptionen noch eine zentrale Einstellungsdatei. Es legt DLL-Dateien in den Ordner jedes Spiels, auf einem von drei Wegen pro Spiel. Von Hand heißt das:
+1. Herausfinden, welche Upscaler das Spiel mitbringt (DLSS, XeSS, FSR 2, FSR 3.1), welche Grafik-API es nutzt und wo seine Haupt-`.exe` liegt.
+2. OptiScaler unter einem Dateinamen, den das Spiel annimmt, neben die `.exe` legen, die nötigen FidelityFX-DLLs dazu, und `OptiScaler.ini` für den gewünschten Upscaler bearbeiten.
+3. `WINEDLLOVERRIDES` in die Steam-Startoptionen eintragen, wenn der Dateiname das braucht — ohne Vorhandenes zu zerstören.
+4. Die passende FSR-4.1-DLL für die GPU herunterladen oder HelixSR nach seiner README einrichten.
+5. Alles nach jedem Update wiederholen, und wieder, wenn ein Spiel-Update die Dateien überschreibt.
 
-1. Herausfinden, welche Upscaler jedes Spiel mitbringt (FSR 3.1, DLSS, XeSS, FSR 2) und wo seine Haupt-`.exe` liegt.
-2. Den passenden Weg wählen, die eigenen Dateien des Spiels umbenennen und sichern und die Dateien von HelixSR an die richtigen Stellen kopieren.
-3. Beim OptiScaler-Weg die richtigen Pfade in `OptiScaler.ini` eintragen.
-4. Alles nach jedem HelixSR-Update wiederholen – und erneut, wenn ein Spiel-Update HelixSR überschreibt.
-5. `helixsr.log` öffnen, um herauszufinden, ob HelixSR wirklich läuft.
+Der Scaler-Assistent erledigt das in einem Fenster und behält alles, was er ersetzt; beim Entfernen ist das Spiel wieder genau wie vorher.
 
-Der HelixSR-Assistent erledigt all das in einem Fenster. HelixSRs eigenes Setup fragt im Terminal Spiel für Spiel; der HelixSR-Assistent zeigt sie als Liste zum Anklicken.
+## Die Möglichkeiten pro Spiel
+
+Grafik-API und Upscaler des Spiels bestimmen, was angeboten wird. Das Spiel muss mindestens einen Upscaler mitbringen (DLSS, XeSS, FSR 2 oder FSR 3.1): Den übernehmen OptiScaler und HelixSR.
+
+| Wahl | Das Spiel braucht | Was in den Spielordner kommt | Im Spiel wählen |
+|---|---|---|---|
+| **DLSS 3.7 (HelixSR) · FSR-Weg** | Direct3D 12, FSR 3.1 | Die FSR-3.1-DLL des Spiels wird durch HelixSR ersetzt (die Datei des Spiels bleibt als `*.original.dll`) | AMD FSR |
+| **DLSS 3.7 (HelixSR) · OptiScaler-Weg** | Direct3D 12, DLSS, XeSS oder FSR 2 | OptiScaler neben der `.exe`, auf einen `HelixSR`-Ordner gerichtet | DLSS |
+| **DLSS 3.7 (HelixSR) · DLSS-Weg** (experimentell) | Direct3D 12, DLSS | HelixSRs DLSS-Lader (`dxgi.dll`) und HelixSR als `nvngx.dll` | DLSS |
+| **FSR 4.1 Exact** | einer der vier Upscaler | OptiScaler neben der `.exe`; FidelityFX-DLLs und die Exact-FSR-4.1-DLL in einem Ordner `ScalerAssistant` | DLSS, FSR oder XeSS |
+| **FSR 4.1 Lossy** | dasselbe | dasselbe, mit der Lossy-FSR-4.1-DLL | DLSS, FSR oder XeSS |
+| **FSR 4.1 (AMD)** — statt Exact / Lossy auf RX 9000 (RDNA 4) | dasselbe | dasselbe, mit AMDs eigener FSR-4.1-DLL | DLSS, FSR oder XeSS |
+| **FSR 3** | dasselbe | dasselbe; OptiScaler nutzt FSR 3.1.5 | DLSS, FSR oder XeSS |
+
+- **Exact** liefert AMDs FSR-4.1-Bild Byte für Byte, mit schnelleren Shadern. **Lossy** ist noch schneller und verändert das Bild leicht; vor der ersten Nutzung zeigt der Scaler-Assistent einmal seine `WARNING.txt`. Im Zweifel nimm Exact.
+- HelixSR funktioniert nur in **Direct3D-12**-Spielen, daher gibt es DLSS 3.7 nur dort. FSR 4.1 und FSR 3 funktionieren auch in **Direct3D-11- und Vulkan**-Spielen: FSR 3 nativ, FSR 4.1 über OptiScalers Direct3D-12-Pfad (weniger getestet als Direct3D-12-Spiele).
+- Klicke in der Zeile des Spiels auf **„Upscaler wählen“** (oder **„Upscaler“**, sobald einer installiert ist): DLSS 3.7 (HelixSR) öffnet ein Untermenü mit seinen Wegen; die aktuelle Wahl ist abgehakt. Beim Wechsel wird zuerst die aktuelle entfernt und alles zurückgestellt.
 
 ## Bevor du anfängst
 
-> ⚠ **Der HelixSR-Assistent enthält HelixSR nicht und lädt es auch nicht für dich herunter.** Er kopiert nur Dateien aus dem HelixSR-Ordner, den du selbst eingerichtet hast.
-
-1. **HelixSR herunterladen** (1.8.0 oder neuer) von seinen [GitHub-Releases](https://github.com/lonewolf0622/HelixSR/releases) und in einen Ordner entpacken, den du behältst, zum Beispiel dein Home-Verzeichnis.
-2. **Einmal `./helixsr-setup.sh` in diesem Ordner ausführen.** Es fragt, ob NVIDIAs DLSS-DLL heruntergeladen werden darf, und erstellt daraus das Netz von HelixSR (etwa eine Minute). Sobald es nach Spielen fragt, kannst du mit `n` antworten oder das Fenster schließen: Um die Spiele kümmert sich der HelixSR-Assistent. Findet er den Ordner, der aber noch nicht eingerichtet ist, bietet er die Schaltfläche „Setup im Terminal ausführen“ an.
-3. **Eine AMD-GPU ab RDNA 1** (Radeon RX 5000 und neuer, Steam Deck, Ryzen-APUs mit RDNA-Grafik). Radeon Vega wird in HelixSR 1.9.0 experimentell unterstützt.
-4. **Direct3D-12-Spiele unter Proton**, die FSR 3.1, DLSS, XeSS oder FSR 2 mitbringen.
-
-Beim ersten Start sucht der HelixSR-Assistent in deinem Home-, Download-, Desktop- und Games-Ordner nach einem eingerichteten HelixSR-Ordner. Mit „HelixSR-Ordner wählen…“ oder einem Klick auf die HelixSR-Anzeige oben wählst du jederzeit einen anderen.
-
-## Die drei Wege, wie HelixSR in ein Spiel kommt
-
-Das sind die drei Wege von HelixSR selbst (die Buchstaben sind die Antworten im HelixSR-Setup). Der HelixSR-Assistent bietet nur die Wege an, die für das jeweilige Spiel funktionieren, den Standardweg zuerst.
-
-| Weg | Das Spiel braucht | Was sich im Spielordner ändert | Im Spiel wählen |
-|---|---|---|---|
-| **FSR-Weg** (f, Standard bei FSR-3.1-Spielen) | FSR 3.1 | Die `amd_fidelityfx_upscaler_dx12.dll` (oder `amd_fidelityfx_dx12.dll`) des Spiels wird durch HelixSR ersetzt; die Datei des Spiels bleibt als `*.original.dll` erhalten | **AMD FSR** |
-| **OptiScaler-Weg** (o) | DLSS, XeSS oder FSR 2 | OptiScaler (die offizielle Version aus deinem HelixSR-Ordner) neben der `.exe` des Spiels; sein FSR-3.1-Backend zeigt auf einen `HelixSR`-Ordner daneben. Alles, was er ersetzt, landet in `HelixSR/backup` | **DLSS** (FSR oder XeSS gehen auch) |
-| **DLSS-Weg** (d, experimentell) | DLSS | HelixSRs DLSS-Loader als `dxgi.dll` und HelixSR als `nvngx.dll` neben der `.exe` des Spiels | **DLSS** |
+- **FSR 4.1 und FSR 3** brauchen nichts weiter: Beim ersten Mal fragt der Scaler-Assistent, ob er OptiScaler und die FSR-4.1-DLLs für deine GPU herunterladen soll (siehe „Downloads“).
+- **DLSS 3.7** braucht HelixSR, das der Scaler-Assistent nicht enthält. Lade HelixSR 1.8.0 oder neuer von den [GitHub-Releases](https://github.com/lonewolf0622/HelixSR/releases), entpacke es in einen Ordner, den du behältst, und führe dort einmal `./helixsr-setup.sh` aus (es baut HelixSRs Netz auf deinem PC; Fragen zu Spielen kannst du mit `n` beantworten). Ein Klick auf die **HelixSR**-Plakette oben zeigt das; einen eingerichteten HelixSR-Ordner in Home, Downloads, Desktop oder Games findet der Scaler-Assistent selbst.
+- Spiele laufen über **Proton**. HelixSR ist für AMD-GPUs ab RDNA 1 gemacht. FSR 4.1 Exact / Lossy sind für Radeon RX 7000 / RX 6000 und integrierte Radeon-Grafik (auch Steam Deck) gemacht; andere GPUs sollten sie ausführen, sind vom Autor aber ungetestet.
 
 ## Funktionen
 
-### 1. Liest deine Steam-Spiele und ihre Upscaler ein
+### 1. Liest deine Steam-Spiele ein
 
-- Beim ersten Start werden alle Steam-Bibliotheken eingelesen (auch auf anderen Laufwerken). Nach dem Installieren neuer Spiele auf „⟳ Steam-Spiele neu einlesen“ klicken.
-- Der Ordner jedes Spiels wird nach FSR-3.1-, DLSS-, XeSS- und FSR-2-DLLs durchsucht; der Ordner der Haupt-`.exe` wird aus Steams Startinformationen ermittelt (Launcher und Unreal-`*-Shipping.exe` werden berücksichtigt).
-- Spiele mit **Anti-Cheat** (Easy Anti-Cheat, BattlEye) werden markiert.
-- Spielnamen folgen der Oberflächensprache (Steams lokalisierte Namen) und werden nach den Regeln dieser Sprache sortiert. Spiele, die HelixSR nutzen können, stehen oben; der Filter „Spiele, die HelixSR nutzen können“ ist standardmäßig aktiv.
+- Beim ersten Start werden alle Steam-Bibliotheken durchsucht (auch auf anderen Laufwerken). Nach neuen Spielen „⟳ Steam-Spiele neu einlesen“ klicken.
+- Pro Spiel: die mitgelieferten Upscaler-DLLs, der Ordner der Haupt-`.exe` (aus Steams Startinformationen; Launcher und Unreals `*-Shipping.exe` werden berücksichtigt), die **Grafik-API** (aus der Importtabelle der `.exe`: DX12, DX11 oder Vulkan) und ob es einen **Anti-Cheat** hat (Easy Anti-Cheat, BattlEye).
+- Spielnamen folgen der Oberflächensprache (Steams lokalisierte Namen). Hochskalierbare Spiele stehen oben.
 
-### 2. Installation mit einem Klick
+### 2. Ein Dateiname für OptiScaler, der im Spiel funktioniert
 
-- „HelixSR installieren“ installiert auf dem Standardweg, der Pfeil daneben bietet die anderen Wege an. Bei jedem Weg steht dabei, was im Spiel zu wählen ist.
-- Bevor etwas geändert wird, prüft das Werkzeug, ob der HelixSR-Ordner eingerichtet ist (das Netz erstellt wurde) und das Spiel nicht läuft.
-- Der DLSS-Weg erklärt zuerst seine Risiken und fragt nach. Spiele mit Anti-Cheat fragen ebenfalls nach.
-- Danach steht im Protokoll genau, welche Dateien ersetzt wurden, wo die Dateien des Spiels gesichert sind und was im Spiel zu wählen ist.
+Das Spiel lädt OptiScaler als System-DLL neben seiner `.exe`. Der Name wird so gewählt:
 
-### 3. Weg wechseln, aktualisieren und reparieren
+1. ein Name, den du für das Spiel gewählt hast („Mehr“ → „Dateiname von OptiScaler…“),
+2. der Name eines OptiScaler, der schon da ist,
+3. der Name, den [OptiScalers Kompatibilitätsliste](https://github.com/optiscaler/OptiScaler/wiki) für das Spiel nennt (zum Beispiel `d3d12.dll` oder `winmm.dll`),
+4. `winmm.dll` für Vulkan-Spiele,
+5. ein anderer freier Name (`winmm.dll`, `version.dll`, …), wenn das Spiel oder eine andere Mod (etwa ReShade) schon eine `dxgi.dll` hat oder deine Startoptionen diesen Namen auf builtin festlegen,
+6. sonst `dxgi.dll`.
 
-- **Wechseln**: „Mehr“ → „Zum … wechseln“ entfernt zuerst den bisherigen Weg (alles wird zurückgelegt) und installiert dann den neuen. Deine HelixSR-Einstellungen ziehen mit um.
-- **Aktualisieren**: Hat dein HelixSR-Ordner einen neueren Build als ein Spiel (neue HelixSR-Version oder neu erstelltes Netz), zeigt das Spiel „↑ HelixSR … verfügbar“ und eine Schaltfläche „↑ Aktualisieren“; „↑ Alle aktualisieren“ erledigt alle Spiele auf einmal.
-- **Reparieren**: Ein Spiel-Update oder „Dateien auf Fehler überprüfen“ in Steam kann die eigenen Dateien des Spiels über HelixSR legen. Das Spiel zeigt dann, was passiert ist, und eine Schaltfläche „Reparieren“: Sie legt HelixSR zurück und behält die neuen Dateien des Spiels als Sicherung.
-- Taucht in deinem Download-Ordner (oder an einem anderen üblichen Ort) ein neuerer, eingerichteter HelixSR-Ordner auf, bietet das Werkzeug einmal an, zu ihm zu wechseln.
+Eine vorhandene Datei wird nie überschrieben: Sie kommt nach `ScalerAssistant/backup` (bei DLSS 3.7 `HelixSR/backup`) und beim Entfernen zurück.
 
-### 4. Entfernen
+### 3. Steam-Startoptionen: nur das Nötige, deine bleiben, wie sie sind
 
-- „Entfernen“ nimmt HelixSR heraus und legt jede Datei, die es ersetzt oder verschoben hat, genau so zurück, wie sie war.
-- Die HelixSR-Einstellungen des Spiels (`helixsr.ini`) bleiben erhalten, außer du hakst „Auch die HelixSR-Einstellungen dieses Spiels entfernen“ an.
-- Dateien, die du selbst in den `my-fsr`-Ordner des Spiels gelegt hast, werden nie gelöscht.
+`dxgi.dll` und `d3d12.dll` werden unter Proton ohne Weiteres geladen. Jeder andere Name braucht `WINEDLLOVERRIDES="<name>=n,b"` in den Startoptionen, und der Scaler-Assistent trägt es ein:
 
-### 5. HelixSR-Einstellungen ohne Dateibearbeitung
+- **Nur dieser eine Eintrag wird eingefügt.** Hast du schon `WINEDLLOVERRIDES`, wird `;winmm=n,b` darin angehängt; sonst wird `WINEDLLOVERRIDES="winmm=n,b"` vorangestellt (mit `%command%`, falls es fehlte). Alles andere bleibt. Beispiel: `-dx12 %command%` wird zu `WINEDLLOVERRIDES="winmm=n,b" -dx12 %command%`.
+- **Nur dieser eine Eintrag wird wieder entfernt**, wenn OptiScaler entfernt oder umbenannt wird. Hast du die Optionen dazwischen nicht geändert, sind sie danach exakt wie vorher; sonst wird nur der eingefügte Text entfernt und deine Änderungen bleiben.
+- Einen Eintrag, den du für den Namen schon hattest, lässt er in Ruhe und entfernt ihn auch später nicht. Setzen deine Optionen den Namen auf Wines builtin-Version, nimmt er einen anderen Namen, statt deine Einstellung zu ändern.
+- Fehlt der Eintrag später, zeigt das Spiel „Startoption fehlt“, und „Reparieren“ fügt ihn wieder ein.
+- Läuft Steam, werden die Optionen über Steam selbst geändert, wenn dessen Debug-Port erreichbar ist (wie ihn Decky Loader nutzt). Sonst bietet der Scaler-Assistent an, Steam zu beenden, die Änderung zu schreiben und Steam neu zu starten — bevor irgendeine Spieldatei angefasst wird.
 
-„⚙ Einstellungen“ bearbeitet die `helixsr.ini` des Spiels über ein Formular. Angeboten werden nur die Einstellungen, die HelixSRs README beschreibt:
+### 4. Downloads (FSR 4.1 und FSR 3)
 
-| Gruppe | Einstellung | Werte |
+Klicke oben auf die **OptiScaler**-Plakette (oder die GPU-Plakette):
+
+- **OptiScaler 0.9.4** (mit AMDs FidelityFX-DLLs: FSR 3 und AMDs FSR 4.1, dazu fakenvapi) und **FSR 4.1 Exact / Lossy** im Build für Grafikkarten oder für integrierte Grafik.
+- Nichts wird ohne deine Zustimmung geladen. Jeder Download ist ein festes Release, vor dem Entpacken gegen Größe und SHA-256 geprüft; nur die Dateien, die Spiele brauchen, bleiben in `~/.local/share/scaler-assistant/components/`.
+- **FSR-4.1-Build**: automatisch nach GPU (RX 9000 / RDNA 4 → AMDs eigenes FSR 4.1, integrierte Grafik und Steam Deck → Build für integrierte Grafik, andere GPUs → Build für Grafikkarten) oder von Hand. Auf RDNA 4 werden die veränderten DLLs nie genutzt. Auf anderen GPUs wird OptiScaler auf das INT8-Modell von FSR 4 gestellt.
+- „Downloads entfernen“ löscht sie; Spiele behalten ihre Kopien.
+
+### 5. Was sich in OptiScaler.ini ändert
+
+Nur die Zeilen, die die Wahl braucht, in ihren eigenen Abschnitten; alle anderen Zeilen und Kommentare bleiben:
+
+| Schlüssel | FSR 4.1 | FSR 3 |
 |---|---|---|
-| Schärfung | Schärfungsfilter | Standard, Aus, NVIDIA, RCAS |
-| | Schärfe | 0.00 – 1.00 |
-| | Dem Schärferegler des Spiels folgen | Standard, Ja, Nein |
-| Upscaling (HelixSR 1.9.0+) | int8-Netz | Standard (automatisch), Automatisch, Ein, Aus |
-| | Letzter Schritt bei Ultra-Leistung | Standard (Lanczos), Lanczos, EASU (FSR 1) |
-| Kompatibilität | Wave-Größe | Standard, 64, 32 |
+| `Dx12Upscaler` | `fsr31` | `fsr31` |
+| `Dx11Upscaler`, `VulkanUpscaler` | `fsr31_12` (über Direct3D 12) | `fsr31` (nativ) |
+| `UpscalerIndex` | `0` (FSR 4) | `1` (FSR 3.1.5) |
+| `Fsr4Update` | `true` | `false` |
+| `Fsr4ForceEnableInt8` | `true` vor RDNA 4 | `auto` |
+| `FfxDx12Path`, `FfxDx12SRPath`, `FfxDx12FGPath`, `FfxVkPath` | die DLLs im `ScalerAssistant`-Ordner des Spiels | ebenso |
 
-„Standard“ lässt die Zeile weg, dann nutzt HelixSR seinen eigenen Standardwert. Kommentare und alle anderen Zeilen der Datei bleiben unverändert. Die Datei liegt neben HelixSRs DLL für den Weg des Spiels (im `HelixSR`-Ordner des Spiels, neben der FSR-DLL des Spiels oder neben der `.exe`).
+Eine schon vorhandene `OptiScaler.ini` wird vorher gesichert und beim Entfernen zurückgelegt.
 
-### 6. HelixSR-Status live (was wirklich läuft)
+### 6. Wechseln, aktualisieren, reparieren, entfernen
 
-Laufende Steam-Spiele werden alle 3 Sekunden geprüft:
+- **Wechseln** im Upscaler-Menü: Die aktuelle Wahl wird zuerst entfernt, dann die neue installiert. Zwischen FSR 4.1 Exact, Lossy und FSR 3 ändern sich nur die FSR-DLL und `OptiScaler.ini`.
+- **Aktualisieren**: Ein Spiel zeigt „↑ HelixSR … verfügbar“, wenn dein HelixSR-Ordner einen neueren Build hat, oder „↑ Neuerer Download verfügbar“, wenn ein neuerer OptiScaler-/FSR-4.1-Download (oder ein anderer FSR-4.1-Build) gilt. „↑ Alle aktualisieren“ erledigt alle Spiele.
+- **Reparieren**: Ein Spiel-Update oder „Spieldateien auf Fehler überprüfen“ kann die eigenen Dateien des Spiels zurückbringen. Das Spiel zeigt dann, was passiert ist, und „Reparieren“ bringt den Upscaler zurück; die neuen Dateien des Spiels bleiben als Sicherung.
+- **Entfernen** stellt jede ersetzte oder verschobene Datei zurück und nimmt den Startoptionen-Eintrag wieder heraus.
 
-- Proton lädt Windows-DLLs aus ihren Dateien. Daher sieht das Werkzeug in `/proc/<pid>/maps`, ob das Spiel **HelixSR wirklich geladen hat** (und OptiScaler oder den DLSS-Loader).
-- HelixSR wird erst geladen, wenn das Spiel den Upscaler benutzt. „HelixSR noch nicht geladen“ sagt dir deshalb, was du in den Grafikeinstellungen des Spiels wählen musst.
-- Die `helixsr.log` des aktuellen Laufs wird gelesen: Die Wave-Größe der Netz-Kernel und eventuelle Fehlerzeilen werden angezeigt. „Mehr“ → „helixsr.log anzeigen“ zeigt das ganze Protokoll mit einer Kopierschaltfläche.
-- Auf GPUs **ab RDNA 3** empfiehlt HelixSRs README in Spielen mit OptiScaler-Weg `WaveSize = 64`, wenn das Protokoll wave32 meldet. Das Werkzeug erkennt das und bietet „WaveSize = 64 setzen“ mit einem Klick an.
-- Die GPU-Anzeige oben zeigt die Generation deiner GPU (zum Beispiel „AMD RDNA 3 (gfx1100)“).
+### 7. HelixSR-Einstellungen ohne Dateibearbeitung
 
-### 7. Einblendung beim Spielstart
+Für DLSS 3.7 bearbeitet „⚙ Einstellungen“ die `helixsr.ini` des Spiels als Formular (Schärfung, int8-Netz, letzter Schritt bei Ultra-Leistung, Wave-Größe). „Standard“ lässt die Zeile weg; andere Zeilen und Kommentare bleiben.
 
-Ist der HelixSR-Assistent beim Start eines Spiels mit HelixSR geöffnet, erscheint unten rechts für etwa 10 Sekunden eine kleine Karte, sobald HelixSR geladen ist – mit Version, Weg und Wave-Größe (einmal pro Start; Spiele, die schon vor dem Öffnen liefen, werden übersprungen). Ist HelixSR nach 90 Sekunden noch nicht geladen, sagt die Karte, was im Spiel zu wählen ist. Die Einblendung ist ein eigenes X11-Fenster (XWayland), nimmt nie den Fokus und lässt Mausklicks durch. Abschaltbar über das Kästchen in der Werkzeugleiste. Im Spielmodus des Steam Deck (gamescope) erscheint sie nicht.
+### 8. Live-Status und Einblendung
 
-### 8. Spiele starten, suchen und filtern
+- Laufende Steam-Spiele werden alle 3 Sekunden geprüft: `/proc/<pid>/maps` zeigt, ob das Spiel HelixSR oder die FSR-DLL (und OptiScaler oder den DLSS-Lader) **wirklich geladen** hat. Geladen wird erst, wenn das Spiel den Upscaler nutzt; „noch nicht geladen“ sagt dir also, was du im Spiel wählen musst.
+- Bei HelixSR zeigt die `helixsr.log` des aktuellen Laufs Wave-Größe und Fehler; ab RDNA 3 mit dem OptiScaler-Weg wird bei wave32 „WaveSize = 64 setzen“ angeboten.
+- Das Detailfeld eines Spiels (die ⌄-Taste auf seiner Karte) bietet „…log anzeigen“ für `helixsr.log` oder `OptiScaler.log`, den Spielordner, OptiScalers Dateinamen und für DLSS 3.7 „⚙ Einstellungen“.
+- Beim Spielstart erscheint unten rechts etwa 10 Sekunden lang eine kleine Karte mit dem Ergebnis (oder nach 90 Sekunden ein Hinweis). Sie ist ein eigenes X11-Fenster, das nie den Fokus nimmt; abschaltbar über den Schalter in der Werkzeugleiste.
 
-- Jede Zeile hat eine Schaltfläche „▶ Starten“ (über `steam://rungameid/<AppID>`); solange das Spiel läuft, steht dort „Läuft“.
-- Suche nach Spielname (in jeder Sprache) oder App-ID. Filter: Spiele, die HelixSR nutzen können, installiert, nicht installiert, Update oder Reparatur nötig, läuft, alle Spiele.
+### 9. Starten, suchen, filtern, Sprachen
 
-### 9. Zwölf Oberflächensprachen
+- „▶ Starten“ startet das Spiel über Steam. Suche nach Name (jede Sprache) oder App-ID; Filter: hochskalierbare Spiele, Upscaler installiert, noch kein Upscaler, Update oder Reparatur nötig, läuft, alle Spiele.
+- 12 Oberflächensprachen: 台灣正體中文, 简体中文, English, 日本語, Deutsch, Français, Español, Italiano, ไทย, Tiếng Việt, Bahasa Melayu, हिन्दी.
 
-台灣正體中文, 简体中文, English, 日本語, Deutsch, Français, Español, Italiano, ไทย, Tiếng Việt, Bahasa Melayu, हिन्दी. Beim ersten Start wird die Systemsprache verwendet; oben rechts umschalten (sofort wirksam und gespeichert).
+### 10. Auf Sicherheit gebaut
 
-### 10. Auf Sicherheit ausgelegt
+- Solange das Spiel läuft, ändert sich nichts; Downloads und HelixSR-Ordner werden geprüft, bevor eine Datei angefasst wird.
+- Jede ersetzte Datei wird behalten, jede Kopie Byte für Byte geprüft, und Startoptionen ändern sich nur um den oben beschriebenen einen Eintrag.
+- Der DLSS-Weg, FSR 4.1 Lossy und Spiele mit Anti-Cheat fragen vorher. Nutze nie einen veränderten Upscaler in Online-Spielen: Anti-Cheat kann das als Manipulation werten.
 
-- Es wird nichts geändert, solange der HelixSR-Ordner nicht eingerichtet ist oder das Spiel läuft.
-- Jede Datei, die HelixSR ersetzt, wird aufbewahrt (`*.original.dll` oder `HelixSR/backup`), und jede kopierte Datei wird Byte für Byte geprüft.
-- Eine vorhandene `OptiScaler.ini` wird gesichert und beim Entfernen zurückgelegt; eine FSR-DLL, die du im `HelixSR`-Ordner des Spiels von Hand ersetzt hast, bleibt bei Updates erhalten.
-- Der DLSS-Weg und Spiele mit Anti-Cheat erfordern eine ausdrückliche Bestätigung.
+### 11. Aussehen
+
+- Im Stil von MAKO Assistant („Liquid Glass“): eine Karte pro Spiel mit Steam-Cover, Status-Chip, dem, was das Spiel bietet, und während es läuft, dem, was wirklich geladen ist. Die ⌄-Taste öffnet die Details (Grafik-API, Upscaler, `.exe`-Ordner, OptiScalers Name, Startoptionen) und seltenere Aktionen.
+- Die Tasten sind klar wie Kristall: leichte Tönung, feiner Rand und hellere Oberkante, ohne Verläufe. Petrol installiert, Blau wechselt, Bernstein aktualisiert, Rot entfernt.
+- Dunkles, helles oder automatisches Design (folgt dem Desktop). Das Aktivitätsprotokoll ist die Schublade am unteren Fensterrand.
 
 ## Zusammenarbeit mit HelixSRs eigenem Setup
 
-Der HelixSR-Assistent schreibt denselben Installationsvermerk (`helixsr-install.json`), dieselben Sicherungen und Dateinamen wie HelixSRs Setup. Daher:
+Für DLSS 3.7 schreibt der Scaler-Assistent denselben Installationsdatensatz (`helixsr-install.json`), dieselben Sicherungen und Dateinamen wie HelixSRs Setup, daher erkennen `helixsr-setup.sh` / `helixsr-uninstall.sh` und der Scaler-Assistent die Spiele des jeweils anderen. HelixSRs Setup hält die FSR-DLL im `ScalerAssistant`-Ordner eines Spiels für die FSR-3.1-DLL des Spiels und kann sie durch HelixSR ersetzen; der Scaler-Assistent meldet das Spiel dann als reparaturbedürftig, und „Reparieren“ nimmt HelixSR wieder heraus. Für DLSS 3.7 in einem solchen Spiel wähle es im Scaler-Assistenten.
 
-- Spiele, die du mit `helixsr-setup.sh` eingerichtet hast, erscheinen im HelixSR-Assistenten als installiert (mit ihrem Weg) und lassen sich dort umstellen, aktualisieren oder entfernen.
-- Mit dem HelixSR-Assistenten eingerichtete Spiele erkennen auch HelixSRs Setup und `helixsr-uninstall.sh`, die sie aktualisieren oder entfernen können.
+## Steam-Deck-Plugin (Decky Loader)
 
-## HelixSR-Assistent installieren
+Dasselbe Programm für den Spielmodus, als Plugin für [Decky Loader](https://decky.xyz) im Schnellzugriffsmenü.
 
-**AppImage (empfohlen)**: Python und Qt sind enthalten, sonst muss nichts installiert werden.
+- **Spiele**: die Spiele, die hochskaliert werden können, laufende zuerst, jeweils mit Status-Chip und, während sie laufen, dem, was wirklich geladen ist. Ein Spiel auswählen, um DLSS 3.7 (HelixSR, jeder Weg), FSR 4.1 Exact / Lossy oder FSR 3 zu wählen, es zu aktualisieren, zu reparieren oder zu entfernen, OptiScalers Dateinamen zu ändern oder sein Log zu lesen. Vorher kommen dieselben Fragen wie in der Desktop-App: Downloads, die Lossy-Warnung, der DLSS-Weg und Anti-Cheat.
+- **Einrichtung**: der HelixSR-Ordner (Dateiauswahl), die Downloads und der FSR-4.1-Build (das Steam Deck bekommt den Build für integrierte Grafik), ein Hinweis beim Spielstart (ob der Upscaler geladen wurde) und die Sprache (standardmäßig wie Steam).
+- Es teilt `state.json`, die Downloads und die Startoptions-Einträge mit der Desktop-App; in einem eingerichtete Spiele erscheinen auch im anderen. Startoptionen werden live über Steam geschrieben.
+- Nicht im Plugin: das Formular für HelixSRs Einstellungen (Desktop-App verwenden) und HelixSRs eigenes `helixsr-setup.sh`, das du einmal im Desktopmodus ausführst.
 
-1. `HelixSR_Assistant-<Version>-x86_64.AppImage` von der Seite [Releases](https://github.com/mosesmoon/helixsr-assistant/releases) herunterladen.
-2. Ausführbar machen: Rechtsklick auf die Datei → Eigenschaften → Berechtigungen und „Datei als Programm ausführen“ einschalten (die Bezeichnung hängt vom Dateimanager ab).
-3. Doppelklicken, um den HelixSR-Assistenten zu öffnen.
+Installation: Decky Loader auf dem Steam Deck einrichten, `Scaler_Assistant-Decky-<Version>.zip` von der [Releases](https://github.com/mosesmoon/scaler-assistant/releases)-Seite laden, dann in Deckys Einstellungen → Entwickler (zuerst unter Allgemein den Entwicklermodus einschalten) → „Install Plugin from ZIP File“.
 
-Oder im Terminal:
+## Den Scaler-Assistenten installieren
+
+**AppImage (empfohlen)**: Python, Qt und 7-Zip sind enthalten.
+
+1. `Scaler_Assistant-<version>-x86_64.AppImage` von der [Releases](https://github.com/mosesmoon/scaler-assistant/releases)-Seite laden.
+2. Ausführbar machen: Rechtsklick → Eigenschaften → Berechtigungen → „Als Programm ausführen“ (je nach Dateimanager anders benannt).
+3. Doppelklicken.
 
 ```bash
-chmod +x HelixSR_Assistant-*-x86_64.AppImage
-./HelixSR_Assistant-*-x86_64.AppImage
+chmod +x Scaler_Assistant-*-x86_64.AppImage
+./Scaler_Assistant-*-x86_64.AppImage
 ```
 
-Startet es nicht, fehlt deinem System eventuell FUSE; starte es dann mit `./HelixSR_Assistant-*-x86_64.AppImage --appimage-extract-and-run`.
+Startet es nicht, fehlt eventuell FUSE; dann mit `--appimage-extract-and-run` starten.
 
-**Aus dem Quellcode**: benötigt Python 3.11 oder neuer und PyQt6 (Arch: `sudo pacman -S python-pyqt6`).
+**Aus dem Quellcode**: Python 3.11+ und PyQt6 (Arch: `sudo pacman -S python-pyqt6`), dazu 7-Zip oder bsdtar zum Entpacken von OptiScaler (`sudo pacman -S 7zip`).
 
 ```bash
-./helixsr-assistant    # direkt starten
-./install.sh           # nach ~/.local/share/helixsr-assistant installieren und einen Menüeintrag anlegen
+./scaler-assistant     # direkt starten
+./install.sh           # nach ~/.local/share/scaler-assistant installieren und Menüeintrag anlegen
 ```
 
 ## Bekannte Einschränkungen
 
-- **Nur Steam-Spiele.** Für Spiele aus anderen Stores HelixSRs eigenes Setup verwenden (den Ordner des Spiels hineinziehen).
-- HelixSR selbst funktioniert nur in Direct3D-12-Spielen. Ein Spiel mit DLSS- oder FSR-DLL kann trotzdem Vulkan oder Direct3D 11 nutzen; dann bewirkt HelixSR dort nichts.
-- HelixSR ändert sich sehr schnell. Der HelixSR-Assistent braucht HelixSR 1.8.0 oder neuer und wurde für den Aufbau von 1.8.x und 1.9.x gemacht. Ändert eine künftige HelixSR-Version die Einrichtung der Spiele, verwende HelixSRs eigenes Setup, bis der HelixSR-Assistent aktualisiert ist.
-- Die Einblendung erscheint nicht im Spielmodus des Steam Deck (gamescope); Spiele im exklusiven nativen Wayland-Vollbild können sie verdecken.
-- Auf Thai, Vietnamesisch, Malaiisch und Hindi sind Kontextmenüs englisch (Qt hat für diese Sprachen keine offiziellen Übersetzungen). Steam hat keine malaiischen oder Hindi-Spielnamen, daher zeigen diese beiden Sprachen immer die Originalnamen.
+- **Nur Steam-Spiele.** Die FSR-4.1-/FSR-3-Wege wurden Datei für Datei mit OptiScaler 0.9.4 geprüft; jedes Spiel verhält sich anders — bei Problemen OptiScalers Kompatibilitätsliste ansehen oder einen anderen Dateinamen für OptiScaler wählen.
+- FSR 4.1 in Direct3D-11- und Vulkan-Spielen läuft über OptiScalers Direct3D-12-Pfad und ist weniger getestet.
+- HelixSR ändert sich schnell. Der Scaler-Assistent braucht HelixSR 1.8.0 oder neuer und folgt dem Aufbau von 1.8.x / 1.9.x.
+- Im Spielmodus des Steam Deck (gamescope) erscheint die Einblendung nicht. Das Decky-Plugin zeigt dort stattdessen eine Steam-Benachrichtigung.
+- Auf Thai, Vietnamesisch, Malaiisch und Hindi sind Kontextmenüs englisch (Qt hat keine offiziellen Übersetzungen). Steam hat keine malaiischen oder Hindi-Spielnamen.
 
-## Wo Daten gespeichert werden
+## Wo Daten liegen
 
 | Ort | Inhalt |
 |---|---|
-| `~/.config/helixsr-assistant/state.json` | Eigener Zustand des HelixSR-Assistenten: HelixSR-Ordner, Spielelisten-Cache, Oberflächensprache, Einblendungs-Einstellung |
-| `<Spiel>/…/HelixSR/helixsr-install.json`, neben der FSR-DLL des Spiels | HelixSRs Installationsvermerk (gemeinsam mit HelixSRs eigenem Setup) |
-| `<Spiel>/…/helixsr.ini` | HelixSRs Einstellungen für dieses Spiel |
-| `<Spiel>/…/helixsr.log` | Was HelixSR beim letzten Spielstart gemeldet hat |
+| `~/.config/scaler-assistant/state.json` | Zustand des Scaler-Assistenten: HelixSR-Ordner, Spieleliste, Sprache, FSR-4.1-Build, gewählte OptiScaler-Namen, die von ihm eingefügten Startoptionen-Einträge (einmalig vom HelixSR-Assistenten übernommen) |
+| `~/.local/share/scaler-assistant/components/` | Die heruntergeladenen OptiScaler- und FSR-4.1-Dateien |
+| `~/homebrew/plugins/scaler-assistant/` | Das Decky-Plugin auf dem Steam Deck (nutzt denselben Zustand und dieselben Downloads wie oben) |
+| `<Spiel>/…/ScalerAssistant/` | FSR 4.1 / FSR 3: FidelityFX-DLLs, `scaler-install.json`, `backup/` |
+| `<Spiel>/…/HelixSR/helixsr-install.json`, neben der FSR-DLL des Spiels | DLSS 3.7: HelixSRs Installationsdatensatz (mit HelixSRs Setup geteilt) |
+| `<Spiel>/…/helixsr.ini`, `helixsr.log`, `OptiScaler.ini`, `OptiScaler.log` | Einstellungen und Protokolle |
 
 ## Lizenzen
 
-Der HelixSR-Assistent ist ein unabhängiges, inoffizielles Werkzeug. Er steht in keiner Verbindung zum Autor von HelixSR, zu NVIDIA, AMD oder dem OptiScaler-Projekt, wird von ihnen nicht unterstützt und enthält keine ihrer Dateien. HelixSR ist unter der HelixSR Freeware License kostenlos nutzbar. Nach dem Setup von HelixSR enthalten HelixSRs DLLs NVIDIAs Netz: Der HelixSR-Assistent kopiert sie nur zwischen Ordnern auf deinem eigenen PC. Teile oder lade sie niemals hoch.
+Der Scaler-Assistent ist ein unabhängiges, inoffizielles Werkzeug, nicht verbunden mit oder unterstützt von HelixSRs Autor, NVIDIA, AMD, dem OptiScaler-Projekt oder dem Projekt fsr4-shader-performance-overrides, und enthält keine ihrer Dateien. Auf deinen Wunsch lädt er OptiScaler (GPL-3.0; fakenvapi MIT; AMDs FidelityFX-DLLs unter AMDs Lizenz) und die FSR-4.1-DLLs (GPL-2.0-or-later, veränderte AMD-DLLs mit AMDs Hinweis) von deren GitHub-Releases. Das AppImage enthält 7-Zips `7zzs` (GNU LGPL mit unRAR-Einschränkung, BSD; Lizenz liegt bei). HelixSR ist unter der HelixSR Freeware License kostenlos; nach seinem Setup enthalten HelixSRs DLLs NVIDIAs Netz, daher kopiert der Scaler-Assistent sie nur zwischen Ordnern auf deinem eigenen PC. Teile oder lade sie niemals hoch. Das Decky-Plugin enthält dasselbe `7zzs`.
