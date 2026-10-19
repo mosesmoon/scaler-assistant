@@ -15,6 +15,7 @@ import hashlib
 import json
 import os
 import shutil
+import ssl
 import subprocess
 import tempfile
 import urllib.request
@@ -143,8 +144,52 @@ def seven_zip() -> Optional[list[str]]:
     return None
 
 
+# CA bundles of the common Linux distributions (SteamOS and Arch: the first and the last).
+CA_FILES = (
+    "/etc/ssl/certs/ca-certificates.crt",
+    "/etc/pki/tls/certs/ca-bundle.crt",
+    "/etc/pki/ca-trust/extracted/pem/tls-ca-bundle.pem",
+    "/etc/ssl/ca-bundle.pem",
+    "/etc/ssl/cert.pem",
+    "/etc/ca-certificates/extracted/tls-ca-bundle.pem",
+)
+_context: Optional[ssl.SSLContext] = None
+
+
+def tls_context() -> ssl.SSLContext:
+    """A verifying TLS context that trusts the system's certificate authorities.
+
+    A Python built elsewhere (Decky Loader runs plugins inside its own bundled Python)
+    looks for them where its build machine kept them and finds none, so every HTTPS
+    download fails with CERTIFICATE_VERIFY_FAILED. Then the system's bundle is loaded.
+    Certificates are always checked."""
+    global _context
+    if _context is not None:
+        return _context
+    context = ssl.create_default_context()
+    if not context.cert_store_stats().get("x509_ca"):
+        paths = ssl.get_default_verify_paths()
+        found = False
+        for candidate in (os.environ.get("SSL_CERT_FILE"), paths.cafile, *CA_FILES):
+            if candidate and os.path.isfile(candidate):
+                try:
+                    context.load_verify_locations(cafile=candidate)
+                except (OSError, ssl.SSLError):
+                    continue
+                found = True
+                break
+        if not found and os.path.isdir("/etc/ssl/certs"):
+            context.load_verify_locations(capath="/etc/ssl/certs")
+    _context = context
+    return context
+
+
+def open_url(request, timeout: float):
+    return urllib.request.urlopen(request, timeout=timeout, context=tls_context())
+
+
 def _download(component: Component, target: Path, progress: Progress,
-              opener: Callable = urllib.request.urlopen) -> None:
+              opener: Callable = open_url) -> None:
     digest = hashlib.sha256()
     done = 0
     request = urllib.request.Request(component.url, headers={"User-Agent": "Scaler-Assistant"})
@@ -186,7 +231,7 @@ def _extract(component: Component, archive: Path, into: Path) -> None:
 
 
 def fetch(component: Component, progress: Progress = lambda *_: None,
-          root: Optional[Path] = None, opener: Callable = urllib.request.urlopen) -> Path:
+          root: Optional[Path] = None, opener: Callable = open_url) -> Path:
     """Download, verify and unpack a component (nothing is left half-done)."""
     if ready(component, root):
         return folder(component, root)

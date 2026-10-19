@@ -901,6 +901,28 @@ class FrameGenerationTest(Base):
         self.assertNotIn("scaler-fg", self.calls())
 
 
+class TlsContextTest(unittest.TestCase):
+    """Downloads trust the system's CAs even in a Python that can't find them (Decky Loader)."""
+
+    def test_system_bundle_when_python_has_none(self):
+        import ssl
+        bundle = next((f for f in components.CA_FILES if os.path.isfile(f)), None)
+        if bundle is None:
+            self.skipTest("no system CA bundle here")
+        empty = lambda *a, **k: ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+        paths = ssl.DefaultVerifyPaths(None, None, "SSL_CERT_FILE", "/nowhere/cert.pem",
+                                       "SSL_CERT_DIR", "/nowhere/certs")
+        with mock.patch.object(components, "_context", None), \
+                mock.patch("ssl.create_default_context", empty), \
+                mock.patch("ssl.get_default_verify_paths", return_value=paths), \
+                mock.patch.dict(os.environ, {}, clear=False) as env:
+            env.pop("SSL_CERT_FILE", None)
+            context = components.tls_context()
+        self.assertGreater(context.cert_store_stats()["x509_ca"], 0)
+        self.assertEqual(context.verify_mode, ssl.CERT_REQUIRED)
+        self.assertTrue(context.check_hostname)
+
+
 class BridgeRunnerTest(unittest.TestCase):
     """HelixSR's installer runs with unreadable folders counting as not there."""
 
