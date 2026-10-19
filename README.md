@@ -10,7 +10,7 @@ A desktop tool (PyQt6) that lets you choose the upscaler for each Steam game —
 
 > ⚠ **Scaler Assistant contains no upscaler files.** FSR 4.1 and FSR 3 run through OptiScaler, which it downloads (with the FSR 4.1 DLLs for your GPU) only when you agree. For DLSS 3.7, download HelixSR 1.8.0 or newer from its [releases](https://github.com/lonewolf0622/HelixSR/releases) and run `./helixsr-setup.sh` in its folder once.
 
-**Download**: the AppImage and the Decky plugin (`Scaler_Assistant-Decky-<version>.zip`) are on the [Releases](https://github.com/mosesmoon/scaler-assistant/releases) page.
+**Download**: the AppImage, the single installer (`.bin`), the Flatpak bundle and the Decky plugin (`Scaler_Assistant-Decky-<version>.zip`) are on the [Releases](https://github.com/mosesmoon/scaler-assistant/releases) page.
 
 **Full feature guide** (12 languages): [English](docs/features/en.md) · [台灣正體中文](docs/features/zh_TW.md) · [简体中文](docs/features/zh_CN.md) · [日本語](docs/features/ja.md) · [Deutsch](docs/features/de.md) · [Français](docs/features/fr.md) · [Español](docs/features/es.md) · [Italiano](docs/features/it.md) · [ไทย](docs/features/th.md) · [Tiếng Việt](docs/features/vi.md) · [Bahasa Melayu](docs/features/ms.md) · [हिन्दी](docs/features/hi.md)
 
@@ -77,6 +77,15 @@ chmod +x Scaler_Assistant-*-x86_64.AppImage
 2. In Game Mode open the Quick Access menu → Decky → ⚙ → Developer (turn on Developer mode in Decky's General settings first) → "Install Plugin from ZIP File", and pick the zip.
 3. Open Scaler Assistant in the Quick Access menu's Decky tab. For DLSS 3.7, set up HelixSR once in Desktop Mode (`./helixsr-setup.sh`) and choose its folder in the plugin.
 
+**Single installer (.bin)**: `Scaler_Assistant-<version>-x86_64.bin` installs the same bundled app for your user only (no root, no FUSE) into `~/.local/opt/scaler-assistant`, with the `scaler-assistant` command and a menu entry. **Flatpak**: `Scaler_Assistant-<version>-x86_64.flatpak` is a single-file bundle on the Freedesktop 25.08 runtime (fetched from Flathub on install). It may read your home folder and other drives (SD cards under `/run/media`) and sees Steam's and the games' processes through `flatpak-spawn --host`.
+
+```bash
+sh Scaler_Assistant-*-x86_64.bin                # install / install
+sh Scaler_Assistant-*-x86_64.bin --uninstall    # remove / remove
+flatpak install --user Scaler_Assistant-*-x86_64.flatpak
+flatpak run io.github.mosesmoon.ScalerAssistant
+```
+
 **From source**: Python 3.11+, PyQt6 (Arch: `sudo pacman -S python-pyqt6`) and 7-Zip or bsdtar to unpack OptiScaler (`sudo pacman -S 7zip`).
 
 ```bash
@@ -90,6 +99,8 @@ scaler-assistant       # or run ./scaler-assistant from the source folder
 python3 -m unittest discover -s tests -t . -v   # tests (no PyQt6 needed)
 ./build-appimage.sh                              # dist/Scaler_Assistant-<version>-x86_64.AppImage
 ./build-decky.sh                                 # dist/Scaler_Assistant-Decky-<version>.zip (needs Node.js)
+./build-bin.sh                                   # dist/Scaler_Assistant-<version>-x86_64.bin
+./build-flatpak.sh                               # dist/Scaler_Assistant-<version>-x86_64.flatpak (needs flatpak)
 ```
 
 The Decky plugin is in `decky/`: a React panel (`src/index.tsx`, built with `@decky/rollup`) and a Python backend (`main.py`) that runs the same `scaler_assistant` package (its `deck.py` bridge) without the desktop window.
@@ -110,7 +121,7 @@ Scaler Assistant is an independent, unofficial tool, not affiliated with or endo
 
 > ⚠ **Scaler 助手不含任何升頻檔案。** FSR 4.1 和 FSR 3 透過 OptiScaler 執行，只有在你同意時才會下載它（以及適合你顯示卡的 FSR 4.1 DLL）。使用 DLSS 3.7 前，請從 [HelixSR 的 Releases](https://github.com/lonewolf0622/HelixSR/releases) 下載 HelixSR 1.8.0 以上，並在它的資料夾執行一次 `./helixsr-setup.sh`。
 
-**下載**：AppImage 與 Decky 外掛（`Scaler_Assistant-Decky-<版本>.zip`）放在 [Releases](https://github.com/mosesmoon/scaler-assistant/releases) 頁面。
+**下載**：AppImage、單一安裝檔（`.bin`）、Flatpak 套件與 Decky 外掛（`Scaler_Assistant-Decky-<版本>.zip`）放在 [Releases](https://github.com/mosesmoon/scaler-assistant/releases) 頁面。
 
 **完整功能介紹**（12 種語言）：[English](docs/features/en.md) · [台灣正體中文](docs/features/zh_TW.md) · [简体中文](docs/features/zh_CN.md) · [日本語](docs/features/ja.md) · [Deutsch](docs/features/de.md) · [Français](docs/features/fr.md) · [Español](docs/features/es.md) · [Italiano](docs/features/it.md) · [ไทย](docs/features/th.md) · [Tiếng Việt](docs/features/vi.md) · [Bahasa Melayu](docs/features/ms.md) · [हिन्दी](docs/features/hi.md)
 
@@ -177,6 +188,15 @@ chmod +x Scaler_Assistant-*-x86_64.AppImage
 2. 在遊戲模式開啟快速存取選單 → Decky → ⚙ →「開發者」（先在 Decky 的一般設定開啟開發者模式）→「Install Plugin from ZIP File」，選擇這個 zip。
 3. 在快速存取選單的 Decky 分頁開啟 Scaler 助手。使用 DLSS 3.7 前，請在桌面模式設定一次 HelixSR（`./helixsr-setup.sh`），再於外掛中選擇它的資料夾。
 
+**單一安裝檔（.bin）**：`Scaler_Assistant-<版本>-x86_64.bin` 只替目前的使用者安裝同一套內含程式（不需 root、不需 FUSE）到 `~/.local/opt/scaler-assistant`，並加入 `scaler-assistant` 指令與選單項目。**Flatpak**：`Scaler_Assistant-<版本>-x86_64.flatpak` 是單一檔案的套件，使用 Freedesktop 25.08 runtime（安裝時從 Flathub 下載）。它可以讀取家目錄與其他磁碟（`/run/media` 下的 SD 卡），並透過 `flatpak-spawn --host` 看到 Steam 與遊戲的程序。
+
+```bash
+sh Scaler_Assistant-*-x86_64.bin                # install / 安裝
+sh Scaler_Assistant-*-x86_64.bin --uninstall    # remove / 移除
+flatpak install --user Scaler_Assistant-*-x86_64.flatpak
+flatpak run io.github.mosesmoon.ScalerAssistant
+```
+
 **從原始碼執行**：需要 Python 3.11 以上、PyQt6（Arch：`sudo pacman -S python-pyqt6`），以及解開 OptiScaler 用的 7-Zip 或 bsdtar（`sudo pacman -S 7zip`）。
 
 ```bash
@@ -190,6 +210,8 @@ scaler-assistant       # 或直接在原始碼目錄執行 ./scaler-assistant
 python3 -m unittest discover -s tests -t . -v   # 測試（不需要 PyQt6）
 ./build-appimage.sh                              # 輸出 dist/Scaler_Assistant-<版本>-x86_64.AppImage
 ./build-decky.sh                                 # 輸出 dist/Scaler_Assistant-Decky-<版本>.zip（需要 Node.js）
+./build-bin.sh                                   # 輸出 dist/Scaler_Assistant-<版本>-x86_64.bin
+./build-flatpak.sh                               # 輸出 dist/Scaler_Assistant-<版本>-x86_64.flatpak（需要 flatpak）
 ```
 
 Decky 外掛位於 `decky/`：React 面板（`src/index.tsx`，以 `@decky/rollup` 建置）與 Python 後端（`main.py`），後端執行同一套 `scaler_assistant` 套件（透過 `deck.py`），但不含桌面視窗。

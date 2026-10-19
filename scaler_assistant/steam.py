@@ -223,7 +223,8 @@ class SteamInstallation:
     # ---- process state ----------------------------------------------------
 
     def is_running(self) -> bool:
-        for proc in Path("/proc").iterdir():
+        from .sandbox import proc_root
+        for proc in proc_root().iterdir():
             if not proc.name.isdigit():
                 continue
             try:

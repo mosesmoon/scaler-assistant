@@ -167,6 +167,15 @@ chmod +x Scaler_Assistant-*-x86_64.AppImage
 
 Nếu không mở được, có thể hệ thống thiếu FUSE; chạy với `--appimage-extract-and-run`.
 
+**Trình cài một tệp (.bin)**: `Scaler_Assistant-<phiên bản>-x86_64.bin` cài cùng ứng dụng đóng gói cho riêng người dùng của bạn (không cần root, không cần FUSE) vào `~/.local/opt/scaler-assistant`, kèm lệnh `scaler-assistant` và mục trong menu. **Flatpak**: `Scaler_Assistant-<phiên bản>-x86_64.flatpak` là gói một tệp trên runtime Freedesktop 25.08 (tải từ Flathub khi cài). Nó đọc được thư mục home và các ổ khác (thẻ SD trong `/run/media`) và thấy tiến trình của Steam và game qua `flatpak-spawn --host`.
+
+```bash
+sh Scaler_Assistant-*-x86_64.bin                # install / cài
+sh Scaler_Assistant-*-x86_64.bin --uninstall    # remove / gỡ
+flatpak install --user Scaler_Assistant-*-x86_64.flatpak
+flatpak run io.github.mosesmoon.ScalerAssistant
+```
+
 **Từ mã nguồn**: Python 3.11+ và PyQt6 (Arch: `sudo pacman -S python-pyqt6`), cùng 7-Zip hoặc bsdtar để giải nén OptiScaler (`sudo pacman -S 7zip`).
 
 ```bash

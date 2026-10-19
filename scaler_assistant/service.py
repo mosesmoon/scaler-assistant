@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
 
-from . import __version__, components, gpu, helixsr, installer, settings
+from . import __version__, components, gpu, helixsr, installer, sandbox, settings
 from . import launch_options as lo
 from . import optiscaler
 from .components import Component
@@ -156,12 +156,12 @@ class ChoicePlan:
 class AssistantService:
     def __init__(self, steam_root: Optional[Path] = None,
                  state_file: Optional[Path] = None,
-                 proc: Path = Path("/proc"),
+                 proc: Optional[Path] = None,
                  cef: Optional[SteamCef] = None,
                  components_root: Optional[Path] = None,
                  sys_root: Path = Path("/sys")) -> None:
         self._steam_root = steam_root
-        self.proc = proc
+        self._proc = proc
         self.state_file = state_file or state_path()
         _migrate(self.state_file)
         self.state = self._load_state()
@@ -832,23 +832,28 @@ class AssistantService:
         subprocess.Popen(["xdg-open", str(path)], stdout=subprocess.DEVNULL,
                          stderr=subprocess.DEVNULL, start_new_session=True)
 
+    @property
+    def proc(self) -> Path:
+        """The host's /proc (a snapshot of it inside Flatpak)."""
+        return self._proc if self._proc is not None else sandbox.proc_root()
+
     def _steam_command(self) -> str:
-        return shutil.which("steam") or str(self.steam().root / "steam.sh")
+        return sandbox.host_which("steam") or str(self.steam().root / "steam.sh")
 
     def shutdown_steam(self) -> bool:
-        subprocess.Popen([self._steam_command(), "-shutdown"], stdout=subprocess.DEVNULL,
+        subprocess.Popen(sandbox.host([self._steam_command(), "-shutdown"]), stdout=subprocess.DEVNULL,
                          stderr=subprocess.DEVNULL, start_new_session=True)
         return self.steam().wait_until_closed(90)
 
     def start_steam(self) -> None:
-        subprocess.Popen([self._steam_command()], stdout=subprocess.DEVNULL,
+        subprocess.Popen(sandbox.host([self._steam_command()]), stdout=subprocess.DEVNULL,
                          stderr=subprocess.DEVNULL, start_new_session=True)
 
     def launch_game(self, app_id: int) -> None:
         """Ask Steam to start the game (it forwards to a running client)."""
         url = f"steam://rungameid/{int(app_id)}"
-        steam_bin = shutil.which("steam")
-        command = [steam_bin, url] if steam_bin else ["xdg-open", url]
+        steam_bin = sandbox.host_which("steam")
+        command = sandbox.host([steam_bin, url]) if steam_bin else ["xdg-open", url]
         try:
             subprocess.Popen(command, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
                              start_new_session=True)

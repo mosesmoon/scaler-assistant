@@ -851,3 +851,24 @@ class HelixSR19Test(Base):
             self.service.apply(DLSS, "helixsr:optiscaler")
         self.service.apply(FSR, "helixsr:direct")
         self.assertEqual(self.entry(FSR).status.choice, "helixsr:direct")
+
+
+class SandboxTest(unittest.TestCase):
+    def test_proc_snapshot_finds_steam_games(self):
+        """The host-side snapshot Flatpak uses (run here directly) keeps what runtime reads."""
+        import subprocess, sys, time
+        from scaler_assistant import sandbox
+        from scaler_assistant.runtime import running_app_ids
+        game = subprocess.Popen([sys.executable, "-c", "import time; time.sleep(30)"],
+                                env=dict(os.environ, SteamAppId="424242"))
+        self.addCleanup(game.kill)
+        time.sleep(0.3)
+        with tempfile.TemporaryDirectory() as tmp:
+            dest = Path(tmp) / "proc"
+            subprocess.run(["sh", "-c", sandbox._SNAPSHOT, "snapshot", str(dest)], check=True)
+            self.assertTrue((dest / "stat").is_file())
+            self.assertIn(game.pid, running_app_ids(dest).get(424242, []))
+            self.assertTrue((dest / str(game.pid) / "maps").is_file())
+        self.assertFalse(sandbox.in_flatpak())
+        self.assertEqual(sandbox.host(["steam"]), ["steam"])
+        self.assertEqual(sandbox.proc_root(), Path("/proc"))

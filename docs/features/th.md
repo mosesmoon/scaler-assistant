@@ -167,6 +167,15 @@ chmod +x Scaler_Assistant-*-x86_64.AppImage
 
 ถ้าเปิดไม่ขึ้น ระบบอาจไม่มี FUSE ให้รันด้วย `--appimage-extract-and-run`
 
+**ตัวติดตั้งไฟล์เดียว (.bin)**: `Scaler_Assistant-<เวอร์ชัน>-x86_64.bin` ติดตั้งแอปชุดเดียวกันให้เฉพาะผู้ใช้ปัจจุบัน (ไม่ต้องใช้ root หรือ FUSE) ไว้ที่ `~/.local/opt/scaler-assistant` พร้อมคำสั่ง `scaler-assistant` และเมนู **Flatpak**: `Scaler_Assistant-<เวอร์ชัน>-x86_64.flatpak` เป็นแพ็กเกจไฟล์เดียวบน runtime Freedesktop 25.08 (ดาวน์โหลดจาก Flathub ตอนติดตั้ง) อ่านโฟลเดอร์ home และไดรฟ์อื่น (การ์ด SD ใต้ `/run/media`) ได้ และเห็นโปรเซสของ Steam และเกมผ่าน `flatpak-spawn --host`
+
+```bash
+sh Scaler_Assistant-*-x86_64.bin                # install / ติดตั้ง
+sh Scaler_Assistant-*-x86_64.bin --uninstall    # remove / ลบ
+flatpak install --user Scaler_Assistant-*-x86_64.flatpak
+flatpak run io.github.mosesmoon.ScalerAssistant
+```
+
 **จากซอร์สโค้ด**: Python 3.11 ขึ้นไปและ PyQt6 (Arch: `sudo pacman -S python-pyqt6`) รวมถึง 7-Zip หรือ bsdtar สำหรับแตกไฟล์ OptiScaler (`sudo pacman -S 7zip`)
 
 ```bash

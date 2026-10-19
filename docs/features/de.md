@@ -167,6 +167,15 @@ chmod +x Scaler_Assistant-*-x86_64.AppImage
 
 Startet es nicht, fehlt eventuell FUSE; dann mit `--appimage-extract-and-run` starten.
 
+**Einzelinstaller (.bin)**: `Scaler_Assistant-<Version>-x86_64.bin` installiert dieselbe gebündelte App nur für deinen Benutzer (ohne root, ohne FUSE) nach `~/.local/opt/scaler-assistant`, mit dem Befehl `scaler-assistant` und einem Menüeintrag. **Flatpak**: `Scaler_Assistant-<Version>-x86_64.flatpak` ist ein Ein-Datei-Bundle auf der Freedesktop-25.08-Runtime (bei der Installation von Flathub geladen). Es darf deinen Home-Ordner und andere Laufwerke (SD-Karten unter `/run/media`) lesen und sieht Steams und die Spielprozesse über `flatpak-spawn --host`.
+
+```bash
+sh Scaler_Assistant-*-x86_64.bin                # install / installieren
+sh Scaler_Assistant-*-x86_64.bin --uninstall    # remove / entfernen
+flatpak install --user Scaler_Assistant-*-x86_64.flatpak
+flatpak run io.github.mosesmoon.ScalerAssistant
+```
+
 **Aus dem Quellcode**: Python 3.11+ und PyQt6 (Arch: `sudo pacman -S python-pyqt6`), dazu 7-Zip oder bsdtar zum Entpacken von OptiScaler (`sudo pacman -S 7zip`).
 
 ```bash

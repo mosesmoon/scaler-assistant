@@ -4,7 +4,6 @@ from __future__ import annotations
 
 import html
 import shlex
-import shutil
 import subprocess
 import sys
 import time
@@ -25,7 +24,9 @@ from PyQt6.QtWidgets import (
     QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QVBoxLayout, QWidget,
 )
 
-from . import __version__, components, gpu, i18n, optiscaler, overlay, settings, status, theme
+from . import (
+    __version__, components, gpu, i18n, optiscaler, overlay, sandbox, settings, status, theme,
+)
 from .helixsr import HelixSRFolder, MIN_VERSION
 from .i18n import tr
 from .launch_options import needs_override
@@ -92,7 +93,7 @@ _TERMINALS = (
 
 def find_terminal() -> Optional[tuple[str, list[str]]]:
     for name, flags in _TERMINALS:
-        path = shutil.which(name)
+        path = sandbox.host_which(name)
         if path:
             return path, flags
     return None
@@ -107,7 +108,7 @@ def run_setup_in_terminal(folder: Path) -> bool:
     command = (f"cd {shlex.quote(str(folder))} && bash ./helixsr-setup.sh; "
                f"echo; read -r -p {pause} _")
     path, flags = terminal
-    subprocess.Popen([path, *flags, "bash", "-c", command], stdout=subprocess.DEVNULL,
+    subprocess.Popen(sandbox.host([path, *flags, "bash", "-c", command]), stdout=subprocess.DEVNULL,
                      stderr=subprocess.DEVNULL, start_new_session=True)
     return True
 
@@ -945,7 +946,7 @@ class MainWindow(QMainWindow):
 
         def work():
             folder = self.service.helixsr() if recheck else None
-            return detect_running(watch), folder
+            return detect_running(watch, self.service.proc), folder
 
         task = _Task(work)
 
