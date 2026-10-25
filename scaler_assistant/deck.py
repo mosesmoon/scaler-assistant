@@ -239,7 +239,7 @@ class DeckBridge:
         if build != "native":
             wanted += service.needed_components("fsr4:exact")[1:]
         items = []
-        for component in components.ALL:
+        for component in service.listed_components():
             items.append({
                 "key": component.key, "name": component_label(component),
                 "version": component.version, "size": round(component.size / 1_000_000),
@@ -253,8 +253,8 @@ class DeckBridge:
             "items": items,
             "missing": [c.key for c in wanted if not service.component_ready(c)],
             "build": service.fsr4_build_setting,
-            "builds": [["auto", auto], ["dgpu", tr("dl_build_dgpu")],
-                       ["igpu", tr("dl_build_igpu")], ["native", tr("dl_build_native")]],
+            "builds": [["auto", auto]] + [[value, tr("dl_build_" + value)]
+                                          for value in (*components.FSR4_PACKS, "native")],
             "intro": plain(tr("dl_intro", folder=service.components_root
                               or components.data_dir())),
         }
@@ -293,16 +293,17 @@ class DeckBridge:
                           "text": plain(tr("dl_confirm", what=choice_label(choice), items=items)),
                           "ok": tr("dl_confirm_ok"), "keys": [c.key for c in plan.downloads]})
         if plan.lossy_warning:
-            steps.append({"kind": "lossy", "title": tr("lossy_title"),
-                          "text": plain(tr("lossy_intro")), "ok": tr("lossy_accept"),
-                          "body": None})
+            prefix = "lossy2_" if plan.lossy_warning == "lossy2" else "lossy_"
+            steps.append({"kind": "lossy", "title": tr(prefix + "title"),
+                          "text": plain(tr(prefix + "intro")), "ok": tr(prefix + "accept"),
+                          "variant": plan.lossy_warning, "body": None})
         return {"choice": choice, "label": choice_label(choice), "steps": steps}
 
-    def lossy_text(self) -> str:
-        return self.service.lossy_warning_text() or tr("lossy_missing")
+    def lossy_text(self, variant: str = "lossy") -> str:
+        return self.service.lossy_warning_text(variant) or tr("lossy_missing")
 
-    def accept_lossy(self) -> None:
-        self.service.accept_lossy()
+    def accept_lossy(self, variant: str = "lossy") -> None:
+        self.service.accept_lossy(variant)
 
     def _run(self, fn: Callable[[], str]) -> dict[str, Any]:
         try:

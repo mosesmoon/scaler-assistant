@@ -4,8 +4,8 @@ Choices per game (``installer.CHOICES``):
 
 * ``helixsr:direct`` / ``helixsr:optiscaler`` / ``helixsr:dlss`` — DLSS 3.7 (HelixSR)
   from the user's own HelixSR folder, the ways HelixSR documents.
-* ``fsr4:exact`` / ``fsr4:lossy`` — FSR 4.1 through OptiScaler with the modified
-  DLLs from zgauthier2000/fsr4-shader-performance-overrides (GPUs before RDNA 4).
+* ``fsr4:exact`` / ``fsr4:lossy`` / ``fsr4:lossy2`` — FSR 4.1 through OptiScaler with the
+  modified DLLs from zgauthier2000/fsr4-shader-performance-overrides (GPUs before RDNA 4).
 * ``fsr4:native`` — FSR 4.1 through OptiScaler with AMD's own DLL (RDNA 4).
 * ``fsr3`` — FSR 3 through OptiScaler.
 
@@ -37,7 +37,13 @@ from .steam import SteamGame, SteamInstallation
 from .steam_cef import CefError, SteamCef
 
 STAMP = f"Scaler Assistant {__version__}"
-FSR4_BUILDS = ("auto", "dgpu", "igpu", "native")
+FSR4_BUILDS = ("auto", *components.FSR4_PACKS, "native")
+# The builds of releases before dll-2026-10-22 (one for graphics cards, one built-in).
+LEGACY_FSR4_BUILDS = ("dgpu", "igpu")
+FSR4_VARIANTS = ("exact", "lossy", "lossy2")
+FSR4_MODIFIED = tuple(f"fsr4:{v}" for v in FSR4_VARIANTS)
+# Variants that change the picture: their WARNING.txt is shown once before the first use.
+LOSSY_VARIANTS = ("lossy", "lossy2")
 # Raised when games.detect_layout changes what it finds, so cached scans are redone.
 LAYOUT_VERSION = 4
 
@@ -149,7 +155,7 @@ class ChoicePlan:
     opti_reason: str = ""
     launch_before: str = ""
     launch_after: str = ""
-    lossy_warning: bool = False          # Lossy's WARNING.txt has not been accepted yet
+    lossy_warning: Optional[str] = None  # 'lossy' / 'lossy2': its WARNING.txt is not accepted yet
     anti_cheat: list[str] = field(default_factory=list)
 
     @property
@@ -212,6 +218,8 @@ class AssistantService:
     @property
     def fsr4_build_setting(self) -> str:
         value = self.state.get("fsr4_build")
+        if value in LEGACY_FSR4_BUILDS:
+            return gpu.legacy_fsr4_pack(value, self.main_gpu())
         return value if value in FSR4_BUILDS else "auto"
 
     @fsr4_build_setting.setter
@@ -220,21 +228,22 @@ class AssistantService:
         self._save_state()
 
     def fsr4_build(self) -> str:
-        """'dgpu' / 'igpu' (FSR 4.1 Exact and Lossy) or 'native' (AMD's own FSR 4.1, RDNA 4)."""
+        """One of components.FSR4_PACKS (FSR 4.1 Exact and Lossy) or 'native' (AMD's own FSR 4.1, RDNA 4)."""
         setting = self.fsr4_build_setting
         if setting != "auto":
             return setting
         return gpu.fsr4_pack(self.main_gpu()) or "native"
 
     def fsr4_choices(self) -> list[str]:
-        return ["fsr4:native"] if self.fsr4_build() == "native" else ["fsr4:exact", "fsr4:lossy"]
+        return ["fsr4:native"] if self.fsr4_build() == "native" else list(FSR4_MODIFIED)
 
     def force_int8(self) -> bool:
         """FSR 4 needs its INT8 model on everything but RDNA 4."""
         return self.fsr4_build() != "native"
 
     def _fsr4_component(self) -> Component:
-        return components.FSR4["igpu" if self.fsr4_build() == "igpu" else "dgpu"]
+        build = self.fsr4_build()
+        return components.FSR4[build if build in components.FSR4 else "igpu_rdna3"]
 
     # ---- downloads ------------------------------------------------------------------------
 
@@ -242,13 +251,19 @@ class AssistantService:
         if upscaler_of(choice) not in ("fsr4", "fsr3"):
             return []
         needed = [components.OPTISCALER]
-        if choice in ("fsr4:exact", "fsr4:lossy"):
+        if choice in FSR4_MODIFIED:
             needed.append(self._fsr4_component())
         return needed
 
     def missing_components(self, choice: str) -> list[Component]:
         return [c for c in self.needed_components(choice)
                 if not components.ready(c, self.components_root)]
+
+    def listed_components(self) -> list[Component]:
+        """The downloads to list: OptiScaler, the FSR 4.1 build in use and other builds on disk."""
+        mine = None if self.fsr4_build() == "native" else self._fsr4_component()
+        return [c for c in components.ALL
+                if c is components.OPTISCALER or c is mine or self.component_ready(c)]
 
     def component_ready(self, component: Component) -> bool:
         return components.ready(component, self.components_root)
@@ -279,20 +294,22 @@ class AssistantService:
             components.remove(component, self.components_root)
         return tr("svc_downloads_removed")
 
-    def lossy_warning_text(self) -> str:
-        path = components.path(self._fsr4_component(), "lossy/WARNING.txt", self.components_root)
+    def lossy_warning_text(self, variant: str = "lossy") -> str:
+        variant = variant if variant in LOSSY_VARIANTS else "lossy"
+        path = components.path(self._fsr4_component(), f"{variant}/WARNING.txt",
+                               self.components_root)
         try:
             return path.read_text(encoding="utf-8", errors="replace")
         except OSError:
             return ""
 
-    def accept_lossy(self) -> None:
-        self.state["lossy_accepted"] = True
+    def accept_lossy(self, variant: str = "lossy") -> None:
+        self.state[_accepted_key(variant)] = True
         self._save_state()
 
     def _source_for(self, choice: str) -> tuple[Component, Path]:
         """The component the upscaler DLL of a choice comes from, and the DLL in it."""
-        if choice in ("fsr4:exact", "fsr4:lossy"):
+        if choice in FSR4_MODIFIED:
             component = self._fsr4_component()
             member = f"{choice.partition(':')[2]}/{installer.FFX_FILES['upscaler']}"
         else:
@@ -747,8 +764,15 @@ class AssistantService:
             app_id=app_id, choice=choice, downloads=self.missing_components(choice),
             needs_helixsr=needs_helixsr, opti_name=name, opti_reason=reason,
             launch_before=options, launch_after=after,
-            lossy_warning=choice == "fsr4:lossy" and not self.state.get("lossy_accepted"),
+            lossy_warning=self._needs_warning(choice),
             anti_cheat=list(layout.anti_cheat))
+
+    def _needs_warning(self, choice: str) -> Optional[str]:
+        """'lossy' / 'lossy2' when that variant's WARNING.txt has not been accepted yet."""
+        variant = choice.partition(":")[2] if upscaler_of(choice) == "fsr4" else ""
+        if variant in LOSSY_VARIANTS and not self.state.get(_accepted_key(variant)):
+            return variant
+        return None
 
     def _check_blocked(self, layout: GameLayout, choice: str) -> None:
         folder = self.helixsr()
@@ -962,6 +986,10 @@ class AssistantService:
     def theme(self, choice: str) -> None:
         self.state["theme"] = choice if choice in ("auto", "dark", "light") else "auto"
         self._save_state()
+
+
+def _accepted_key(variant: str) -> str:
+    return "lossy2_accepted" if variant == "lossy2" else "lossy_accepted"
 
 
 def choice_label(choice: Optional[str]) -> str:

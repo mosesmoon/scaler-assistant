@@ -307,32 +307,39 @@ class FsrTest(Base):
         super().setUp()
         make_components(self.root / "components")
         self.gpus = [gpu.Gpu("AMD", 0x744c, (11, 0, 0))]   # an RX 7900
+        self.service._gpus = self.gpus
 
     def localconfig(self) -> str:
         return (self.steam / "userdata/12345/config/localconfig.vdf").read_text()
 
     def test_needs_downloads_first(self):
         before = snapshot(self.common)
-        components.remove(components.FSR4["dgpu"], self.root / "components")
+        components.remove(components.FSR4["rx7000"], self.root / "components")
         self.assertEqual(self.service.plan(DLSS, "fsr4:exact").downloads,
-                         [components.FSR4["dgpu"]])
+                         [components.FSR4["rx7000"]])
         with self.assertRaises(NeedsDownloadError) as caught:
             self.service.apply(DLSS, "fsr4:exact")
-        self.assertEqual(caught.exception.missing, [components.FSR4["dgpu"]])
+        self.assertEqual(caught.exception.missing, [components.FSR4["rx7000"]])
         self.assertEqual(snapshot(self.common), before)
 
     def test_choices_follow_the_gpu(self):
         self.assertEqual(self.entry(FSR).choices,
-                         ["helixsr:direct", "helixsr:optiscaler", "helixsr:dlss",
-                          "fsr4:exact", "fsr4:lossy", "fsr3"])
+                         ["helixsr:direct", "helixsr:optiscaler",   # DLSS way: GeForce only
+                          "fsr4:exact", "fsr4:lossy", "fsr4:lossy2", "fsr3"])
         self.service._gpus = [gpu.Gpu("AMD", 0x7550, (12, 0, 1))]   # RX 9070: RDNA 4
         self.assertEqual([c for c in self.entry(FSR).choices if c.startswith("fsr")],
                          ["fsr4:native", "fsr3"])
         self.assertFalse(self.service.force_int8())
         self.service._gpus = [gpu.Gpu("AMD", 0x163f, (10, 3, 3), apu=True)]   # Steam Deck
-        self.assertEqual(self.service.needed_components("fsr4:lossy")[1], components.FSR4["igpu"])
-        self.service.fsr4_build_setting = "dgpu"
-        self.assertEqual(self.service.needed_components("fsr4:lossy")[1], components.FSR4["dgpu"])
+        self.assertEqual(self.service.needed_components("fsr4:lossy")[1],
+                         components.FSR4["igpu_rdna2"])
+        self.assertEqual(self.service.needed_components("fsr4:lossy2")[1],
+                         components.FSR4["igpu_rdna2"])
+        self.service.fsr4_build_setting = "rx6000"
+        self.assertEqual(self.service.needed_components("fsr4:lossy")[1], components.FSR4["rx6000"])
+        self.service.state["fsr4_build"] = "dgpu"   # chosen before there were four builds
+        self.assertEqual(self.service.fsr4_build(), "rx6000")
+        self.assertEqual(self.service.needed_components("fsr3"), [components.OPTISCALER])
         self.assertEqual(self.entry(PLAIN).choices, [])
 
     def test_fsr4_install_switch_and_remove_put_everything_back(self):
@@ -347,7 +354,7 @@ class FsrTest(Base):
         self.assertEqual((self.dlss_bin / "dxgi.dll").read_bytes(), b"MZ the game's own dxgi")
         self.assertTrue(helixsr.is_optiscaler(self.dlss_bin / "winmm.dll"))
         self.assertEqual((sc / "amd_fidelityfx_upscaler_dx12.dll").read_bytes(),
-                         b"MZ ffxCreateContext fsr4-dgpu exact/amd_fidelityfx_upscaler_dx12.dll")
+                         b"MZ ffxCreateContext fsr4-rx7000 exact/amd_fidelityfx_upscaler_dx12.dll")
         ini = (self.dlss_bin / "OptiScaler.ini").read_bytes().decode()
         win = "Z:" + str(sc.resolve()).replace("/", "\\")
         for line in ("Dx12Upscaler=fsr31", "Dx11Upscaler=fsr31_12", "VulkanUpscaler=fsr31_12",
@@ -365,7 +372,13 @@ class FsrTest(Base):
 
         self.service.apply(DLSS, "fsr4:lossy")
         self.assertEqual((sc / "amd_fidelityfx_upscaler_dx12.dll").read_bytes(),
-                         b"MZ ffxCreateContext fsr4-dgpu lossy/amd_fidelityfx_upscaler_dx12.dll")
+                         b"MZ ffxCreateContext fsr4-rx7000 lossy/amd_fidelityfx_upscaler_dx12.dll")
+        self.assertEqual(self.entry(DLSS).status.choice, "fsr4:lossy")
+        self.service.apply(DLSS, "fsr4:lossy2")
+        self.assertEqual((sc / "amd_fidelityfx_upscaler_dx12.dll").read_bytes(),
+                         b"MZ ffxCreateContext fsr4-rx7000 lossy2/amd_fidelityfx_upscaler_dx12.dll")
+        self.assertEqual(self.entry(DLSS).status.choice, "fsr4:lossy2")
+        self.assertIn("Fsr4ForceEnableInt8=true\r\n", (self.dlss_bin / "OptiScaler.ini").read_bytes().decode())
         self.service.apply(DLSS, "fsr3")
         ini = (self.dlss_bin / "OptiScaler.ini").read_text()
         for line in ("Dx11Upscaler=fsr31\n", "VulkanUpscaler=fsr31\n", "UpscalerIndex=1\n",
@@ -465,14 +478,26 @@ class FsrTest(Base):
         self.service.uninstall(FSR, remove_settings=False)
         self.assertEqual(snapshot(self.common / "FsrGame"), before)
 
+    def test_each_lossy_warning_is_accepted_once(self):
+        self.assertEqual(self.service.plan(DLSS, "fsr4:lossy").lossy_warning, "lossy")
+        self.assertEqual(self.service.plan(DLSS, "fsr4:lossy2").lossy_warning, "lossy2")
+        self.assertIsNone(self.service.plan(DLSS, "fsr4:exact").lossy_warning)
+        self.assertEqual(self.service.lossy_warning_text("lossy2"),
+                         "fsr4-rx7000 lossy2/WARNING.txt\n")
+        self.service.accept_lossy("lossy2")
+        self.assertIsNone(self.service.plan(DLSS, "fsr4:lossy2").lossy_warning)
+        self.assertEqual(self.service.plan(DLSS, "fsr4:lossy").lossy_warning, "lossy")
+        self.service.accept_lossy()
+        self.assertIsNone(self.service.plan(DLSS, "fsr4:lossy").lossy_warning)
+
     def test_outdated_when_the_build_changes(self):
         self.service.apply(DLSS, "fsr4:exact")
         self.assertFalse(self.entry(DLSS).outdated)
-        self.service.fsr4_build_setting = "igpu"
+        self.service.fsr4_build_setting = "igpu_rdna3"
         self.assertTrue(self.entry(DLSS).outdated)
         self.service.update_all()
         self.assertEqual((self.dlss_bin / "ScalerAssistant/amd_fidelityfx_upscaler_dx12.dll").read_bytes(),
-                         b"MZ ffxCreateContext fsr4-igpu exact/amd_fidelityfx_upscaler_dx12.dll")
+                         b"MZ ffxCreateContext fsr4-igpu-rdna3 exact/amd_fidelityfx_upscaler_dx12.dll")
         self.assertFalse(self.entry(DLSS).outdated)
 
     def test_leaving_an_install_that_displaced_the_games_dxgi(self):
@@ -740,8 +765,35 @@ class GpuTest(unittest.TestCase):
             self.assertIsNone(found[2].supported)
             self.assertTrue(found[1].apu)   # the Steam Deck's graphics
             self.assertEqual(gpu.main_gpu(found), found[0])
-            self.assertEqual([gpu.fsr4_pack(g) for g in found], ["dgpu", "igpu", "dgpu"])
+            self.assertEqual([gpu.fsr4_pack(g) for g in found], ["rx7000", "igpu_rdna2", "igpu_rdna3"])
             self.assertIsNone(gpu.fsr4_pack(gpu.Gpu("AMD", 0x7550, (12, 0, 1))))
+
+    def test_fsr4_builds(self):
+        cases = [(gpu.Gpu("AMD", 0x744c, (11, 0, 0)), "rx7000"),              # RX 7900 XTX
+                 (gpu.Gpu("AMD", 0x7480, (11, 0, 2)), "rx7000"),              # RX 7600
+                 (gpu.Gpu("AMD", 0x73bf, (10, 3, 0)), "rx6000"),              # RX 6800
+                 (gpu.Gpu("AMD", 0x73ff, (10, 3, 2)), "rx6000"),              # RX 6600
+                 (gpu.Gpu("AMD", 0x163f, (10, 3, 3), apu=True), "igpu_rdna2"),  # Steam Deck
+                 (gpu.Gpu("AMD", 0x1681, (10, 3, 5), apu=True), "igpu_rdna2"),  # Radeon 680M
+                 (gpu.Gpu("AMD", 0x164e, (10, 3, 6), apu=True), "igpu_rdna2"),  # Ryzen 7000 desktop
+                 (gpu.Gpu("AMD", 0x15bf, (11, 0, 3), apu=True), "igpu_rdna3"),  # Radeon 780M
+                 (gpu.Gpu("AMD", 0x150e, (11, 5, 0), apu=True), "igpu_rdna3"),  # Radeon 890M
+                 (gpu.Gpu("AMD", 0x731f, (10, 1, 0)), "igpu_rdna3"),          # RX 5700: another card
+                 (gpu.Gpu("NVIDIA", 0x2684), "igpu_rdna3"),
+                 (gpu.Gpu("Intel", 0xe20b, None), "igpu_rdna3"),
+                 (gpu.Gpu("AMD", 0x7550, (12, 0, 1)), None)]                  # RX 9070: AMD's own
+        for card, want in cases:
+            self.assertEqual(gpu.fsr4_pack(card), want, card)
+        self.assertEqual(gpu.fsr4_pack(None), "igpu_rdna3")
+
+    def test_builds_chosen_before_four_builds_are_carried_over(self):
+        rx7900, rx6800 = gpu.Gpu("AMD", 0x744c, (11, 0, 0)), gpu.Gpu("AMD", 0x73bf, (10, 3, 0))
+        deck = gpu.Gpu("AMD", 0x163f, (10, 3, 3), apu=True)
+        self.assertEqual(gpu.legacy_fsr4_pack("dgpu", rx7900), "rx7000")
+        self.assertEqual(gpu.legacy_fsr4_pack("dgpu", rx6800), "rx6000")
+        self.assertEqual(gpu.legacy_fsr4_pack("dgpu", deck), "rx6000")
+        self.assertEqual(gpu.legacy_fsr4_pack("igpu", rx7900), "igpu_rdna3")
+        self.assertEqual(gpu.legacy_fsr4_pack("igpu", deck), "igpu_rdna2")
 
 
 if __name__ == "__main__":

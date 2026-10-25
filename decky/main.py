@@ -79,11 +79,11 @@ class Plugin:
     async def plan(self, app_id: int, choice: str):
         return await self._work(self.bridge.plan, int(app_id), choice)
 
-    async def lossy_text(self):
-        return await self._read(self.bridge.lossy_text)
+    async def lossy_text(self, variant: str = "lossy"):
+        return await self._read(self.bridge.lossy_text, str(variant))
 
-    async def accept_lossy(self):
-        self.bridge.accept_lossy()
+    async def accept_lossy(self, variant: str = "lossy"):
+        self.bridge.accept_lossy(str(variant))
 
     async def apply(self, app_id: int, choice: str):
         return await self._work(self.bridge.apply, int(app_id), choice)

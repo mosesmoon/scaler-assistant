@@ -27,10 +27,12 @@ L'API graphique et les mises à l'échelle du jeu déterminent ce qui est propos
 | **DLSS 3.7 (HelixSR) · méthode DLSS** (expérimentale) | Direct3D 12, DLSS | Le chargeur DLSS de HelixSR (`dxgi.dll`) et HelixSR en tant que `nvngx.dll` | DLSS |
 | **FSR 4.1 Exact** | l'une des quatre mises à l'échelle | OptiScaler à côté du `.exe` ; les DLL FidelityFX et la DLL FSR 4.1 Exact dans un dossier `ScalerAssistant` | DLSS, FSR ou XeSS |
 | **FSR 4.1 Lossy** | idem | idem, avec la DLL FSR 4.1 Lossy | DLSS, FSR ou XeSS |
+| **FSR 4.1 Lossy2** | idem | idem, avec la DLL FSR 4.1 Lossy2 | DLSS, FSR ou XeSS |
 | **FSR 4.1 (AMD)** — à la place d'Exact / Lossy sur RX 9000 (RDNA 4) | idem | idem, avec la DLL FSR 4.1 d'AMD | DLSS, FSR ou XeSS |
 | **FSR 3** | idem | idem ; OptiScaler utilise FSR 3.1.5 | DLSS, FSR ou XeSS |
 
 - **Exact** donne l'image du FSR 4.1 d'AMD à l'octet près, avec des shaders plus rapides. **Lossy** est encore plus rapide et modifie légèrement l'image ; l'Assistant Scaler affiche une fois son `WARNING.txt` avant la première utilisation. Dans le doute, prenez Exact.
+- **Lossy2** est Lossy avec six des douze couches du réseau réentraînées : le feuillage qui bouge se rapproche de l'image d'AMD et il y a moins de pixels lucioles, mais il suit plus lentement les éclaircissements et il est identique à Lossy en Ultra Performance. Il est proposé à côté de Lossy pour les comparer et affiche une fois son propre `WARNING.txt`.
 - HelixSR ne fonctionne que dans les jeux **Direct3D 12** : DLSS 3.7 n'est proposé que là. FSR 4.1 et FSR 3 fonctionnent aussi dans les jeux **Direct3D 11 et Vulkan** : FSR 3 en natif, FSR 4.1 via le chemin Direct3D 12 d'OptiScaler (moins testé que les jeux Direct3D 12).
 - Cliquez sur **« Choisir la mise à l'échelle »** dans la ligne du jeu (ou **« Mise à l'échelle »** une fois installée) : DLSS 3.7 (HelixSR) ouvre un sous-menu avec ses méthodes ; le choix actuel est coché. Changer retire d'abord le choix actuel et remet tout en place.
 
@@ -76,7 +78,7 @@ Sous Proton, `dxgi.dll` et `d3d12.dll` se chargent sans rien d'autre. Tout autre
 
 Cliquez sur la pastille **OptiScaler** en haut (ou celle du GPU) :
 
-- **OptiScaler 0.9.4** (avec les DLL FidelityFX d'AMD : FSR 3 et le FSR 4.1 d'AMD, plus fakenvapi) et **FSR 4.1 Exact / Lossy** dans la version pour cartes graphiques ou pour puce intégrée.
+- **OptiScaler 0.9.4** (avec les DLL FidelityFX d'AMD : FSR 3 et le FSR 4.1 d'AMD, plus fakenvapi) et **FSR 4.1 Exact / Lossy / Lossy2** dans la version pour votre GPU : cartes RX 7000, cartes RX 6000, puce RDNA 3 intégrée au processeur (aussi GeForce, Intel Arc et autres GPU), ou Steam Deck et puce RDNA 2 intégrée au processeur. Chaque version fonctionne sur tous ; celle de votre GPU est la plus rapide. Si un jeu plante avec Exact, choisissez une version pour puce intégrée.
 - Rien n'est téléchargé sans votre accord. Chaque téléchargement est une version fixe vérifiée par sa taille et son SHA-256 avant d'être extrait ; seuls les fichiers utiles aux jeux sont gardés, dans `~/.local/share/scaler-assistant/components/`.
 - **Version de FSR 4.1** : automatique selon votre GPU (RX 9000 / RDNA 4 → FSR 4.1 d'AMD, puce intégrée et Steam Deck → version intégrée, autres GPU → version cartes graphiques), ou choisie à la main. Les DLL modifiées ne sont jamais utilisées sur RDNA 4. Sur les autres GPU, OptiScaler est réglé sur le modèle INT8 de FSR 4.
 - « Supprimer les téléchargements » les efface ; les jeux gardent leurs propres copies.

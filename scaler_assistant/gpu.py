@@ -5,8 +5,9 @@ built into the processor.
   with 64 lanes, which matters for the OptiScaler way (see HelixSR's README,
   "check the wave size").
 * FSR 4: RDNA 4 (RX 9000) runs AMD's own FSR 4. Other GPUs run the INT8 model,
-  for which the FSR 4.1 Exact / Lossy DLLs exist in a build for graphics cards
-  and one for graphics built into the processor (also the Steam Deck).
+  for which the FSR 4.1 Exact / Lossy DLLs exist in four builds: RX 7000 cards,
+  RX 6000 cards, RDNA 3 built into the processor (also every other GPU) and
+  RDNA 2 built into the processor (also the Steam Deck).
 
 The generation comes from the graphics IP version the amdgpu driver reports
 (KFD topology, else IP discovery in sysfs).
@@ -90,13 +91,35 @@ def main_gpu(gpus: list[Gpu]) -> Optional[Gpu]:
 
 
 def fsr4_pack(gpu: Optional[Gpu]) -> Optional[str]:
-    """Which FSR 4.1 Exact / Lossy build fits: 'dgpu', 'igpu', or None on RDNA 4
-    (AMD's own FSR 4 runs there and the modified DLLs must not be used)."""
-    if gpu is None:
-        return "dgpu"
+    """Which FSR 4.1 Exact / Lossy build fits, as fsr4-shader-performance-overrides names them:
+
+    * 'rx7000': Radeon RX 7000 cards (RDNA 3 graphics cards);
+    * 'rx6000': Radeon RX 6000 cards (RDNA 2 graphics cards);
+    * 'igpu_rdna2': RDNA 2 built into the processor (Steam Deck, Radeon 680M / 660M / 610M);
+    * 'igpu_rdna3': RDNA 3 / 3.5 built into the processor, and every other GPU
+      (GeForce, Intel Arc, older Radeons, unknown);
+    * None on RDNA 4, where AMD's own FSR 4 runs and the modified DLLs must not be used."""
+    if gpu is None or gpu.vendor != "AMD" or not gpu.gfx:
+        return "igpu_rdna3"
     if gpu.rdna4:
         return None
-    return "igpu" if gpu.apu else "dgpu"
+    major, minor, _ = gpu.gfx
+    rdna2 = major == 10 and minor >= 3
+    if gpu.apu:
+        return "igpu_rdna2" if rdna2 else "igpu_rdna3"
+    if major == 11:
+        return "rx7000"
+    if rdna2:
+        return "rx6000"
+    return "igpu_rdna3"
+
+
+def legacy_fsr4_pack(setting: str, gpu: Optional[Gpu]) -> str:
+    """The build that replaces a choice made when there were two: 'dgpu' or 'igpu'."""
+    pack = fsr4_pack(gpu) or ""
+    if setting == "dgpu":
+        return pack if pack in ("rx7000", "rx6000") else "rx6000"
+    return pack if pack in ("igpu_rdna3", "igpu_rdna2") else "igpu_rdna3"
 
 
 def _read(path: Path) -> str:

@@ -27,10 +27,12 @@ Scaler アシスタントはこれらをひとつのウィンドウで行い、�
 | **DLSS 3.7（HelixSR）· DLSS 方式**（実験的） | Direct3D 12、DLSS | HelixSR の DLSS ローダー（`dxgi.dll`）と `nvngx.dll` としての HelixSR | DLSS |
 | **FSR 4.1 Exact** | 4 つのアップスケーラーのいずれか | `.exe` の隣に OptiScaler、`ScalerAssistant` フォルダーに FidelityFX DLL と Exact 版 FSR 4.1 DLL | DLSS・FSR・XeSS |
 | **FSR 4.1 Lossy** | 同上 | 同上（Lossy 版 FSR 4.1 DLL） | DLSS・FSR・XeSS |
+| **FSR 4.1 Lossy2** | 同上 | 同上（Lossy2 版 FSR 4.1 DLL） | DLSS・FSR・XeSS |
 | **FSR 4.1（AMD）** — RX 9000（RDNA 4）では Exact／Lossy の代わり | 同上 | 同上（AMD 純正 FSR 4.1 DLL） | DLSS・FSR・XeSS |
 | **FSR 3** | 同上 | 同上。OptiScaler は FSR 3.1.5 を使用 | DLSS・FSR・XeSS |
 
 - **Exact** は AMD の FSR 4.1 と 1 バイト単位で同じ画を、より速いシェーダーで出します。**Lossy** はさらに速い代わりに画がわずかに変わります。初めて使う前に `WARNING.txt` を一度表示します。迷ったら Exact を選んでください。
+- **Lossy2** は、ネットワーク 12 層のうち 6 層を再学習した Lossy です。揺れる葉が AMD の画に近く輝点ノイズも減りますが、明るくなる変化への追従は遅く、Ultra Performance では Lossy と同じです。比較できるよう Lossy と並べて提供し、初回は専用の `WARNING.txt` を一度表示します。
 - HelixSR は **Direct3D 12** のゲーム専用なので、DLSS 3.7 はそこでのみ表示されます。FSR 4.1 と FSR 3 は **Direct3D 11 と Vulkan** のゲームでも使えます（FSR 3 はネイティブ、FSR 4.1 は OptiScaler の Direct3D 12 経由で、Direct3D 12 のゲームほどは検証されていません）。
 - ゲームの行の **「アップスケーラーを選ぶ」**（導入済みなら **「アップスケーラー」**）を押します。DLSS 3.7（HelixSR）はサブメニューで方式を選べ、現在の選択にはチェックが付きます。切り替え時は現在のものを先に削除してすべて元に戻します。
 
@@ -76,7 +78,7 @@ Proton では `dxgi.dll` と `d3d12.dll` は追加設定なしで読み込まれ
 
 上部の **OptiScaler** ピル（または GPU ピル）を押します。
 
-- **OptiScaler 0.9.4**（AMD の FidelityFX DLL：FSR 3 と AMD の FSR 4.1、fakenvapi を含む）と、グラフィックスカード用または内蔵グラフィックス用の **FSR 4.1 Exact／Lossy**。
+- **OptiScaler 0.9.4**（AMD の FidelityFX DLL：FSR 3 と AMD の FSR 4.1、fakenvapi を含む）と、お使いの GPU 向けビルドの **FSR 4.1 Exact／Lossy／Lossy2**：RX 7000、RX 6000、CPU 内蔵の RDNA 3 グラフィックス（GeForce・Intel Arc・その他の GPU も）、または Steam Deck と CPU 内蔵の RDNA 2 グラフィックス。どのビルドもこれらすべてで動き、お使いの GPU 向けが最速です。Exact でゲームが落ちる場合は内蔵グラフィックス向けのビルドを選んでください。
 - 同意するまで何もダウンロードしません。各ダウンロードは固定のリリースで、展開前にサイズと SHA-256 を照合し、ゲームに必要なファイルだけを `~/.local/share/scaler-assistant/components/` に保存します。
 - **FSR 4.1 のビルド**：GPU から自動選択（RX 9000／RDNA 4 → AMD 純正 FSR 4.1、内蔵グラフィックスと Steam Deck → 内蔵用、その他 → グラフィックスカード用）、または手動で選択。RDNA 4 では改変 DLL を使いません。それ以外の GPU では OptiScaler を FSR 4 の INT8 モデルに設定します。
 - 「ダウンロードを削除」で削除できます。ゲーム内のコピーはそのままです。

@@ -27,10 +27,12 @@ Scaler 助手在一個視窗裡完成這一切，並保留所有被取代的檔�
 | **DLSS 3.7（HelixSR）· DLSS 方式**（實驗性） | Direct3D 12、DLSS | HelixSR 的 DLSS 載入器（`dxgi.dll`）和以 `nvngx.dll` 為名的 HelixSR | DLSS |
 | **FSR 4.1 Exact** | 四種升頻技術任一種 | `.exe` 旁放入 OptiScaler；FidelityFX DLL 和 Exact 版 FSR 4.1 DLL 放在 `ScalerAssistant` 資料夾 | DLSS、FSR 或 XeSS |
 | **FSR 4.1 Lossy** | 同上 | 同上，改用 Lossy 版 FSR 4.1 DLL | DLSS、FSR 或 XeSS |
+| **FSR 4.1 Lossy2** | 同上 | 同上，改用 Lossy2 版 FSR 4.1 DLL | DLSS、FSR 或 XeSS |
 | **FSR 4.1（AMD）**——RX 9000（RDNA 4）以此取代 Exact／Lossy | 同上 | 同上，改用 AMD 原生 FSR 4.1 DLL | DLSS、FSR 或 XeSS |
 | **FSR 3** | 同上 | 同上；OptiScaler 使用 FSR 3.1.5 | DLSS、FSR 或 XeSS |
 
 - **Exact** 的畫面與 AMD 的 FSR 4.1 逐位元組相同，只是著色器更快。**Lossy** 更快，但畫面會略有不同；第一次使用前，Scaler 助手會先顯示一次它的 `WARNING.txt`。不確定的話就選 Exact。
+- **Lossy2** 是把網路十二層中的六層重新訓練過的 Lossy：搖曳的樹葉更接近 AMD 的畫面、亮點雜訊較少，但畫面變亮時跟得較慢，Ultra Performance 模式下與 Lossy 相同。它與 Lossy 並列，方便比較；第一次使用前也會先顯示一次它自己的 `WARNING.txt`。
 - HelixSR 只能用於 **Direct3D 12** 遊戲，所以只有這類遊戲會出現 DLSS 3.7。FSR 4.1 和 FSR 3 也能用於 **Direct3D 11 與 Vulkan** 遊戲：FSR 3 原生支援，FSR 4.1 則透過 OptiScaler 的 Direct3D 12 路徑（測試程度不如 Direct3D 12 遊戲）。
 - 在遊戲那一列按 **「選擇升頻」**（已安裝的遊戲按 **「升頻」**）：DLSS 3.7（HelixSR）會展開子選單列出它的方式，目前的選擇會打勾。切換時會先移除目前的項目並全部還原。
 
@@ -76,7 +78,7 @@ Scaler 助手在一個視窗裡完成這一切，並保留所有被取代的檔�
 
 按上方的 **OptiScaler** 標籤（或 GPU 標籤）：
 
-- **OptiScaler 0.9.4**（含 AMD 的 FidelityFX DLL：FSR 3 與 AMD 的 FSR 4.1，以及 fakenvapi），以及給獨立顯示卡或內建顯示晶片用的 **FSR 4.1 Exact／Lossy**。
+- **OptiScaler 0.9.4**（含 AMD 的 FidelityFX DLL：FSR 3 與 AMD 的 FSR 4.1，以及 fakenvapi），以及適合你 GPU 版本的 **FSR 4.1 Exact／Lossy／Lossy2**：RX 7000 顯示卡、RX 6000 顯示卡、處理器內建的 RDNA 3 顯示晶片（也適用 GeForce、Intel Arc 與其他 GPU），或 Steam Deck 與處理器內建的 RDNA 2 顯示晶片。每個版本在這些 GPU 上都能用，對應你 GPU 的版本最快。若遊戲用 Exact 會當掉，可改選內建顯示晶片的版本。
 - 你同意之前不會下載任何東西。每個下載檔都是固定的版本，解開前會核對大小和 SHA-256；只保留遊戲需要的檔案，存在 `~/.local/share/scaler-assistant/components/`。
 - **FSR 4.1 版本**：依顯示卡自動選擇（RX 9000／RDNA 4 → AMD 原生 FSR 4.1；內建顯示晶片與 Steam Deck → 內建顯示晶片版；其他 GPU → 獨立顯示卡版），也可以手動指定。RDNA 4 絕不會使用修改過的 DLL。其他 GPU 會把 OptiScaler 設為使用 FSR 4 的 INT8 模型。
 - 「移除下載檔」會刪除它們；遊戲裡的複本不受影響。

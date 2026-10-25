@@ -27,10 +27,12 @@ API grafik dan upscaler permainan menentukan pilihan yang ditawarkan. Permainan 
 | **DLSS 3.7 (HelixSR) · cara DLSS** (percubaan) | Direct3D 12, DLSS | Pemuat DLSS HelixSR (`dxgi.dll`) dan HelixSR sebagai `nvngx.dll` | DLSS |
 | **FSR 4.1 Exact** | mana-mana empat upscaler | OptiScaler di sebelah `.exe`; DLL FidelityFX dan DLL FSR 4.1 Exact dalam folder `ScalerAssistant` | DLSS, FSR atau XeSS |
 | **FSR 4.1 Lossy** | sama | sama, dengan DLL FSR 4.1 Lossy | DLSS, FSR atau XeSS |
+| **FSR 4.1 Lossy2** | sama | sama, dengan DLL FSR 4.1 Lossy2 | DLSS, FSR atau XeSS |
 | **FSR 4.1 (AMD)** — menggantikan Exact / Lossy pada RX 9000 (RDNA 4) | sama | sama, dengan DLL FSR 4.1 asli AMD | DLSS, FSR atau XeSS |
 | **FSR 3** | sama | sama; OptiScaler menggunakan FSR 3.1.5 | DLSS, FSR atau XeSS |
 
 - **Exact** memberi gambar FSR 4.1 AMD bait demi bait, dengan shader yang lebih pantas. **Lossy** lebih pantas lagi dan mengubah gambar sedikit; Pembantu Scaler menunjukkan `WARNING.txt`-nya sekali sebelum penggunaan pertama. Jika tidak pasti, pilih Exact.
+- **Lossy2** ialah Lossy dengan enam daripada dua belas lapisan rangkaian dilatih semula: dedaun yang bergoyang lebih dekat dengan gambar AMD dan kurang piksel terang terpencil, tetapi ia mengikut perubahan menjadi cerah dengan lebih perlahan dan sama seperti Lossy dalam Ultra Performance. Ia ditawarkan di sebelah Lossy supaya anda boleh membandingkannya, dan menunjukkan `WARNING.txt` sendiri sekali.
 - HelixSR hanya berfungsi dalam permainan **Direct3D 12**, jadi DLSS 3.7 hanya ditawarkan di situ. FSR 4.1 dan FSR 3 juga berfungsi dalam permainan **Direct3D 11 dan Vulkan**: FSR 3 secara asli, FSR 4.1 melalui laluan Direct3D 12 OptiScaler (kurang diuji berbanding permainan Direct3D 12).
 - Klik **"Pilih upscaler"** pada baris permainan (atau **"Upscaler"** apabila sudah dipasang): DLSS 3.7 (HelixSR) membuka submenu dengan cara-caranya; pilihan semasa ditandakan. Menukar akan membuang pilihan semasa dahulu dan memulihkan semuanya.
 
@@ -76,7 +78,7 @@ Di bawah Proton, `dxgi.dll` dan `d3d12.dll` dimuatkan tanpa apa-apa lagi. Nama l
 
 Klik label **OptiScaler** di atas (atau label GPU):
 
-- **OptiScaler 0.9.4** (dengan DLL FidelityFX AMD: FSR 3 dan FSR 4.1 AMD, serta fakenvapi) dan **FSR 4.1 Exact / Lossy** dalam binaan untuk kad grafik atau untuk grafik terbina dalam.
+- **OptiScaler 0.9.4** (dengan DLL FidelityFX AMD: FSR 3 dan FSR 4.1 AMD, serta fakenvapi) dan **FSR 4.1 Exact / Lossy / Lossy2** dalam binaan untuk GPU anda: kad RX 7000, kad RX 6000, grafik RDNA 3 terbina dalam pemproses (juga GeForce, Intel Arc dan GPU lain), atau Steam Deck dan grafik RDNA 2 terbina dalam pemproses. Setiap binaan berfungsi pada semua; binaan untuk GPU anda paling pantas. Jika permainan ranap dengan Exact, pilih binaan untuk grafik terbina dalam.
 - Tiada apa dimuat turun sehingga anda bersetuju. Setiap muat turun ialah keluaran tetap yang disemak dengan saiz dan SHA-256 sebelum diekstrak; hanya fail yang diperlukan permainan disimpan, dalam `~/.local/share/scaler-assistant/components/`.
 - **Binaan FSR 4.1**: automatik mengikut GPU (RX 9000 / RDNA 4 → FSR 4.1 asli AMD, grafik terbina dalam dan Steam Deck → binaan terbina dalam, GPU lain → binaan kad grafik), atau dipilih sendiri. DLL yang diubah suai tidak pernah digunakan pada RDNA 4. Pada GPU lain, OptiScaler ditetapkan kepada model INT8 FSR 4.
 - "Buang muat turun" memadamnya; permainan mengekalkan salinan sendiri.

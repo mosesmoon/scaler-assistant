@@ -72,7 +72,7 @@ SCALER_NOTE_TEXT = (
     "Remove the upscaler in Scaler Assistant to put everything back.\r\n"
 )
 CHOICES = ("helixsr:hscaler", "helixsr:direct", "helixsr:optiscaler", "helixsr:dlss",
-           "fsr4:exact", "fsr4:lossy", "fsr4:native", "fsr3")
+           "fsr4:exact", "fsr4:lossy", "fsr4:lossy2", "fsr4:native", "fsr3")
 
 MY_FSR_TEXT = (
     "Scaler Assistant made this folder for HelixSR.\r\n\r\n"
@@ -172,7 +172,7 @@ class InstallState:
     chosen: bool = False                                 # OptiScaler picked for an FSR 3.1 game
     installed_by: str = ""
     upscaler: Optional[str] = None       # helixsr / fsr4 / fsr3
-    variant: Optional[str] = None        # fsr4: exact / lossy / native
+    variant: Optional[str] = None        # fsr4: exact / lossy / lossy2 / native
     opti_name: Optional[str] = None      # OptiScaler's file name next to the .exe
     files: dict[str, str] = field(default_factory=dict)  # FSR: sha256 of the copies made
     helper_files: list[Path] = field(default_factory=list)   # OptiScaler or the DLSS loader
@@ -633,7 +633,7 @@ def _settings_of(current: InstallState) -> dict[str, str]:
 @dataclass
 class ScalerPlan:
     """What an FSR 4.1 / FSR 3 install copies, prepared by the service from the downloads."""
-    choice: str                  # fsr4:exact / fsr4:lossy / fsr4:native / fsr3
+    choice: str                  # fsr4:exact / fsr4:lossy / fsr4:lossy2 / fsr4:native / fsr3
     opti_name: str               # OptiScaler's file name next to the .exe
     optiscaler: Path             # the downloaded OptiScaler folder
     optiscaler_version: str

@@ -379,7 +379,7 @@ class DownloadsDialog(_FitDialog):
         layout = QVBoxLayout(self)
         layout.addWidget(_label(tr("dl_intro", folder=html.escape(
             str(service.components_root or components.data_dir()))), "subtitle"))
-        for component in components.ALL:
+        for component in service.listed_components():
             ready = service.component_ready(component)
             state = (f'<span style="color:{theme.token("ok")}">✓ {html.escape(tr("dl_ready"))}</span>' if ready
                      else f'<span style="color:{theme.token("muted")}">{html.escape(tr("dl_missing", size=mb(component.size)))}</span>')
@@ -396,9 +396,9 @@ class DownloadsDialog(_FitDialog):
         main_gpu = service.main_gpu()
         auto = tr("dl_build_auto", build=tr("dl_build_" + (
             gpu.fsr4_pack(main_gpu) or "native")), gpu=main_gpu.label() if main_gpu else "?")
-        for value, label in (("auto", auto), ("dgpu", tr("dl_build_dgpu")),
-                             ("igpu", tr("dl_build_igpu")), ("native", tr("dl_build_native"))):
-            self.build_box.addItem(label, value)
+        for value in (*components.FSR4_PACKS, "native"):
+            self.build_box.addItem(tr("dl_build_" + value), value)
+        self.build_box.insertItem(0, auto, "auto")
         self.build_box.setCurrentIndex(max(0, self.build_box.findData(service.fsr4_build_setting)))
         self.build_box.currentIndexChanged.connect(self._build_changed)
         form.addRow(tr("dl_build_label"), self.build_box)
@@ -488,19 +488,20 @@ class OptiNameDialog(_FitDialog):
 
 
 class LossyDialog(QDialog):
-    """WARNING.txt of the Lossy DLL, shown once before it is used the first time."""
+    """WARNING.txt of the Lossy or Lossy2 DLL, shown once before it is used the first time."""
 
-    def __init__(self, text: str, parent: QWidget) -> None:
+    def __init__(self, text: str, parent: QWidget, variant: str = "lossy") -> None:
         super().__init__(parent)
-        self.setWindowTitle(tr("lossy_title"))
+        prefix = "lossy2_" if variant == "lossy2" else "lossy_"
+        self.setWindowTitle(tr(prefix + "title"))
         self.resize(820, 600)
         layout = QVBoxLayout(self)
-        layout.addWidget(_label(tr("lossy_intro"), "banner"))
+        layout.addWidget(_label(tr(prefix + "intro"), "banner"))
         view = QPlainTextEdit(text or tr("lossy_missing"))
         view.setReadOnly(True)
         layout.addWidget(view, 1)
         buttons = QDialogButtonBox()
-        ok = buttons.addButton(tr("lossy_accept"), QDialogButtonBox.ButtonRole.AcceptRole)
+        ok = buttons.addButton(tr(prefix + "accept"), QDialogButtonBox.ButtonRole.AcceptRole)
         ok.setObjectName("primary")
         buttons.addButton(tr("cancel"), QDialogButtonBox.ButtonRole.RejectRole)
         buttons.accepted.connect(self.accept)
@@ -1248,11 +1249,12 @@ class MainWindow(QMainWindow):
             self.download(plan.downloads, then=lambda: self.choose(entry, plan.choice))
             return
         if plan.lossy_warning:
-            dialog = LossyDialog(self.service.lossy_warning_text(), self)
+            dialog = LossyDialog(self.service.lossy_warning_text(plan.lossy_warning), self,
+                                 plan.lossy_warning)
             if dialog.exec() != QDialog.DialogCode.Accepted:
                 self.write_log(tr("log_cancelled"))
                 return
-            self.service.accept_lossy()
+            self.service.accept_lossy(plan.lossy_warning)
         if entry.status.choice == plan.choice:
             key = "log_update"
         elif entry.status.installed:

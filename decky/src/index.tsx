@@ -61,7 +61,7 @@ interface Overview {
   downloads: Downloads; gpu: string; toast: boolean; home: string; log: string[];
 }
 interface Result { ok: boolean; kind?: string; message: string; keys?: string[] }
-interface Step { kind: string; title?: string; text: string; ok?: string; keys?: string[] }
+interface Step { kind: string; title?: string; text: string; ok?: string; keys?: string[]; variant?: string }
 interface Plan { choice: string; label: string; steps: Step[] }
 interface Removal { title: string; text: string; ok: string; settings: string }
 interface OptiNames {
@@ -73,8 +73,8 @@ const start = callable<[steamLanguage: string], { strings: Record<string, string
 const setLanguageCall = callable<[code: string], { strings: Record<string, string> }>("set_language");
 const overviewCall = callable<[rescan: boolean], Overview>("overview");
 const planCall = callable<[appId: number, choice: string], Plan>("plan");
-const lossyText = callable<[], string>("lossy_text");
-const acceptLossy = callable<[], void>("accept_lossy");
+const lossyText = callable<[variant: string], string>("lossy_text");
+const acceptLossy = callable<[variant: string], void>("accept_lossy");
 const applyCall = callable<[appId: number, choice: string], Result>("apply");
 const removalCall = callable<[appId: number], Removal>("removal");
 const setFgCall = callable<[appId: number, on: boolean], Result>("set_frame_generation");
@@ -209,9 +209,10 @@ async function choose(game: Game, choice: string): Promise<boolean> {
       if (!result.ok) { await report(result); return false; }
     }
     if (step.kind === "lossy") {
-      const body = await lossyText();
+      const variant = step.variant ?? "lossy";
+      const body = await lossyText(variant);
       if (!(await ask(step.title ?? "", `${step.text}\n\n${body}`, step.ok ?? t("ok")))) return false;
-      await acceptLossy();
+      await acceptLossy(variant);
     }
   }
   let result = await working(t("busy_install", { name: game.name }), () => applyCall(game.app_id, choice));

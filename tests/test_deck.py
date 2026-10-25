@@ -39,14 +39,14 @@ class DeckBridgeTest(Base):
         self.assertEqual((dlss["fg"], dlss["fg_block"]), (None, ""))
         self.assertIn("fsr4:lossy", [c["id"] for c in dlss["choices"]])
         # DX12 only for HelixSR: offered for FSR's game, not explained away
-        self.assertEqual(overview["downloads"]["missing"], ["optiscaler", "fsr4-igpu"])
+        self.assertEqual(overview["downloads"]["missing"], ["optiscaler", "fsr4-igpu-rdna2"])
         self.assertNotIn("<", json.dumps(self.bridge.strings()))
 
     def test_choose_fsr4_lossy_asks_downloads_then_warning_then_installs(self):
         plan = self.bridge.plan(DLSS, "fsr4:lossy")
         kinds = [s["kind"] for s in plan["steps"]]
         self.assertEqual(kinds[:3], ["confirm", "download", "lossy"])   # anti-cheat first
-        self.assertEqual(plan["steps"][1]["keys"], ["optiscaler", "fsr4-igpu"])
+        self.assertEqual(plan["steps"][1]["keys"], ["optiscaler", "fsr4-igpu-rdna2"])
         failed = self.bridge.apply(DLSS, "fsr4:lossy")
         self.assertEqual((failed["ok"], failed["kind"]), (False, "download"))
 
@@ -66,6 +66,28 @@ class DeckBridgeTest(Base):
         self.assertTrue(self.bridge.uninstall(DLSS)["ok"])
         self.assertEqual(snapshot(self.common / "DlssGame"), before)
         self.assertIn(result["message"].splitlines()[0], self.bridge.overview()["log"])
+
+    def test_lossy2_has_its_own_warning(self):
+        make_components(self.root / "components")
+        self.bridge.accept_lossy()   # Lossy's warning accepted: Lossy2 still asks for its own
+        step = next(s for s in self.bridge.plan(DLSS, "fsr4:lossy2")["steps"] if s["kind"] == "lossy")
+        self.assertEqual((step["variant"], step["title"]), ("lossy2", i18n.tr("lossy2_title")))
+        self.assertEqual(self.bridge.lossy_text("lossy2"), "fsr4-igpu-rdna2 lossy2/WARNING.txt\n")
+        self.assertEqual(self.bridge.lossy_text("lossy"), "fsr4-igpu-rdna2 lossy/WARNING.txt\n")
+        self.bridge.accept_lossy("lossy2")
+        self.assertEqual([s["kind"] for s in self.bridge.plan(DLSS, "fsr4:lossy2")["steps"]],
+                         ["confirm"])
+        self.assertTrue(self.bridge.apply(DLSS, "fsr4:lossy2")["ok"])
+        game = self.game(self.bridge.overview(), DLSS)
+        self.assertEqual(game["choice"], "fsr4:lossy2")
+
+    def test_downloads_list_the_build_in_use(self):
+        downloads = self.bridge.overview()["downloads"]
+        self.assertEqual([i["key"] for i in downloads["items"]], ["optiscaler", "fsr4-igpu-rdna2"])
+        self.assertEqual([b[0] for b in downloads["builds"]],
+                         ["auto", "rx7000", "rx6000", "igpu_rdna3", "igpu_rdna2", "native"])
+        make_components(self.root / "components")   # every build on disk: all are listed
+        self.assertEqual(len(self.bridge.overview()["downloads"]["items"]), 5)
 
     def test_opti_name_moves_installed_optiscaler_and_launch_options(self):
         make_components(self.root / "components")

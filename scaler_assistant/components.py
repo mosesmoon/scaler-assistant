@@ -65,28 +65,35 @@ OPTISCALER = Component(
     licence="GPL-3.0 (OptiScaler), MIT (fakenvapi), AMD FidelityFX licence (AMD DLLs)",
 )
 
-_FSR4_RELEASE = "dll-2026-10-15"
+_FSR4_RELEASE = "dll-2026-10-22"
 _FSR4_BASE = ("https://github.com/zgauthier2000/fsr4-shader-performance-overrides/releases/download/"
               f"{_FSR4_RELEASE}/")
 _FSR4_MEMBERS = ("NOTICE.md", "exact/amd_fidelityfx_upscaler_dx12.dll",
-                 "lossy/amd_fidelityfx_upscaler_dx12.dll", "lossy/WARNING.txt")
-FSR4 = {
-    "dgpu": Component(
-        key="fsr4-dgpu", version=_FSR4_RELEASE, url=_FSR4_BASE + "fsr4.1.1-cyboman.zip",
-        sha256="3e14f27e4b4639445b791f8fb4202d4b3b3c73bda1fb23c2c5c08e55b651593f",
-        size=52988220, archive="zip", members=_FSR4_MEMBERS,
-        project="https://github.com/zgauthier2000/fsr4-shader-performance-overrides",
-        licence="GPL-2.0-or-later, modified AMD DLL with AMD's notice",
-        notes=("lossy/WARNING.txt",)),
-    "igpu": Component(
-        key="fsr4-igpu", version=_FSR4_RELEASE, url=_FSR4_BASE + "fsr4.1.1-igpu-cyboman.zip",
-        sha256="9c5caf5cf31b13af64d4c255a57514c311d131b2b4951479702dafac71565531",
-        size=52988461, archive="zip", members=_FSR4_MEMBERS,
-        project="https://github.com/zgauthier2000/fsr4-shader-performance-overrides",
-        licence="GPL-2.0-or-later, modified AMD DLL with AMD's notice",
-        notes=("lossy/WARNING.txt",)),
+                 "lossy/amd_fidelityfx_upscaler_dx12.dll", "lossy/WARNING.txt",
+                 "lossy2/amd_fidelityfx_upscaler_dx12.dll", "lossy2/WARNING.txt")
+# One build per kind of GPU (gpu.fsr4_pack): each carries only the shader changes that help it.
+# Every build runs on every GPU before RDNA 4; the one for the GPU is the fastest there.
+_FSR4_PACKS = {
+    "rx7000": ("fsr4.1.1-cyboman-rx7000-2026-10-22.7z",
+               "e6e507288c003d8063c3c12a70cb94b692499d894a9c2703c816450176155c43", 5418356),
+    "rx6000": ("fsr4.1.1-cyboman-rx6000-2026-10-22.7z",
+               "238c1561584737b3f0b1e029255eab639dfba554c65769adf3ab35fcf49c076c", 5413768),
+    "igpu_rdna3": ("fsr4.1.1-igpu-cyboman-rdna3-2026-10-22.7z",
+                   "c48a95842b56c643bde09e320750a94428ed7614ff671bf55824a1fdcfaf1035", 5419336),
+    "igpu_rdna2": ("fsr4.1.1-igpu-cyboman-rdna2-2026-10-22.7z",
+                   "944756b03438ab75c71e816285af429a3fa23c5e2aa1f5840834d889fb4aedb2", 5628777),
 }
-ALL = (OPTISCALER, FSR4["dgpu"], FSR4["igpu"])
+FSR4 = {
+    pack: Component(
+        key="fsr4-" + pack.replace("_", "-"), version=_FSR4_RELEASE, url=_FSR4_BASE + name,
+        sha256=sha, size=size, archive="7z", members=_FSR4_MEMBERS,
+        project="https://github.com/zgauthier2000/fsr4-shader-performance-overrides",
+        licence="GPL-2.0-or-later, modified AMD DLL with AMD's notice",
+        notes=("lossy/WARNING.txt", "lossy2/WARNING.txt"))
+    for pack, (name, sha, size) in _FSR4_PACKS.items()
+}
+FSR4_PACKS = tuple(_FSR4_PACKS)
+ALL = (OPTISCALER, *FSR4.values())
 
 
 def data_dir() -> Path:

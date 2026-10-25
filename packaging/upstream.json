@@ -3,14 +3,14 @@
   "helixsr": {
     "repo": "https://github.com/lonewolf0622/HelixSR",
     "latest_release": "v2.0.0",
-    "head": "63590c9a7d1608bed649dba082516bc1c409f9ce",
+    "head": "2ca54d14110342c6d301703bebad7c62cf792d7d",
     "supported": "1.8.0 - 2.0.x (2.0: HelixSR Scaler and FSR drop-in through setup/helixsr_bridge.py)"
   },
   "fsr4": {
     "repo": "https://github.com/zgauthier2000/fsr4-shader-performance-overrides",
-    "latest_dll_release": "dll-2026-10-15",
-    "pinned_in_components": "dll-2026-10-15",
-    "head": "87cd12399ca76003491959e0d3c6cf3eeebfc2e2"
+    "latest_dll_release": "dll-2026-10-22",
+    "pinned_in_components": "dll-2026-10-22",
+    "head": "a0b479c134fc9fbfd13fe08ca794915a24f9f11c"
   },
-  "checked": "2026-10-19"
+  "checked": "2026-10-25"
 }
