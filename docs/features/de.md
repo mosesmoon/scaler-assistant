@@ -41,7 +41,7 @@ Grafik-API und Upscaler des Spiels bestimmen, was angeboten wird. Das Spiel muss
 - **FSR 4.1 und FSR 3** brauchen nichts weiter: Beim ersten Mal fragt der Scaler-Assistent, ob er OptiScaler und die FSR-4.1-DLLs für deine GPU herunterladen soll (siehe „Downloads“).
 - **DLSS 3.7** braucht HelixSR, das der Scaler-Assistent nicht enthält. Lade HelixSR 1.8.0 oder neuer von den [GitHub-Releases](https://github.com/lonewolf0622/HelixSR/releases), entpacke es in einen Ordner, den du behältst, und führe dort einmal `./helixsr-setup.sh` aus (es baut HelixSRs Netz auf deinem PC; Fragen zu Spielen kannst du mit `n` beantworten). Ein Klick auf die **HelixSR**-Plakette oben zeigt das; einen eingerichteten HelixSR-Ordner in Home, Downloads, Desktop oder Games findet der Scaler-Assistent selbst.
   Einfacher: Im selben Fenster **HelixSR herunterladen und erstellen** drücken (HelixSR 2.0 oder neuer); Scaler Assistant erledigt das alles ohne Terminal.
-- Spiele laufen über **Proton**. HelixSR ist für AMD-GPUs ab RDNA 1 gemacht. FSR 4.1 Exact / Lossy sind für Radeon RX 7000 / RX 6000 und integrierte Radeon-Grafik (auch Steam Deck) gemacht; andere GPUs sollten sie ausführen, sind vom Autor aber ungetestet.
+- Spiele laufen über **Proton**. HelixSR ist für AMD-GPUs ab RDNA 1 gemacht. FSR 4.1 Exact / Lossy sind für Radeon RX 7000 / RX 6000 und integrierte Radeon-Grafik (auch Steam Deck) gemacht; andere GPUs sollten sie ausführen, sind vom Autor aber ungetestet. FSR 4.1 funktioniert nicht auf Radeon-RX-5000-GPUs (RDNA 1) (jede Version zeigt nur ein schwarzes Bild), daher graut Scaler-Assistent es dort aus; FSR 3 und DLSS 3.7 (HelixSR) bleiben verfügbar.
 
 ## Funktionen
 

@@ -173,7 +173,7 @@ class DeckBridge:
         out, with the reason), the one recommended for this PC is marked."""
         result = []
         order = [f"helixsr:{way}" for way in entry.ways]
-        order += [c for c in entry.choices if c not in order]
+        order += [c for c in (*entry.blocked, *entry.choices) if c not in order]
         for choice in order:
             if upscaler_of(choice) == "helixsr":
                 way = choice.partition(":")[2]
@@ -233,10 +233,11 @@ class DeckBridge:
         service = self.service
         build = service.fsr4_build()
         main = service.main_gpu()
-        auto = tr("dl_build_auto", build=tr("dl_build_" + (gpu.fsr4_pack(main) or "native")),
+        auto = tr("dl_build_auto", build=tr("dl_build_" + (gpu.fsr4_pack(main) or "native")
+                                            if gpu.fsr4_supported(main) else "dl_build_none"),
                   gpu=main.label() if main else "?")
         wanted = [components.OPTISCALER]
-        if build != "native":
+        if build != "native" and not service.fsr4_block():
             wanted += service.needed_components("fsr4:exact")[1:]
         items = []
         for component in service.listed_components():

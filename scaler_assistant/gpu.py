@@ -7,7 +7,9 @@ built into the processor.
 * FSR 4: RDNA 4 (RX 9000) runs AMD's own FSR 4. Other GPUs run the INT8 model,
   for which the FSR 4.1 Exact / Lossy DLLs exist in four builds: RX 7000 cards,
   RX 6000 cards, RDNA 3 built into the processor (also every other GPU) and
-  RDNA 2 built into the processor (also the Steam Deck).
+  RDNA 2 built into the processor (also the Steam Deck). None of them works on
+  Radeon RX 5000 (RDNA 1): FSR 4 gives only a black picture there, on any system
+  (fsr4-shader-performance-overrides, issue #43).
 
 The generation comes from the graphics IP version the amdgpu driver reports
 (KFD topology, else IP discovery in sysfs).
@@ -97,7 +99,7 @@ def fsr4_pack(gpu: Optional[Gpu]) -> Optional[str]:
     * 'rx6000': Radeon RX 6000 cards (RDNA 2 graphics cards);
     * 'igpu_rdna2': RDNA 2 built into the processor (Steam Deck, Radeon 680M / 660M / 610M);
     * 'igpu_rdna3': RDNA 3 / 3.5 built into the processor, and every other GPU
-      (GeForce, Intel Arc, older Radeons, unknown);
+      (GeForce, Intel Arc, older Radeons, unknown; on RDNA 1 none works, see fsr4_supported);
     * None on RDNA 4, where AMD's own FSR 4 runs and the modified DLLs must not be used."""
     if gpu is None or gpu.vendor != "AMD" or not gpu.gfx:
         return "igpu_rdna3"
@@ -112,6 +114,16 @@ def fsr4_pack(gpu: Optional[Gpu]) -> Optional[str]:
     if rdna2:
         return "rx6000"
     return "igpu_rdna3"
+
+
+def fsr4_supported(gpu: Optional[Gpu]) -> bool:
+    """False on Radeon RX 5000 (RDNA 1), where FSR 4 gives only a black picture with every
+    FSR 4.1 build, on Windows and Linux. RX Vega gives a black picture under Windows; under
+    Linux it is unknown, so it is not refused here."""
+    if gpu is None or gpu.vendor != "AMD" or not gpu.gfx:
+        return True
+    major, minor, _ = gpu.gfx
+    return not (major == 10 and minor < 3)
 
 
 def legacy_fsr4_pack(setting: str, gpu: Optional[Gpu]) -> str:

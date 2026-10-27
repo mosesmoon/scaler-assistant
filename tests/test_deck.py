@@ -89,6 +89,18 @@ class DeckBridgeTest(Base):
         make_components(self.root / "components")   # every build on disk: all are listed
         self.assertEqual(len(self.bridge.overview()["downloads"]["items"]), 5)
 
+    def test_rdna1_shows_fsr4_greyed_out_and_downloads_no_build(self):
+        self.service._gpus = [gpu.Gpu("AMD", 0x731f, (10, 1, 0))]   # RX 5700 XT
+        overview = self.bridge.overview()
+        choices = self.game(overview, FSR)["choices"]
+        fsr4 = [c for c in choices if "4.1" in c["label"]]
+        self.assertEqual(len(fsr4), 3)
+        self.assertTrue(all(c["id"] == "" for c in fsr4))
+        self.assertIn("RDNA 1", fsr4[0]["hint"])
+        self.assertEqual(choices[-1]["id"], "fsr3")
+        self.assertEqual(overview["downloads"]["missing"], ["optiscaler"])
+        self.assertIn("RDNA 1", overview["downloads"]["builds"][0][1])
+
     def test_opti_name_moves_installed_optiscaler_and_launch_options(self):
         make_components(self.root / "components")
         write_launch_options(self.steam, {DLSS: "-dx12 %command%"})

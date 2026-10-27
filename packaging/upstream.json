@@ -10,7 +10,8 @@
     "repo": "https://github.com/zgauthier2000/fsr4-shader-performance-overrides",
     "latest_dll_release": "dll-2026-10-22",
     "pinned_in_components": "dll-2026-10-22",
-    "head": "a0b479c134fc9fbfd13fe08ca794915a24f9f11c"
+    "head": "29146039cca8b2f5e587ac91ffd4461e2e9baab9",
+    "not_supported": "Radeon RX 5000 (RDNA 1): no build gives a picture (README, issue #43); FSR 4.1 greyed out there since 1.0.2"
   },
-  "checked": "2026-10-25"
+  "checked": "2026-10-27"
 }

@@ -342,6 +342,30 @@ class FsrTest(Base):
         self.assertEqual(self.service.needed_components("fsr3"), [components.OPTISCALER])
         self.assertEqual(self.entry(PLAIN).choices, [])
 
+    def test_rdna1_gets_no_fsr4(self):
+        # fsr4-shader-performance-overrides: no FSR 4.1 build gives a picture on RX 5000 (RDNA 1)
+        self.service._gpus = [gpu.Gpu("AMD", 0x731f, (10, 1, 0))]   # RX 5700 XT
+        before = snapshot(self.common)
+        entry = self.entry(FSR)
+        self.assertEqual([c for c in entry.choices if c.startswith("fsr")], ["fsr3"])
+        self.assertEqual({c: r for c, r in entry.blocked.items() if c.startswith("fsr4")},
+                         dict.fromkeys(["fsr4:exact", "fsr4:lossy", "fsr4:lossy2"],
+                                       "blk_fsr4_rdna1"))
+        self.assertNotIn("fsr4:exact", self.entry(PLAIN).blocked)   # no OptiScaler there
+        with self.assertRaises(installer.InstallError):
+            self.service.apply(FSR, "fsr4:exact")
+        self.service.fsr4_build_setting = "native"   # picked by hand: AMD's own FSR 4 too
+        self.assertEqual(self.entry(FSR).blocked.get("fsr4:native"), "blk_fsr4_rdna1")
+        self.service.fsr4_build_setting = "auto"
+        for pack in components.FSR4.values():   # nothing on disk: no FSR 4.1 build is listed
+            components.remove(pack, self.root / "components")
+        self.assertEqual(self.service.listed_components(), [components.OPTISCALER])
+        self.assertEqual(snapshot(self.common), before)
+        self.service._gpus = [gpu.Gpu("AMD", 0x731f, (10, 1, 0)), gpu.Gpu("NVIDIA", 0x2684)]
+        self.assertNotIn("fsr4:exact", self.entry(FSR).choices)   # the Radeon runs the games
+        self.service._gpus = [gpu.Gpu("NVIDIA", 0x2684)]
+        self.assertIn("fsr4:exact", self.entry(FSR).choices)
+
     def test_fsr4_install_switch_and_remove_put_everything_back(self):
         before = snapshot(self.common / "DlssGame")
         options = self.localconfig()
@@ -785,6 +809,14 @@ class GpuTest(unittest.TestCase):
         for card, want in cases:
             self.assertEqual(gpu.fsr4_pack(card), want, card)
         self.assertEqual(gpu.fsr4_pack(None), "igpu_rdna3")
+
+    def test_fsr4_not_on_rdna1(self):
+        self.assertFalse(gpu.fsr4_supported(gpu.Gpu("AMD", 0x731f, (10, 1, 0))))   # RX 5700 XT
+        self.assertFalse(gpu.fsr4_supported(gpu.Gpu("AMD", 0x7340, (10, 1, 2))))   # RX 5500 XT
+        for card in (gpu.Gpu("AMD", 0x73bf, (10, 3, 0)), gpu.Gpu("AMD", 0x163f, (10, 3, 3), apu=True),
+                     gpu.Gpu("AMD", 0x744c, (11, 0, 0)), gpu.Gpu("AMD", 0x7550, (12, 0, 1)),
+                     gpu.Gpu("AMD", 0x66af, (9, 0, 6)), gpu.Gpu("NVIDIA", 0x2684), None):
+            self.assertTrue(gpu.fsr4_supported(card), card)
 
     def test_builds_chosen_before_four_builds_are_carried_over(self):
         rx7900, rx6800 = gpu.Gpu("AMD", 0x744c, (11, 0, 0)), gpu.Gpu("AMD", 0x73bf, (10, 3, 0))

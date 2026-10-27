@@ -41,7 +41,7 @@ Scaler 助手在一个窗口里完成这一切，并保留所有被替换的文�
 - **FSR 4.1 和 FSR 3** 不需要其他东西：首次选择时，Scaler 助手会询问是否下载 OptiScaler 及适合你显卡的 FSR 4.1 DLL（见下方“下载文件”）。
 - **DLSS 3.7** 需要 HelixSR，Scaler 助手不包含它。请从 [HelixSR 的 GitHub Releases](https://github.com/lonewolf0622/HelixSR/releases) 下载 1.8.0 或更新版本，解压到会保留的文件夹，并在其中运行一次 `./helixsr-setup.sh`（它会在你的电脑上构建 HelixSR 的神经网络；开始逐个询问游戏时可以回答 `n`）。点击顶部的 **HelixSR** 标签可查看这些说明；Scaler 助手会自动在主目录、下载、桌面或 Games 文件夹中寻找已设置好的 HelixSR 文件夹。
   更简单的方式：在该窗口按 **下载并构建 HelixSR**（HelixSR 2.0 及以上），Scaler 助手会替你完成以上步骤，无需终端。
-- 游戏通过 **Proton** 运行。HelixSR 为 AMD 显卡（RDNA 1 及以上）设计。FSR 4.1 Exact／Lossy 为 Radeon RX 7000／RX 6000 及 Radeon 集成显卡（含 Steam Deck）制作；其他 GPU 应该也能运行，但原作者尚未测试。
+- 游戏通过 **Proton** 运行。HelixSR 为 AMD 显卡（RDNA 1 及以上）设计。FSR 4.1 Exact／Lossy 为 Radeon RX 7000／RX 6000 及 Radeon 集成显卡（含 Steam Deck）制作；其他 GPU 应该也能运行，但原作者尚未测试。FSR 4.1 无法在 Radeon RX 5000（RDNA 1）显卡上使用（每个版本都只有黑屏），因此 Scaler 助手在这类显卡上会将其置灰；仍可使用 FSR 3 与 DLSS 3.7（HelixSR）。
 
 ## 功能
 

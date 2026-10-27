@@ -237,6 +237,11 @@ class AssistantService:
     def fsr4_choices(self) -> list[str]:
         return ["fsr4:native"] if self.fsr4_build() == "native" else list(FSR4_MODIFIED)
 
+    def fsr4_block(self) -> Optional[str]:
+        """The i18n key saying why FSR 4.1 can't be used on this PC, or None: no FSR 4.1 build
+        gives a picture on Radeon RX 5000 (RDNA 1)."""
+        return None if gpu.fsr4_supported(self.main_gpu()) else "blk_fsr4_rdna1"
+
     def force_int8(self) -> bool:
         """FSR 4 needs its INT8 model on everything but RDNA 4."""
         return self.fsr4_build() != "native"
@@ -261,7 +266,7 @@ class AssistantService:
 
     def listed_components(self) -> list[Component]:
         """The downloads to list: OptiScaler, the FSR 4.1 build in use and other builds on disk."""
-        mine = None if self.fsr4_build() == "native" else self._fsr4_component()
+        mine = None if self.fsr4_build() == "native" or self.fsr4_block() else self._fsr4_component()
         return [c for c in components.ALL
                 if c is components.OPTISCALER or c is mine or self.component_ready(c)]
 
@@ -556,9 +561,11 @@ class AssistantService:
     def _ways(self, layout: GameLayout, folder: Optional[HelixSRFolder]) -> list[str]:
         return layout.ways(True, bool(folder and folder.modern))
 
-    def blocked_choices(self, ways: list[str],
-                        folder: Optional[HelixSRFolder] = None) -> dict[str, str]:
-        """HelixSR ways that can't be used here, with the i18n key saying why:
+    def blocked_choices(self, ways: list[str], folder: Optional[HelixSRFolder] = None,
+                        optiscaler: bool = False) -> dict[str, str]:
+        """Choices that can't be used here, with the i18n key saying why:
+        * FSR 4.1 (only for games OptiScaler can work with: ``optiscaler``) on Radeon RX 5000
+          (RDNA 1), where no FSR 4.1 build gives a picture;
         * the DLSS way needs a GeForce: with an AMD or Intel GPU games don't offer DLSS to
           select (no NVIDIA driver answers them);
         * HelixSR 1.9 releases no longer carry the OptiScaler way's and the DLSS loader's
@@ -571,6 +578,9 @@ class AssistantService:
                 blocked["helixsr:optiscaler"] = "blk_no_files"
             if "dlss" in ways and not folder.has_loader:
                 blocked.setdefault("helixsr:dlss", "blk_no_files")
+        reason = self.fsr4_block() if optiscaler else None
+        if reason:
+            blocked.update(dict.fromkeys(self.fsr4_choices(), reason))
         return blocked
 
     def recommended_choice(self, choices: list[str]) -> Optional[str]:
@@ -582,10 +592,10 @@ class AssistantService:
     def choices_for(self, layout: GameLayout, folder: Optional[HelixSRFolder] = None,
                     ways: Optional[list[str]] = None) -> list[str]:
         ways = self._ways(layout, folder) if ways is None else ways
-        blocked = self.blocked_choices(ways, folder)
+        blocked = self.blocked_choices(ways, folder, layout.optiscaler_possible)
         result = [f"helixsr:{way}" for way in ways if f"helixsr:{way}" not in blocked]
         if layout.optiscaler_possible:
-            result += self.fsr4_choices() + ["fsr3"]
+            result += [c for c in self.fsr4_choices() if c not in blocked] + ["fsr3"]
         return result
 
     def modern_choice(self, choice: str, folder: Optional[HelixSRFolder]) -> str:
@@ -624,7 +634,7 @@ class AssistantService:
                 status=status,
                 ways=ways,
                 choices=choices,
-                blocked=self.blocked_choices(ways, folder),
+                blocked=self.blocked_choices(ways, folder, layout.optiscaler_possible),
                 recommended=self.recommended_choice(choices),
                 outdated=outdated,
                 names=dict(game.get("names") or {}),
@@ -776,7 +786,8 @@ class AssistantService:
 
     def _check_blocked(self, layout: GameLayout, choice: str) -> None:
         folder = self.helixsr()
-        reason = self.blocked_choices(self._ways(layout, folder), folder).get(choice)
+        reason = self.blocked_choices(self._ways(layout, folder), folder,
+                                      layout.optiscaler_possible).get(choice)
         if reason:
             raise installer.InstallError(tr(reason))
 

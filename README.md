@@ -32,6 +32,7 @@ Multilingual release notes for each version are in [`docs/releases/`](docs/relea
 
 | Version | Date | Summary |
 |---|---|---|
+| [1.0.2](docs/releases/1.0.2.md) | 2026-10-27 | FSR 4.1 greyed out on Radeon RX 5000 (RDNA 1): no FSR 4.1 build gives a picture there |
 | [1.0.1](docs/releases/1.0.1.md) | 2026-10-25 | FSR 4.1 DLLs of dll-2026-10-22: four builds (RX 7000, RX 6000, built-in RDNA 3 and other GPUs, Steam Deck and built-in RDNA 2); new FSR 4.1 Lossy2 |
 | [1.0.0](docs/releases/1.0.0.md) | 2026-10-19 | First release: DLSS 3.7 (HelixSR), FSR 4.1 Exact / Lossy, FSR 3; Liquid Glass window; Decky plugin for the Steam Deck |
 
@@ -52,7 +53,7 @@ Multilingual release notes for each version are in [`docs/releases/`](docs/relea
 - **Detects each game**: upscaler DLLs, the main `.exe` folder, the graphics API (from the `.exe`'s imports) and anti-cheat.
 - **OptiScaler's file name** picked for the game: your choice, an existing OptiScaler, OptiScaler's compatibility list, `winmm.dll` for Vulkan, a free name when `dxgi.dll` is taken (game, ReShade or your launch options), else `dxgi.dll`. Files already there go to a backup folder.
 - **Launch options left intact**: names other than `dxgi.dll` / `d3d12.dll` need `WINEDLLOVERRIDES`; only that one entry is inserted (inside your existing `WINEDLLOVERRIDES` if you have one) and later only that entry is taken out. Written live through Steam when possible, otherwise Steam is closed and restarted first (with your confirmation).
-- **Downloads on request**: OptiScaler 0.9.4 and FSR 4.1 Exact / Lossy / Lossy2 in the build for your GPU (RX 7000, RX 6000, built-in RDNA 3 and other GPUs, or Steam Deck and built-in RDNA 2), pinned releases checked by SHA-256. RDNA 4 uses AMD's own FSR 4.1; other GPUs get FSR 4's INT8 model. FSR 4.1 Lossy and Lossy2 each show their `WARNING.txt` first.
+- **Downloads on request**: OptiScaler 0.9.4 and FSR 4.1 Exact / Lossy / Lossy2 in the build for your GPU (RX 7000, RX 6000, built-in RDNA 3 and other GPUs, or Steam Deck and built-in RDNA 2), pinned releases checked by SHA-256. RDNA 4 uses AMD's own FSR 4.1; other GPUs get FSR 4's INT8 model. Radeon RX 5000 (RDNA 1) gets no FSR 4.1: no build gives a picture there. FSR 4.1 Lossy and Lossy2 each show their `WARNING.txt` first.
 - **OptiScaler.ini** edited section by section: only the upscaler keys, `UpscalerIndex`, `Fsr4Update`, `Fsr4ForceEnableInt8` and the FidelityFX DLL paths change.
 - **Switch, update, repair, remove**: switching removes the current choice first; "Update all" brings games to your HelixSR build and the current downloads; "Repair" fixes games after a game update (and a missing launch option); removal puts every file back.
 - **HelixSR settings** (`helixsr.ini`) as a form, **live status** of what is really loaded in a running game, and an **overlay** when a game starts.
@@ -146,6 +147,7 @@ Scaler Assistant is an independent, unofficial tool, not affiliated with or endo
 
 | 版本 | 日期 | 摘要 |
 |---|---|---|
+| [1.0.2](docs/releases/1.0.2.md) | 2026-10-27 | Radeon RX 5000（RDNA 1）上的 FSR 4.1 改為反灰：任何 FSR 4.1 版本在該顯示卡上都沒有畫面 |
 | [1.0.1](docs/releases/1.0.1.md) | 2026-10-25 | FSR 4.1 DLL 更新為 dll-2026-10-22：四個版本（RX 7000、RX 6000、內建 RDNA 3 與其他 GPU、Steam Deck 與內建 RDNA 2）；新增 FSR 4.1 Lossy2 |
 | [1.0.0](docs/releases/1.0.0.md) | 2026-10-19 | 第一版：DLSS 3.7（HelixSR）、FSR 4.1 Exact／Lossy、FSR 3；Liquid Glass 視窗；Steam Deck 的 Decky 外掛 |
 
@@ -166,7 +168,7 @@ Scaler Assistant is an independent, unofficial tool, not affiliated with or endo
 - **偵測每款遊戲**：升頻 DLL、主要 `.exe` 資料夾、繪圖 API（讀 `.exe` 的匯入表）與反作弊。
 - **替 OptiScaler 選檔名**：你的選擇、已存在的 OptiScaler、OptiScaler 相容性清單、Vulkan 用 `winmm.dll`、`dxgi.dll` 被占用（遊戲、ReShade 或你的啟動選項）時改用空著的名稱，否則 `dxgi.dll`。原本就在的檔案會移到備份資料夾。
 - **啟動選項保持原樣**：`dxgi.dll`／`d3d12.dll` 以外的檔名需要 `WINEDLLOVERRIDES`；只插入這一項（若你已有 `WINEDLLOVERRIDES` 就加在它裡面），之後也只移除這一項。可以時透過 Steam 即時寫入，否則先經你確認再關閉並重新開啟 Steam。
-- **按需下載**：OptiScaler 0.9.4 與適合你 GPU 版本的 FSR 4.1 Exact／Lossy／Lossy2（RX 7000、RX 6000、內建 RDNA 3 與其他 GPU，或 Steam Deck 與內建 RDNA 2），固定版本並核對 SHA-256。RDNA 4 使用 AMD 原生 FSR 4.1；其他 GPU 使用 FSR 4 的 INT8 模型。FSR 4.1 Lossy 與 Lossy2 會各自先顯示它們的 `WARNING.txt`。
+- **按需下載**：OptiScaler 0.9.4 與適合你 GPU 版本的 FSR 4.1 Exact／Lossy／Lossy2（RX 7000、RX 6000、內建 RDNA 3 與其他 GPU，或 Steam Deck 與內建 RDNA 2），固定版本並核對 SHA-256。RDNA 4 使用 AMD 原生 FSR 4.1；其他 GPU 使用 FSR 4 的 INT8 模型。Radeon RX 5000（RDNA 1）不提供 FSR 4.1：任何版本在該顯示卡上都沒有畫面。FSR 4.1 Lossy 與 Lossy2 會各自先顯示它們的 `WARNING.txt`。
 - **OptiScaler.ini** 依區段修改：只改升頻 key、`UpscalerIndex`、`Fsr4Update`、`Fsr4ForceEnableInt8` 和 FidelityFX DLL 路徑。
 - **切換、更新、修復、移除**：切換時先移除目前的選項；「全部更新」把遊戲更新到你的 HelixSR 版本與目前的下載檔；「修復」處理遊戲更新後的問題（以及消失的啟動選項）；移除時所有檔案恢復原狀。
 - 以表單調整 **HelixSR 設定**（`helixsr.ini`）、顯示執行中遊戲真正載入了什麼的**即時狀態**，以及遊戲啟動時的**浮動提示**。

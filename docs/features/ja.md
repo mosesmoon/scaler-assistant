@@ -41,7 +41,7 @@ Scaler アシスタントはこれらをひとつのウィンドウで行い、�
 - **FSR 4.1 と FSR 3** には他に何もいりません。初めて選ぶと、OptiScaler と GPU に合った FSR 4.1 DLL のダウンロードを確認します（下の「ダウンロード」参照）。
 - **DLSS 3.7** には HelixSR が必要ですが、Scaler アシスタントには含まれていません。[HelixSR の GitHub Releases](https://github.com/lonewolf0622/HelixSR/releases) から 1.8.0 以降をダウンロードして残しておくフォルダーに展開し、そこで `./helixsr-setup.sh` を一度実行してください（PC 上で HelixSR のネットワークを作ります。ゲームについて聞かれたら `n` で構いません）。上部の **HelixSR** ピルを押すと案内が出ます。ホーム、ダウンロード、デスクトップ、Games フォルダーにあるセットアップ済みの HelixSR は自動で見つけます。
   もっと簡単に：そのウィンドウで **HelixSR をダウンロードしてビルド** を押すと（HelixSR 2.0 以降）、Scaler Assistant がこれらをターミナルなしで行います。
-- ゲームは **Proton** で動かします。HelixSR は AMD GPU（RDNA 1 以降）向けです。FSR 4.1 Exact／Lossy は Radeon RX 7000／RX 6000 と Radeon 内蔵グラフィックス（Steam Deck を含む）向けで、他の GPU でも動くはずですが作者は未検証です。
+- ゲームは **Proton** で動かします。HelixSR は AMD GPU（RDNA 1 以降）向けです。FSR 4.1 Exact／Lossy は Radeon RX 7000／RX 6000 と Radeon 内蔵グラフィックス（Steam Deck を含む）向けで、他の GPU でも動くはずですが作者は未検証です。FSR 4.1 は Radeon RX 5000（RDNA 1）では動作しない（どのビルドも画面が真っ黒になる）ため、Scaler アシスタントはこの GPU ではグレー表示にします。FSR 3 と DLSS 3.7（HelixSR）は使えます。
 
 ## 機能
 

@@ -395,7 +395,8 @@ class DownloadsDialog(_FitDialog):
         self.build_box = QComboBox()
         main_gpu = service.main_gpu()
         auto = tr("dl_build_auto", build=tr("dl_build_" + (
-            gpu.fsr4_pack(main_gpu) or "native")), gpu=main_gpu.label() if main_gpu else "?")
+            gpu.fsr4_pack(main_gpu) or "native") if gpu.fsr4_supported(main_gpu)
+            else "dl_build_none"), gpu=main_gpu.label() if main_gpu else "?")
         for value in (*components.FSR4_PACKS, "native"):
             self.build_box.addItem(tr("dl_build_" + value), value)
         self.build_box.insertItem(0, auto, "auto")
@@ -1143,11 +1144,18 @@ class MainWindow(QMainWindow):
             else:
                 action = menu.addAction(tr("menu_helixsr_api", api=api))
             action.setEnabled(False)
-        fsr = [c for c in entry.choices if upscaler_of(c) in ("fsr4", "fsr3")]
+        fsr = [c for c in (*entry.blocked, *entry.choices) if upscaler_of(c) in ("fsr4", "fsr3")]
         if fsr:
             menu.addSeparator()
             for choice in fsr:
-                add(menu, choice, tr("menu_" + choice.replace(":", "_")))
+                reason = entry.blocked.get(choice)
+                if reason:
+                    action = menu.addAction(
+                        f"{tr('menu_' + choice.replace(':', '_'))}   ({tr(reason + '_short')})")
+                    action.setEnabled(False)
+                    action.setToolTip(tr(reason))
+                else:
+                    add(menu, choice, tr("menu_" + choice.replace(":", "_")))
         return menu
 
     def _runtime_html(self, entry: Optional[GameEntry], game: RunningGame) -> tuple[str, str]:
