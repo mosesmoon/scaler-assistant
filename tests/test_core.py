@@ -921,6 +921,83 @@ class ModernHelixSRTest(Base):
         self.assertEqual(self.entry(DLSS).status.route, "hscaler")
 
 
+
+class NgxHelixSRTest(Base):
+    """HelixSR 3.0: HelixSR/helixsr.dll, HLX FSR 4 as the FSR drop-in, no frame generation."""
+
+    def setUp(self):
+        super().setUp()
+        from tests.fakes import make_helixsr_ngx
+        self.hx3 = make_helixsr_ngx(self.root / "HelixSR-3.0.0")
+        make_components(self.root / "components")
+        self.service._gpus = [gpu.Gpu("AMD", 0x744c, (11, 0, 0))]
+        self.service.set_helixsr_folder(self.hx3)
+
+    def test_folder(self):
+        folder = helixsr.inspect(self.hx3)
+        self.assertTrue(folder.modern and folder.ngx and folder.ready and folder.hlx_ready)
+        self.assertEqual((folder.version, folder.scaler_version()), ("3.0.0", "2.0.0"))
+        self.assertEqual(folder.dll, self.hx3 / "HelixSR" / "helixsr.dll")
+        self.assertFalse(folder.fg_available)
+        self.assertTrue(helixsr.looks_like_helixsr(self.hx3))
+        chosen = self.service.set_helixsr_folder(self.hx3 / "HelixSR")   # its HelixSR folder
+        self.assertEqual(chosen.path, self.hx3.resolve())
+        self.assertEqual(self.entry(FSR).ways, ["hscaler", "direct"])
+        from tests.fakes import hlx_dll, make_helixsr_ngx
+        # HLX FSR 4 needs only its own build; HelixSR Scaler needs the network
+        raw = make_helixsr_ngx(self.root / "raw", built=False)
+        folder = helixsr.inspect(raw)
+        self.assertTrue(folder.ready and folder.can_install("direct"))
+        self.assertFalse(folder.can_install("hscaler"))
+        (raw / "HLX-FSR4" / "amd_fidelityfx_upscaler_dx12.dll").write_bytes(hlx_dll(False))
+        self.assertEqual(helixsr.inspect(raw).problem, "hx_not_built")
+
+    def test_hscaler_install_and_remove(self):
+        before = snapshot(self.common / "DlssGame")
+        message = self.service.apply(DLSS, "helixsr:hscaler")
+        status = self.entry(DLSS).status
+        self.assertEqual((status.choice, status.version), ("helixsr:hscaler", "3.0.0"), message)
+        self.assertEqual(status.dll_files, [self.dlss_bin / "HelixSR" / "helixsr.dll"])
+        self.assertEqual(self.entry(DLSS).issues, [])
+        self.assertFalse(self.entry(DLSS).outdated)
+        self.assertIn("--scaler-version 2.0.0", (self.hx3 / "bridge-calls.txt").read_text())
+        self.service.scan()   # its HelixSR folder is not taken for a game folder
+        self.assertEqual(self.entry(DLSS).status.route, "hscaler")
+        self.service.uninstall(DLSS, False)
+        self.assertEqual(snapshot(self.common / "DlssGame"), before)
+
+    def test_fsr_way_is_hlx_fsr4(self):
+        before = snapshot(self.common / "FsrGame")
+        self.service.apply(FSR, "helixsr:direct")
+        entry = self.entry(FSR)
+        self.assertEqual((entry.status.route, entry.status.version), ("direct", "3.0.0"))
+        self.assertEqual(entry.issues, [])
+        self.assertFalse(entry.outdated)
+        self.service.uninstall(FSR, False)
+        self.assertEqual(snapshot(self.common / "FsrGame"), before)
+
+    def test_no_frame_generation_switch(self):
+        (self.dlss_bin / "sl.dlss_g.dll").write_bytes(b"MZ Streamline DLSS-G")
+        self.service.scan()
+        self.service.apply(DLSS, "helixsr:hscaler")
+        self.assertIsNone(self.entry(DLSS).fg)
+
+    def test_update_from_helixsr_2(self):
+        from tests.fakes import make_helixsr_modern
+        hx2 = make_helixsr_modern(self.root / "HelixSR-2.0.0")
+        before = snapshot(self.common / "DlssGame")
+        self.service.set_helixsr_folder(hx2)
+        self.service.apply(DLSS, "helixsr:hscaler")
+        self.service.set_helixsr_folder(self.hx3)
+        self.assertTrue(self.entry(DLSS).outdated)
+        self.assertEqual(self.entry(DLSS).status.version, "2.0.0")
+        self.service.apply(DLSS, "helixsr:hscaler")
+        status = self.entry(DLSS).status
+        self.assertEqual(status.version, "3.0.0")
+        self.assertFalse((self.dlss_bin / "HelixSR-fsrfg").exists())
+        self.service.uninstall(DLSS, False)
+        self.assertEqual(snapshot(self.common / "DlssGame"), before)
+
 class AntiCheatTest(unittest.TestCase):
     def test_vendors_helixsr_knows(self):
         import tempfile

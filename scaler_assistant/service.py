@@ -364,8 +364,8 @@ class AssistantService:
 
     def set_helixsr_folder(self, path: Path | str) -> HelixSRFolder:
         path = Path(path).expanduser()
-        if path.name == helixsr.FSRFG and helixsr.looks_like_helixsr(path.parent):
-            path = path.parent   # HelixSR 2.0: its HelixSR-fsrfg folder was picked
+        if path.name in (helixsr.FSRFG, helixsr.NGX_DIR) and helixsr.looks_like_helixsr(path.parent):
+            path = path.parent   # HelixSR 2.0 / 3.0: its HelixSR-fsrfg / HelixSR folder was picked
         folder = helixsr.inspect(path)
         if not folder.version and not helixsr.looks_like_helixsr(folder.path):
             # A parent folder holding one extracted release (HelixSR-1.9.0/HelixSR-1.9.0)
@@ -383,7 +383,7 @@ class AssistantService:
     @staticmethod
     def helixsr_auto_consent() -> str:
         return tr("hxa_consent", releases=hxsetup.RELEASES, data=hxsetup.data_root(),
-                  licences="\n".join(hxsetup.NVIDIA_LICENSES))
+                  licences="\n".join(hxsetup.NVIDIA_LICENSES), amd=hxsetup.AMD_DRIVERS)
 
     @staticmethod
     def helixsr_auto_progress(stage: str, done: int, total: int, text: str) -> str:
@@ -409,10 +409,16 @@ class AssistantService:
             raise hxsetup.SetupError(tr("hxa_failed", error=error)) from error
         folder = self.set_helixsr_folder(result.folder.path)
         lines = [tr("hxa_done", version=folder.version or "?", path=folder.path)]
+        failed = False
+        if result.hlx is False:       # HelixSR 3.0: HLX FSR 4, the FSR drop-in
+            lines.append(tr("hxa_no_hlx"))
+            failed = True
         if result.fg:
             lines.append(tr("hxa_fg_ready"))
-        else:
+        elif result.fg_offered:
             lines.append(tr("hxa_no_fg"))
+            failed = True
+        if failed:
             lines += ["  " + line for line in result.lines[-6:]]
         return "\n".join(lines)
 
@@ -649,12 +655,15 @@ class AssistantService:
     def frame_generation(layout: GameLayout, status: InstallState,
                          folder: Optional[HelixSRFolder]) -> tuple[Optional[bool], Optional[str]]:
         """(on, why it can't be switched) for HelixSR's frame generation: offered only with
-        HelixSR Scaler (HelixSR 2.0) in a game that has DLSS Frame Generation."""
+        HelixSR Scaler (HelixSR 2.0) in a game that has DLSS Frame Generation. HelixSR 3.0 has
+        no frame generation: not offered, except to switch off what an earlier version put in."""
         if status.route != "hscaler" or not layout.dlss_fg:
             return None, None
         on = bool(status.fg)
         if folder is None or not folder.modern:
             return on, "fg_no_folder"
+        if not folder.fg_available and not on and not status.fg_files:
+            return None, None
         if not on and not status.fg_files and not folder.fg_ready:
             return on, "fg_not_built_short"
         return on, None

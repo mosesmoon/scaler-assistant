@@ -38,6 +38,16 @@ FG_DIR = "helixsr-fg"                         # HelixSR's frame generation, in H
 # the executor): NVIDIA's NGX core, NVIDIA's DLSS Frame Generation DLL and its data.
 FG_BUILT = ("_nvngx.dll", "nvngx_dlssg.dll", "hxfg_data.bin")
 _SCALER_VERSION = re.compile(rb"HelixSR Scaler v(\d+\.\d+\.\d+)")
+# HelixSR 3.0 and newer: the DLL is HelixSR/helixsr.dll (HelixSR Scaler's DLSS upscaler, "HLX DLSS"),
+# and the FSR drop-in is HLX FSR 4 (HLX-FSR4/amd_fidelityfx_upscaler_dx12.dll), whose shaders the
+# setup builds from AMD's FSR 4 driver file and appends (footer magic HLXFSR4D). No frame generation.
+NGX_DIR = "HelixSR"
+NGX_DLL = "helixsr.dll"
+HLX_DIR = "HLX-FSR4"
+HLX_DLL = "amd_fidelityfx_upscaler_dx12.dll"
+HLX_MAGIC = b"HLXFSR4D"
+HLX_MARK = b"HLX FSR 4 ("                     # in HLX FSR 4's DLL ("HLX FSR 4 (4.1.2)")
+FG_SETUP = "setup/fg/fg_setup.py"             # releases that can build HelixSR's frame generation
 
 NETWORK_TAG = b"HXSRNET1"                    # trailer of a DLL that carries the network
 # One-file DLL (network inside), the f/o setup and the record format this tool writes.
@@ -108,6 +118,26 @@ def is_optiscaler(path: Path) -> bool:
     return contains(path, b"OptiScaler")
 
 
+def is_hlx(path: Path) -> bool:
+    """HLX FSR 4's DLL (HelixSR 3.0's FSR drop-in)."""
+    return contains(path, HLX_MARK, 16 << 20)
+
+
+def hlx_built(path: Path) -> bool:
+    """HLX FSR 4's DLL carries the shaders HelixSR's setup builds and appends."""
+    try:
+        with open(path, "rb") as handle:
+            handle.seek(-24, os.SEEK_END)
+            return handle.read(8) == HLX_MAGIC
+    except OSError:
+        return False
+
+
+def is_dropin(path: Path) -> bool:
+    """A game's FSR DLL that is HelixSR's FSR drop-in: HelixSR's own DLL or HLX FSR 4."""
+    return is_helixsr(path) or is_hlx(path)
+
+
 def is_loader(path: Path) -> bool:
     return contains(path, b"HelixSR DLSS loader", 1 << 20)
 
@@ -122,10 +152,34 @@ class HelixSRFolder:
     version: Optional[str]
     built: bool
     modern: bool = False          # HelixSR 2.0 layout (HelixSR-fsrfg, HelixSR Scaler, the bridge)
+    ngx: bool = False             # HelixSR 3.0 layout (HelixSR/helixsr.dll, HLX FSR 4); also modern
 
     @property
     def dll(self) -> Path:
+        if self.ngx:
+            return self.path / NGX_DIR / NGX_DLL
         return self.path / FSRFG / DLL if self.modern else self.path / DLL
+
+    @property
+    def hlx(self) -> Optional[Path]:
+        """HLX FSR 4's DLL in the release (HelixSR 3.0 and newer), else None."""
+        path = self.path / HLX_DIR / HLX_DLL
+        return path if self.ngx and path.is_file() else None
+
+    @property
+    def hlx_ready(self) -> bool:
+        return self.hlx is not None and hlx_built(self.hlx)
+
+    @property
+    def fg_available(self) -> bool:
+        """The release can build HelixSR's frame generation (2.0; 3.0 has none)."""
+        return self.modern and (self.path / FG_SETUP).is_file()
+
+    def can_install(self, route: str) -> bool:
+        """What the route needs is built: the network, or for HelixSR 3.0's FSR drop-in HLX FSR 4."""
+        if self.ngx and route == "direct":
+            return self.hlx_ready
+        return self.built
 
     @property
     def bridge(self) -> Path:
@@ -138,7 +192,7 @@ class HelixSRFolder:
     @property
     def fg_ready(self) -> bool:
         """HelixSR's setup built frame generation (HelixSR 2.0 and newer)."""
-        fg = self.path / FSRFG / FG_DIR
+        fg = self.dll.parent / FG_DIR
         if not self.modern or not (fg / "nvexec64.dll").is_file():
             return False
         names = {p.name.lower() for p in fg.rglob("*") if p.is_file()}
@@ -163,7 +217,7 @@ class HelixSRFolder:
 
     @property
     def ready(self) -> bool:
-        return self.supported and self.built
+        return self.supported and (self.built or self.hlx_ready)
 
     @property
     def problem(self) -> Optional[str]:
@@ -172,7 +226,7 @@ class HelixSRFolder:
             return "hx_not_helixsr"
         if not self.supported:
             return "hx_too_old"
-        if not self.built:
+        if not (self.built or self.hlx_ready):
             return "hx_not_built"
         return None
 
@@ -206,6 +260,8 @@ class HelixSRFolder:
             needed.append(self.bridge)
             if route == "hscaler":
                 needed.append(self.scaler_pkg / SCALER_DLL)
+            elif route == "direct" and self.ngx:
+                needed = [self.path / HLX_DIR / HLX_DLL, self.bridge]
             return [p for p in needed if not p.is_file()]
         if route == "optiscaler":
             needed += [self.path / OPTI_DIR / n for n in (OPTI_DLL, OPTI_INI) + OPTI_EXTRA]
@@ -217,13 +273,17 @@ class HelixSRFolder:
 
 def inspect(path: Path | str) -> HelixSRFolder:
     folder = Path(path).expanduser()
+    if (folder / NGX_DIR / NGX_DLL).is_file() and (folder / BRIDGE).is_file():
+        dll = folder / NGX_DIR / NGX_DLL
+        return HelixSRFolder(folder, dll_version(dll), has_network(dll), True, True)
     modern = (folder / FSRFG / DLL).is_file()
     dll = folder / FSRFG / DLL if modern else folder / DLL
     return HelixSRFolder(folder, dll_version(dll), has_network(dll), modern)
 
 
 def looks_like_helixsr(path: Path) -> bool:
-    return (path / SETUP).is_file() and ((path / DLL).is_file() or (path / FSRFG / DLL).is_file())
+    return (path / SETUP).is_file() and ((path / DLL).is_file() or (path / FSRFG / DLL).is_file()
+                                         or (path / NGX_DIR / NGX_DLL).is_file())
 
 
 def _search_roots() -> Iterable[tuple[Path, int]]:

@@ -183,9 +183,12 @@ def snapshot(folder: Path) -> dict[str, str]:
 # A stand-in for the installer HelixSR 2.0 releases carry (setup/helixsr_bridge.py): it only
 # speaks the same command line and JSON and lays files out the way HelixSR Scaler does.
 FAKE_BRIDGE = r'''
-import json, os, shutil, sys
+import json, os, re, shutil, sys
 from pathlib import Path
 release, command = Path(sys.argv[1]), sys.argv[2]
+ngx = (release / "HelixSR" / "helixsr.dll").is_file()   # HelixSR 3.0's layout
+helix = "HelixSR" if ngx else "HelixSR-fsrfg"
+helix_dll = "helixsr.dll" if ngx else "amd_fidelityfx_dx12.dll"
 args = dict(zip(sys.argv[3::2], sys.argv[4::2]))
 log = release / "bridge-calls.txt"
 with open(log, "a") as f:
@@ -202,18 +205,31 @@ if command == "install":
     if args["--way"] == "scaler":
         name = args.get("--scaler-name", "dxgi.dll")
         files = []
+        if (t / "HelixSR-Scaler.files").exists():   # an update: the earlier install out first
+            for rel in (t / "HelixSR-Scaler.files").read_text().splitlines():
+                if rel and not rel.startswith(("#", "name=")) and (t / rel).is_file():
+                    (t / rel).unlink()
+            for d in ("HelixSR", "HelixSR-fsrfg"):
+                shutil.rmtree(t / d, ignore_errors=True)
+            backup = t / "HelixSR-Scaler-backup"
+            if backup.is_dir():
+                for f in backup.rglob("*"):
+                    if f.is_file():
+                        os.replace(f, t / f.relative_to(backup))
+                shutil.rmtree(backup)
         if (t / name).exists():
             (t / "HelixSR-Scaler-backup").mkdir(exist_ok=True)
             os.replace(t / name, t / "HelixSR-Scaler-backup" / name)
         shutil.copyfile(Path(args["--scaler"]) / "OptiScaler.dll", t / name)
         files.append(name)
-        (t / "HelixSR-fsrfg").mkdir(exist_ok=True)
-        shutil.copyfile(release / "HelixSR-fsrfg" / "amd_fidelityfx_dx12.dll",
-                        t / "HelixSR-fsrfg" / "amd_fidelityfx_dx12.dll")
-        files.append("HelixSR-fsrfg/amd_fidelityfx_dx12.dll")
+        (t / helix).mkdir(exist_ok=True)
+        shutil.copyfile(release / helix / helix_dll, t / helix / helix_dll)
+        files.append(helix + "/" + helix_dll)
         (t / "OptiScaler.ini").write_text("[HelixSR]\n")
         files.append("OptiScaler.ini")
-        if args.get("--fg") == "on":
+        if ngx:   # made when the game starts; removed with HelixSR Scaler
+            (t / helix / "helixsr.ini").write_text("[HelixSR]\n")
+        if args.get("--fg") == "on" and not ngx:
             (t / "HelixSR-fsrfg" / "helixsr-fg").mkdir(exist_ok=True)
             (t / "HelixSR-fsrfg" / "helixsr-fg" / "nvexec64.dll").write_bytes(b"MZ fg")
             files.append("HelixSR-fsrfg/helixsr-fg/nvexec64.dll")
@@ -221,7 +237,21 @@ if command == "install":
                 "[HelixSR]\n[FrameGen]\nFGInput=nvngxfg\nFGNvngxReplacement=HelixSR\n")
         (t / "HelixSR-Scaler.files").write_text(
             "# HelixSR Scaler, installed by HelixSR Desktop\n# version=" +
-            args.get("--scaler-version", "") + "\nname=" + name + "\n" + "\n".join(files) + "\n")
+            args.get("--scaler-version", "") + "\n" + ("# layout=ngx\n" if ngx else "") +
+            "name=" + name + "\n" + "\n".join(files) + "\n")
+    elif args["--way"] == "fsr" and ngx:   # HLX FSR 4 in place of the game's FSR 3.1 DLLs
+        hlx = release / "HLX-FSR4" / "amd_fidelityfx_upscaler_dx12.dll"
+        version = re.search(rb"\x00HelixSR (\d+\.\d+\.\d+)\x00",
+                            (release / helix / helix_dll).read_bytes()).group(1).decode()
+        found = {n: [Path(d) / n for d, _, names in os.walk(args["--game"]) if n in names]
+                 for n in ("amd_fidelityfx_upscaler_dx12.dll", "amd_fidelityfx_dx12.dll")}
+        for t in found["amd_fidelityfx_upscaler_dx12.dll"] or found["amd_fidelityfx_dx12.dll"]:
+            if b"HLX FSR 4 (" not in t.read_bytes():
+                shutil.copyfile(t, t.with_name(t.stem + ".original.dll"))
+            shutil.copyfile(hlx, t)
+            (t.parent / "helixsr-install.json").write_text(json.dumps(
+                {"helixsr": version, "upscaler": "HLX FSR 4", "files": [t.name],
+                 "route": "direct", "ini_made": None}))
     answer(game={})
 elif command == "scaler-fg":
     t = exe_dir(args["--game"])
@@ -253,7 +283,8 @@ def make_helixsr_modern(folder: Path, version: str = "2.0.0", built: bool = True
     (folder / "helixsr-scaler").mkdir(exist_ok=True)
     (folder / "helixsr-scaler" / "OptiScaler.dll").write_bytes(
         b"MZ OptiScaler HelixSR Scaler v1.1.0 (marker)")
-    (folder / "setup").mkdir(exist_ok=True)
+    (folder / "setup" / "fg").mkdir(parents=True, exist_ok=True)
+    (folder / "setup" / "fg" / "fg_setup.py").write_text("# stand-in\n")
     (folder / "setup" / "helixsr_bridge.py").write_text(FAKE_BRIDGE)
     fg_dir = folder / "HelixSR-fsrfg" / "helixsr-fg"
     fg_dir.mkdir(exist_ok=True)
@@ -261,4 +292,32 @@ def make_helixsr_modern(folder: Path, version: str = "2.0.0", built: bool = True
     if fg:   # what HelixSR's setup adds when it builds frame generation (stand-ins)
         for name in ("_nvngx.dll", "nvngx_dlssg.dll", "hxfg_data.bin"):
             (fg_dir / name).write_bytes(b"marker")
+    return folder
+
+
+def hlx_dll(built: bool = True) -> bytes:
+    """A stand-in for HLX FSR 4's DLL; built: with the shader data HelixSR's setup appends."""
+    body = b"MZ" + b"\x00" * 64 + b"ffxCreateContext HLX FSR 4 (4.1.2)" + b"\x00" * 64
+    if built:
+        data = b"s" * 50
+        body += data + b"HLXFSR4D" + struct.pack("<QQ", len(data), 1)
+    return body
+
+
+def make_helixsr_ngx(folder: Path, version: str = "3.0.0", built: bool = True,
+                     hlx: bool = True) -> Path:
+    """A HelixSR 3.0 style release: HelixSR/helixsr.dll, HLX-FSR4, helixsr-scaler, the installer
+    and no frame generation."""
+    folder.mkdir(parents=True, exist_ok=True)
+    (folder / "helixsr-setup.sh").write_text("#!/bin/sh\n")
+    (folder / "HelixSR").mkdir(exist_ok=True)
+    (folder / "HelixSR" / "helixsr.dll").write_bytes(helixsr_dll(version, built))
+    (folder / "HelixSR" / "helixsr.ini").write_text("[HelixSR]\n")
+    (folder / "HLX-FSR4").mkdir(exist_ok=True)
+    (folder / "HLX-FSR4" / "amd_fidelityfx_upscaler_dx12.dll").write_bytes(hlx_dll(hlx))
+    (folder / "helixsr-scaler").mkdir(exist_ok=True)
+    (folder / "helixsr-scaler" / "OptiScaler.dll").write_bytes(
+        b"MZ OptiScaler HelixSR Scaler v2.0.0 (marker)")
+    (folder / "setup" / "hlxfsr4").mkdir(parents=True, exist_ok=True)
+    (folder / "setup" / "helixsr_bridge.py").write_text(FAKE_BRIDGE)
     return folder

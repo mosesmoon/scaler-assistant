@@ -10,8 +10,10 @@ user would otherwise do by hand, the way HelixSR's own desktop app does it:
    system's can't unpack NVIDIA's zstd package for frame generation) and Microsoft's DirectX
    Shader Compiler, run through Steam's Proton (or Wine);
 3. HelixSR's build program ``setup/helixsr_setup.py`` (run, never copied), after the user has
-   agreed to NVIDIA's downloads in Scaler Assistant. It only builds: the games step of
-   ``helixsr-setup.sh`` is not run, games stay Scaler Assistant's choice.
+   agreed to NVIDIA's (and from HelixSR 3.0 on AMD's) downloads in Scaler Assistant. It only
+   builds: the games step of ``helixsr-setup.sh`` is not run, games stay Scaler Assistant's
+   choice. HelixSR 3.0 also builds HLX FSR 4 (its FSR drop-in) from AMD's FSR 4 driver file,
+   with a second DXC version, as ``helixsr-setup.sh`` does.
 
 Inside Flatpak the build runs on the host (Proton and Wine live there); every path it uses is
 in the home folder, which host and sandbox share.
@@ -36,11 +38,11 @@ from typing import Callable, Iterable, Optional
 
 from . import sandbox
 from .components import open_url
-from .helixsr import FSRFG, HelixSRFolder, inspect, parse_version
+from .helixsr import FSRFG, NGX_DIR, NGX_DLL, HelixSRFolder, inspect, parse_version
 
 API = "https://api.github.com/repos/lonewolf0622/HelixSR/releases?per_page=10"
 RELEASES = "https://github.com/lonewolf0622/HelixSR/releases"
-MIN_AUTO = (2, 0, 0)          # the HelixSR-fsrfg layout with setup/helixsr_setup.py
+MIN_AUTO = (2, 0, 0)          # HelixSR-fsrfg (2.0) or HelixSR (3.0) with setup/helixsr_setup.py
 _ZIP = re.compile(r"^HelixSR-(\d+\.\d+\.\d+)\.zip$")
 
 # A portable Python 3.14 (python-build-standalone): it unpacks NVIDIA's zstd package itself.
@@ -52,9 +54,16 @@ PYTHON_SIZE = 75007267
 DXC_URL = ("https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2607/"
            "dxc_2026_07_29.zip")
 DXC_SHA = "a1dfb116ba3eeae6a1582291b53a8e7bf65ad760676bd3194685c8f7367cd241"
+# HLX FSR 4 (HelixSR 3.0) compiles part of its shaders with this one too (helixsr-setup.sh's pin).
+DXC2609_URL = ("https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2609/"
+               "dxc_2026_09_29.zip")
+DXC2609_SHA = "ad31b1fc8443175d204f77a611fdb3ef2ec42759bdc2f1167368de24a4a7e7f1"
+HLX_SETUP = "setup/hlxfsr4"        # releases that build HLX FSR 4
+FG_SETUP = "setup/fg/fg_setup.py"  # releases that build HelixSR's frame generation
 
 NVIDIA_LICENSES = ("https://github.com/NVIDIA/DLSS/blob/v310.7.0/LICENSE.txt",
                    "https://github.com/NVIDIAGameWorks/Streamline/blob/main/license.txt")
+AMD_DRIVERS = "https://www.amd.com/en/support/download/drivers.html"
 _PROGRESS = re.compile(r"\]\s+(\d+)%\s+\S+\s+(.*)$")
 
 # (stage, done, total, text): stage is release / python / numpy / dxc / build; done and total
@@ -153,10 +162,22 @@ def _safe_members(names: Iterable[str]) -> None:
             raise SetupError(f"unsafe path in the download: {name}")
 
 
+def _is_release(root: Path) -> bool:
+    """A HelixSR 2.0 (HelixSR-fsrfg) or 3.0 (HelixSR/helixsr.dll) release folder."""
+    return (root / "setup" / "helixsr_setup.py").is_file() and (
+        (root / FSRFG).is_dir() or (root / NGX_DIR / NGX_DLL).is_file())
+
+
+def setup_target(folder: Path) -> Path:
+    """The folder argument of helixsr_setup.py: the release itself from HelixSR 3.0 on (its setup
+    finds HelixSR/ there), HelixSR-fsrfg for HelixSR 2.0."""
+    return folder if (folder / NGX_DIR / NGX_DLL).is_file() else folder / FSRFG
+
+
 def get_release(release: Release, report: Report, opener=None) -> Path:
     """The release unpacked unchanged into data_root(); kept when it is there already."""
     target = release_dir(release.version)
-    if (target / FSRFG).is_dir() and (target / "setup" / "helixsr_setup.py").is_file():
+    if _is_release(target):
         return target
     data_root().mkdir(parents=True, exist_ok=True)
     with tempfile.TemporaryDirectory(dir=data_root(), prefix=".download-") as tmp:
@@ -174,8 +195,8 @@ def get_release(release: Release, report: Report, opener=None) -> Path:
                         path.chmod(path.stat().st_mode | 0o111)
         tops = list(unpacked.iterdir())
         root = tops[0] if len(tops) == 1 and tops[0].is_dir() else unpacked
-        if not (root / "setup" / "helixsr_setup.py").is_file() or not (root / FSRFG).is_dir():
-            raise SetupError(f"HelixSR {release.version}: not a HelixSR 2.0 release")
+        if not _is_release(root):
+            raise SetupError(f"HelixSR {release.version}: not a HelixSR 2.0 or newer release")
         shutil.rmtree(target, ignore_errors=True)
         os.replace(root, target)
     return target
@@ -264,29 +285,41 @@ def find_wine() -> Optional[str]:
     return sandbox.host_which("wine") or sandbox.host_which("wine64")
 
 
-def get_dxc(wine: str, report: Report, opener=None) -> Path:
-    """Microsoft's DXC and a wrapper that runs it through Proton / Wine with Z:\\ paths."""
+def _get_dxc_dir(name: str, url: str, sha256: str, report: Report, opener=None) -> Path:
+    """Microsoft's DXC (Windows build) unpacked into tools/<name>; its bin/x64 folder."""
     tools = tools_dir()
-    exe = tools / "dxc-win" / "bin" / "x64" / "dxc.exe"
+    exe = tools / name / "bin" / "x64" / "dxc.exe"
     if not exe.is_file():
         tools.mkdir(parents=True, exist_ok=True)
         with tempfile.TemporaryDirectory(dir=tools, prefix=".download-") as tmp:
             archive = Path(tmp) / "dxc.zip"
-            _download(DXC_URL, archive, DXC_SHA, 0, "dxc", report, opener)
-            out = Path(tmp) / "dxc-win"
+            _download(url, archive, sha256, 0, "dxc", report, opener)
+            out = Path(tmp) / name
             count = 0
             with zipfile.ZipFile(archive) as zipped:   # Windows paths: bin\x64\dxc.exe
-                for name in zipped.namelist():
-                    rel = name.replace("\\", "/")
+                for member in zipped.namelist():
+                    rel = member.replace("\\", "/")
                     if rel.startswith("bin/x64/") and not rel.endswith("/") and ".." not in rel:
                         path = out / rel
                         path.parent.mkdir(parents=True, exist_ok=True)
-                        path.write_bytes(zipped.read(name))
+                        path.write_bytes(zipped.read(member))
                         count += 1
             if not count:
                 raise SetupError("the shader compiler download has no bin/x64")
-            shutil.rmtree(tools / "dxc-win", ignore_errors=True)
-            os.replace(out, tools / "dxc-win")
+            shutil.rmtree(tools / name, ignore_errors=True)
+            os.replace(out, tools / name)
+    return exe.parent
+
+
+def get_dxc2609(report: Report, opener=None) -> Path:
+    """DXC 1.9.2609's bin/x64 folder (HLX FSR 4, HelixSR 3.0 and newer)."""
+    return _get_dxc_dir("dxc-win-2609", DXC2609_URL, DXC2609_SHA, report, opener)
+
+
+def get_dxc(wine: str, report: Report, opener=None) -> Path:
+    """Microsoft's DXC and a wrapper that runs it through Proton / Wine with Z:\\ paths."""
+    tools = tools_dir()
+    exe = _get_dxc_dir("dxc-win", DXC_URL, DXC_SHA, report, opener) / "dxc.exe"
     wrapper = tools / "dxc-wine.sh"
     wrapper.write_text(
         "#!/bin/sh\n"
@@ -309,16 +342,30 @@ def _sh(text: str) -> str:
 
 # ---- the build --------------------------------------------------------------------------------
 
-def status(python: str, folder: Path) -> tuple[bool, bool]:
-    """(network built, frame generation built) as HelixSR's setup reports them."""
+def status(python: str, folder: Path) -> tuple[bool, bool, Optional[bool]]:
+    """(network built, frame generation built, HLX FSR 4 built) as HelixSR's setup reports them;
+    HLX FSR 4 is None for releases without it (before 3.0)."""
     try:
         done = _host_run([python, str(folder / "setup" / "helixsr_setup.py"),
-                          str(folder / FSRFG), "--status"], timeout=300,
+                          str(setup_target(folder)), "--status"], timeout=300,
                          env=_env(), cwd=str(folder))
     except (OSError, subprocess.SubprocessError):
-        return False, False
-    match = re.search(r"network=([01])\s+fg=([01])", done.stdout)
-    return (match.group(1) == "1", match.group(2) == "1") if match else (False, False)
+        return False, False, None
+    match = re.search(r"network=([01])\s+fg=([01])(?:\s+hlx=([01]))?", done.stdout)
+    if not match:
+        return False, False, None
+    hlx = None if match.group(3) is None or not has_hlx(folder) else match.group(3) == "1"
+    return match.group(1) == "1", match.group(2) == "1", hlx
+
+
+def has_fg(folder: Path) -> bool:
+    """The release builds HelixSR's frame generation (HelixSR 2.0; 3.0 has none)."""
+    return (folder / FG_SETUP).is_file()
+
+
+def has_hlx(folder: Path) -> bool:
+    """The release builds HLX FSR 4 (HelixSR 3.0 and newer)."""
+    return (folder / HLX_SETUP).is_dir()
 
 
 def _env() -> dict:
@@ -330,14 +377,20 @@ def _env() -> dict:
 
 
 def build(python: str, folder: Path, dxc: Path, report: Report,
-          fg_only: bool = False) -> tuple[list[str], int]:
-    """Run HelixSR's build program; (its last lines, exit code)."""
+          fg_only: bool = False, hlx: Optional[tuple[Path, Path, str]] = None
+          ) -> tuple[list[str], int]:
+    """Run HelixSR's build program; (its last lines, exit code). hlx: (DXC 1.9.2607 folder,
+    DXC 1.9.2609 folder, wine) for releases that build HLX FSR 4, passed as helixsr-setup.sh
+    passes them (exit code 4 then: the network is built, HLX FSR 4 is not)."""
     tmp = tools_dir() / "tmp"   # in the home folder: the host and Flatpak's sandbox share it
     shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
     command = ["env", "-u", "PYTHONHOME", "-u", "PYTHONPATH", f"TMPDIR={tmp}",
-               python, str(folder / "setup" / "helixsr_setup.py"), str(folder / FSRFG),
+               python, str(folder / "setup" / "helixsr_setup.py"), str(setup_target(folder)),
                "--dxc", str(dxc), "--yes", *(["--fg-only"] if fg_only else [])]
+    if hlx is not None:
+        command += ["--dxc-dir", str(hlx[0]), "--dxc2609-dir", str(hlx[1]), "--wine", hlx[2],
+                    "--wineprefix", str(tools_dir() / "wineprefix")]
     lines: list[str] = []
     try:
         process = subprocess.Popen(sandbox.host(command), stdout=subprocess.PIPE,
@@ -376,32 +429,38 @@ class Result:
     network: bool
     fg: bool
     lines: list[str]
+    hlx: Optional[bool] = None      # HLX FSR 4 built (None: the release has none)
+    fg_offered: bool = True         # the release has HelixSR frame generation (3.0 has none)
 
 
 def install(report: Report, release: Optional[Release] = None, opener=None) -> Result:
     """Everything: the release, the tools, the build. Only call it after the user agreed to
-    NVIDIA's downloads (the build passes --yes to HelixSR's setup)."""
+    NVIDIA's (and AMD's) downloads (the build passes --yes to HelixSR's setup)."""
     started = time.monotonic()
     release = release or latest_release(opener)
     folder = get_release(release, report, opener)
     python = get_python(report, opener)
-    network, fg = status(python, folder)
+    network, fg, hlx = status(python, folder)
+    fg_offered = has_fg(folder)
     lines: list[str] = []
-    if not (network and fg):
+    if not network or (fg_offered and not fg) or hlx is False:
         wine = find_wine()
         if not wine:
             from .i18n import tr
             raise SetupError(tr("hxa_no_wine"))
         dxc = get_dxc(wine, report, opener)
-        lines, code = build(python, folder, dxc, report, fg_only=network)
-        network, fg = status(python, folder)
+        compilers = None
+        if has_hlx(folder):
+            compilers = (tools_dir() / "dxc-win" / "bin" / "x64", get_dxc2609(report, opener), wine)
+        lines, code = build(python, folder, dxc, report, fg_only=network, hlx=compilers)
+        network, fg, hlx = status(python, folder)
         if not network:
             raise SetupError("\n".join(lines[-8:]) or f"exit code {code}")
     for old in data_root().glob("HelixSR-*"):   # earlier versions this module downloaded
         if old.is_dir() and old.resolve() != folder.resolve():
             shutil.rmtree(old, ignore_errors=True)
     report("done", 1, 1, f"{time.monotonic() - started:.0f}s")
-    return Result(inspect(folder), network, fg, lines)
+    return Result(inspect(folder), network, fg, lines, hlx, fg_offered)
 
 
 def is_managed(folder: Optional[HelixSRFolder]) -> bool:
