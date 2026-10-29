@@ -194,7 +194,7 @@ flatpak run io.github.mosesmoon.ScalerAssistant
 
 - **Jeux Steam uniquement.** Les méthodes FSR 4.1 / FSR 3 ont été vérifiées fichier par fichier avec OptiScaler 0.9.4 ; chaque jeu se comporte différemment : en cas de souci, consultez la liste de compatibilité d'OptiScaler ou choisissez un autre nom de fichier pour OptiScaler.
 - FSR 4.1 dans les jeux Direct3D 11 et Vulkan passe par le chemin Direct3D 12 d'OptiScaler et est moins testé.
-- HelixSR évolue vite. L'Assistant Scaler nécessite HelixSR 1.8.0 ou plus récent et suit l'organisation 1.8.x / 1.9.x / 2.0.x / 3.0.x.
+- HelixSR évolue vite. L'Assistant Scaler nécessite HelixSR 1.8.0 ou plus récent et suit l'organisation 1.8.x / 1.9.x / 2.0.x / 3.0.x / 3.1.x.
 - L'incrustation n'apparaît pas en mode Jeu du Steam Deck (gamescope). Le plugin Decky affiche à la place une notification Steam.
 - En thaï, vietnamien, malais et hindi, les menus contextuels sont en anglais (Qt n'a pas de traduction officielle). Steam n'a pas de noms de jeux en malais ni en hindi.
 

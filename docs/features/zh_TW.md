@@ -194,7 +194,7 @@ flatpak run io.github.mosesmoon.ScalerAssistant
 
 - **只支援 Steam 遊戲。** FSR 4.1／FSR 3 的安裝方式已用 OptiScaler 0.9.4 逐一核對過檔案；但每款遊戲的表現不同，遊戲出問題時請查 OptiScaler 的相容性清單，或替 OptiScaler 換個檔名。
 - Direct3D 11 與 Vulkan 遊戲的 FSR 4.1 經由 OptiScaler 的 Direct3D 12 路徑，測試程度較低。
-- HelixSR 變化很快。Scaler 助手需要 HelixSR 1.8.0 以上，並依照 1.8.x／1.9.x／2.0.x / 3.0.x 的檔案配置。
+- HelixSR 變化很快。Scaler 助手需要 HelixSR 1.8.0 以上，並依照 1.8.x／1.9.x／2.0.x / 3.0.x / 3.1.x 的檔案配置。
 - Steam Deck 遊戲模式（gamescope）下不會顯示浮動提示。Decky 外掛會改以 Steam 通知顯示。
 - 泰文、越南文、馬來文和印地文的右鍵選單是英文（Qt 沒有官方翻譯）。Steam 沒有馬來文和印地文的遊戲名稱。
 

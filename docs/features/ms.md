@@ -194,7 +194,7 @@ flatpak run io.github.mosesmoon.ScalerAssistant
 
 - **Permainan Steam sahaja.** Cara FSR 4.1 / FSR 3 telah disemak fail demi fail dengan OptiScaler 0.9.4; setiap permainan berkelakuan berbeza: jika ada masalah, semak senarai keserasian OptiScaler atau pilih nama fail lain untuk OptiScaler.
 - FSR 4.1 dalam permainan Direct3D 11 dan Vulkan berjalan melalui laluan Direct3D 12 OptiScaler dan kurang diuji.
-- HelixSR berubah dengan pantas. Pembantu Scaler memerlukan HelixSR 1.8.0 atau lebih baharu dan mengikut susun atur 1.8.x / 1.9.x / 2.0.x / 3.0.x.
+- HelixSR berubah dengan pantas. Pembantu Scaler memerlukan HelixSR 1.8.0 atau lebih baharu dan mengikut susun atur 1.8.x / 1.9.x / 2.0.x / 3.0.x / 3.1.x.
 - Paparan tindih tidak muncul dalam Mod Permainan Steam Deck (gamescope). Pemalam Decky memaparkan pemberitahuan Steam sebagai ganti.
 - Dalam bahasa Thai, Vietnam, Melayu dan Hindi, menu klik kanan dalam bahasa Inggeris (Qt tiada terjemahan rasmi). Steam tiada nama permainan dalam bahasa Melayu atau Hindi.
 

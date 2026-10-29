@@ -998,6 +998,34 @@ class NgxHelixSRTest(Base):
         self.service.uninstall(DLSS, False)
         self.assertEqual(snapshot(self.common / "DlssGame"), before)
 
+    def test_update_to_helixsr_3_1(self):
+        # HelixSR 3.1: the same layout as 3.0, HelixSR Scaler 2.1.0; the bridge no longer needs
+        # --anticheat-ok but still accepts it (Scaler Assistant asks the user itself)
+        from tests.fakes import make_helixsr_ngx
+        hx31 = make_helixsr_ngx(self.root / "HelixSR-3.1.0", "3.1.0", scaler="2.1.0")
+        before = {app: snapshot(self.common / name) for app, name in ((DLSS, "DlssGame"),
+                                                                      (FSR, "FsrGame"))}
+        self.service.apply(DLSS, "helixsr:hscaler")
+        self.service.apply(FSR, "helixsr:direct")
+        self.service.set_helixsr_folder(hx31)
+        folder = helixsr.inspect(hx31)
+        self.assertTrue(folder.ngx and folder.ready and not folder.fg_available)
+        self.assertEqual((folder.version, folder.scaler_version()), ("3.1.0", "2.1.0"))
+        for app, choice in ((DLSS, "helixsr:hscaler"), (FSR, "helixsr:direct")):
+            self.assertTrue(self.entry(app).outdated)
+            self.service.apply(app, choice)
+            entry = self.entry(app)
+            self.assertEqual((entry.status.choice, entry.status.version), (choice, "3.1.0"))
+            self.assertFalse(entry.outdated)
+            self.assertEqual(entry.issues, [])
+        calls = (hx31 / "bridge-calls.txt").read_text()
+        self.assertIn("--scaler-version 2.1.0", calls)
+        self.assertIn("--anticheat-ok yes", calls)   # DlssGame has Easy Anti-Cheat
+        for app, name in ((DLSS, "DlssGame"), (FSR, "FsrGame")):
+            self.service.uninstall(app, False)
+            self.assertEqual(snapshot(self.common / name), before[app])
+
+
 class AntiCheatTest(unittest.TestCase):
     def test_vendors_helixsr_knows(self):
         import tempfile

@@ -194,7 +194,7 @@ flatpak run io.github.mosesmoon.ScalerAssistant
 
 - **Steam のゲームのみ。** FSR 4.1／FSR 3 の導入方法は OptiScaler 0.9.4 でファイル単位に確認済みですが、ゲームごとに挙動は異なります。不具合があれば OptiScaler の互換性リストを確認するか、OptiScaler のファイル名を変えてください。
 - Direct3D 11 と Vulkan のゲームでの FSR 4.1 は OptiScaler の Direct3D 12 経由で、検証が少なめです。
-- HelixSR は変化が速いです。Scaler アシスタントは HelixSR 1.8.0 以降が必要で、1.8.x／1.9.x／2.0.x / 3.0.x の構成に合わせています。
+- HelixSR は変化が速いです。Scaler アシスタントは HelixSR 1.8.0 以降が必要で、1.8.x／1.9.x／2.0.x / 3.0.x / 3.1.x の構成に合わせています。
 - Steam Deck のゲームモード（gamescope）ではオーバーレイは表示されません。Decky プラグインでは代わりに Steam の通知で表示します。
 - タイ語、ベトナム語、マレー語、ヒンディー語の右クリックメニューは英語です（Qt の公式翻訳がないため）。Steam にはマレー語とヒンディー語のゲーム名がありません。
 

@@ -305,7 +305,7 @@ def hlx_dll(built: bool = True) -> bytes:
 
 
 def make_helixsr_ngx(folder: Path, version: str = "3.0.0", built: bool = True,
-                     hlx: bool = True) -> Path:
+                     hlx: bool = True, scaler: str = "2.0.0") -> Path:
     """A HelixSR 3.0 style release: HelixSR/helixsr.dll, HLX-FSR4, helixsr-scaler, the installer
     and no frame generation."""
     folder.mkdir(parents=True, exist_ok=True)
@@ -317,7 +317,7 @@ def make_helixsr_ngx(folder: Path, version: str = "3.0.0", built: bool = True,
     (folder / "HLX-FSR4" / "amd_fidelityfx_upscaler_dx12.dll").write_bytes(hlx_dll(hlx))
     (folder / "helixsr-scaler").mkdir(exist_ok=True)
     (folder / "helixsr-scaler" / "OptiScaler.dll").write_bytes(
-        b"MZ OptiScaler HelixSR Scaler v2.0.0 (marker)")
+        b"MZ OptiScaler HelixSR Scaler v" + scaler.encode() + b" (marker)")
     (folder / "setup" / "hlxfsr4").mkdir(parents=True, exist_ok=True)
     (folder / "setup" / "helixsr_bridge.py").write_text(FAKE_BRIDGE)
     return folder

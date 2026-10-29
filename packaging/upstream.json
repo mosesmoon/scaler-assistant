@@ -2,16 +2,16 @@
   "_comment": "Upstream versions Scaler Assistant has been checked against (updated by the daily upstream check).",
   "helixsr": {
     "repo": "https://github.com/lonewolf0622/HelixSR",
-    "latest_release": "v3.0.0",
-    "head": "2ca54d14110342c6d301703bebad7c62cf792d7d",
-    "supported": "1.8.0 - 3.0.x (2.0: HelixSR Scaler and FSR drop-in through setup/helixsr_bridge.py; 3.0: HelixSR/helixsr.dll and HLX FSR 4, no frame generation)"
+    "latest_release": "v3.1.0",
+    "head": "f6f8057d26943e1b0478b5d43048d6884b763cba",
+    "supported": "1.8.0 - 3.1.x (2.0: HelixSR Scaler and FSR drop-in through setup/helixsr_bridge.py; 3.0/3.1: HelixSR/helixsr.dll and HLX FSR 4, no frame generation)"
   },
   "fsr4": {
     "repo": "https://github.com/zgauthier2000/fsr4-shader-performance-overrides",
     "latest_dll_release": "dll-2026-10-22",
     "pinned_in_components": "dll-2026-10-22",
-    "head": "f309cc909ecb02aaeef3f69fde8a2410a9138a6a",
+    "head": "b9ef257dbf4f95984a5028e9b719dcb6f7883221",
     "not_supported": "Radeon RX 5000 (RDNA 1): no build gives a picture (README, issue #43); FSR 4.1 greyed out there since 1.0.2"
   },
-  "checked": "2026-10-28"
+  "checked": "2026-10-29"
 }
