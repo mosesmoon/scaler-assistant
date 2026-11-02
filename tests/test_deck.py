@@ -67,19 +67,20 @@ class DeckBridgeTest(Base):
         self.assertEqual(snapshot(self.common / "DlssGame"), before)
         self.assertIn(result["message"].splitlines()[0], self.bridge.overview()["log"])
 
-    def test_lossy2_has_its_own_warning(self):
+    def test_lite_lossy_has_its_own_warning(self):
         make_components(self.root / "components")
-        self.bridge.accept_lossy()   # Lossy's warning accepted: Lossy2 still asks for its own
-        step = next(s for s in self.bridge.plan(DLSS, "fsr4:lossy2")["steps"] if s["kind"] == "lossy")
-        self.assertEqual((step["variant"], step["title"]), ("lossy2", i18n.tr("lossy2_title")))
-        self.assertEqual(self.bridge.lossy_text("lossy2"), "fsr4-igpu-rdna2 lossy2/WARNING.txt\n")
+        self.bridge.accept_lossy()   # Lossy's warning accepted: Lite Lossy still asks for its own
+        step = next(s for s in self.bridge.plan(DLSS, "fsr4:lite_lossy")["steps"] if s["kind"] == "lossy")
+        self.assertEqual((step["variant"], step["title"]), ("lite_lossy", i18n.tr("lite_lossy_title")))
+        self.assertEqual(self.bridge.lossy_text("lite_lossy"),
+                         "fsr4-igpu-rdna2 4.1.2l-lossy/WARNING.txt\n")
         self.assertEqual(self.bridge.lossy_text("lossy"), "fsr4-igpu-rdna2 lossy/WARNING.txt\n")
-        self.bridge.accept_lossy("lossy2")
-        self.assertEqual([s["kind"] for s in self.bridge.plan(DLSS, "fsr4:lossy2")["steps"]],
+        self.bridge.accept_lossy("lite_lossy")
+        self.assertEqual([s["kind"] for s in self.bridge.plan(DLSS, "fsr4:lite_lossy")["steps"]],
                          ["confirm"])
-        self.assertTrue(self.bridge.apply(DLSS, "fsr4:lossy2")["ok"])
+        self.assertTrue(self.bridge.apply(DLSS, "fsr4:lite_lossy")["ok"])
         game = self.game(self.bridge.overview(), DLSS)
-        self.assertEqual(game["choice"], "fsr4:lossy2")
+        self.assertEqual(game["choice"], "fsr4:lite_lossy")
 
     def test_downloads_list_the_build_in_use(self):
         downloads = self.bridge.overview()["downloads"]
@@ -94,7 +95,7 @@ class DeckBridgeTest(Base):
         overview = self.bridge.overview()
         choices = self.game(overview, FSR)["choices"]
         fsr4 = [c for c in choices if "4.1" in c["label"]]
-        self.assertEqual(len(fsr4), 3)
+        self.assertEqual(len(fsr4), 4)
         self.assertTrue(all(c["id"] == "" for c in fsr4))
         self.assertIn("RDNA 1", fsr4[0]["hint"])
         self.assertEqual(choices[-1]["id"], "fsr3")

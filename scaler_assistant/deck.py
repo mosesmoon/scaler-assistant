@@ -294,7 +294,7 @@ class DeckBridge:
                           "text": plain(tr("dl_confirm", what=choice_label(choice), items=items)),
                           "ok": tr("dl_confirm_ok"), "keys": [c.key for c in plan.downloads]})
         if plan.lossy_warning:
-            prefix = "lossy2_" if plan.lossy_warning == "lossy2" else "lossy_"
+            prefix = "lite_lossy_" if plan.lossy_warning == "lite_lossy" else "lossy_"
             steps.append({"kind": "lossy", "title": tr(prefix + "title"),
                           "text": plain(tr(prefix + "intro")), "ok": tr(prefix + "accept"),
                           "variant": plan.lossy_warning, "body": None})

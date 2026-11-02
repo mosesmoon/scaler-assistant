@@ -27,12 +27,12 @@ Scaler 助手在一个窗口里完成这一切，并保留所有被替换的文�
 | **DLSS 3.7（HelixSR）· DLSS 方式**（实验性） | Direct3D 12、DLSS | HelixSR 的 DLSS 加载器（`dxgi.dll`）和以 `nvngx.dll` 命名的 HelixSR | DLSS |
 | **FSR 4.1 Exact** | 四种超分技术任一种 | `.exe` 旁放入 OptiScaler；FidelityFX DLL 和 Exact 版 FSR 4.1 DLL 放在 `ScalerAssistant` 文件夹 | DLSS、FSR 或 XeSS |
 | **FSR 4.1 Lossy** | 同上 | 同上，改用 Lossy 版 FSR 4.1 DLL | DLSS、FSR 或 XeSS |
-| **FSR 4.1 Lossy2** | 同上 | 同上，改用 Lossy2 版 FSR 4.1 DLL | DLSS、FSR 或 XeSS |
+| **FSR 4.1.2 Lite / Lite Lossy** | 同上 | 同上，改用 4.1.2l-exact / 4.1.2l-lossy 版 FSR 4.1 DLL | DLSS、FSR 或 XeSS |
 | **FSR 4.1（AMD）**——RX 9000（RDNA 4）以此代替 Exact／Lossy | 同上 | 同上，改用 AMD 原生 FSR 4.1 DLL | DLSS、FSR 或 XeSS |
 | **FSR 3** | 同上 | 同上；OptiScaler 使用 FSR 3.1.5 | DLSS、FSR 或 XeSS |
 
 - **Exact** 的画面与 AMD 的 FSR 4.1 逐字节相同，只是着色器更快。**Lossy** 更快，但画面略有不同；首次使用前，Scaler 助手会先显示一次它的 `WARNING.txt`。不确定就选 Exact。
-- **Lossy2** 是把网络十二层中的六层重新训练过的 Lossy：摇曳的树叶更接近 AMD 的画面、亮点噪点更少，但画面变亮时跟得较慢，Ultra Performance 模式下与 Lossy 相同。它与 Lossy 并列，方便比较；首次使用前也会先显示一次它自己的 `WARNING.txt`。
+- **Lossy** 自 dll-2026-10-29 的 DLL 起，就是原来的 Lossy2 再经训练（旧的 Lossy 已移除）：树叶中的黑点少了很多，但画面变亮时跟得较慢。**Lite** 与 **Lite Lossy** 运行 AMD 较小的 FSR 4.1.2 Lite 网络（很可能就是 AMD 驱动给集成显卡用的）：Lite 的画面与 AMD 的 Lite 逐字节相同，且略快；Lite Lossy 每两帧才运行一次网络，是最快的版本，画面接近 Lite。Lite 在静态画面与部分动态上比完整 FSR 4 略不精确，另一些动态则更好。Lossy 与 Lite Lossy 会各自先显示一次它们的 `WARNING.txt`。用 Lossy2 设置的游戏会显示为可更新，更新后改用 Lossy。
 - HelixSR 只能用于 **Direct3D 12** 游戏，所以只有这类游戏会出现 DLSS 3.7。FSR 4.1 和 FSR 3 也能用于 **Direct3D 11 与 Vulkan** 游戏：FSR 3 原生支持，FSR 4.1 则通过 OptiScaler 的 Direct3D 12 路径（测试程度不如 Direct3D 12 游戏）。
 - 在游戏那一行点击 **“选择超分”**（已安装的游戏点击 **“超分”**）：DLSS 3.7（HelixSR）会展开子菜单列出各方式，当前选择会打勾。切换时会先移除当前项目并全部还原。
 
@@ -78,7 +78,7 @@ Scaler 助手在一个窗口里完成这一切，并保留所有被替换的文�
 
 点击顶部的 **OptiScaler** 标签（或 GPU 标签）：
 
-- **OptiScaler 0.9.4**（含 AMD 的 FidelityFX DLL：FSR 3 与 AMD 的 FSR 4.1，以及 fakenvapi），以及适合你 GPU 版本的 **FSR 4.1 Exact／Lossy／Lossy2**：RX 7000 显卡、RX 6000 显卡、处理器集成的 RDNA 3 显卡（也适用 GeForce、Intel Arc 与其他 GPU），或 Steam Deck 与处理器集成的 RDNA 2 显卡。每个版本在这些 GPU 上都能用，对应你 GPU 的版本最快。如果游戏用 Exact 会崩溃，可改选集成显卡的版本。
+- **OptiScaler 0.9.4**（含 AMD 的 FidelityFX DLL：FSR 3 与 AMD 的 FSR 4.1，以及 fakenvapi），以及适合你 GPU 版本的 **FSR 4.1 Exact／Lossy／Lite／Lite Lossy**：RX 7000 显卡、RX 6000 显卡、处理器集成的 RDNA 3 显卡（也适用 GeForce、Intel Arc 与其他 GPU），或 Steam Deck 与处理器集成的 RDNA 2 显卡。每个版本在这些 GPU 上都能用，对应你 GPU 的版本最快。如果游戏用 Exact 会崩溃，可改选集成显卡的版本。
 - 你同意之前不会下载任何东西。每个下载文件都是固定版本，解压前会核对大小和 SHA-256；只保留游戏需要的文件，存放在 `~/.local/share/scaler-assistant/components/`。
 - **FSR 4.1 版本**：按显卡自动选择（RX 9000／RDNA 4 → AMD 原生 FSR 4.1；集成显卡与 Steam Deck → 集成显卡版；其他 GPU → 独立显卡版），也可以手动指定。RDNA 4 绝不会使用修改过的 DLL。其他 GPU 会把 OptiScaler 设为使用 FSR 4 的 INT8 模型。
 - “删除下载文件”会删除它们；游戏里的副本不受影响。
@@ -138,7 +138,7 @@ Scaler 助手在一个窗口里完成这一切，并保留所有被替换的文�
 - **一键下载并构建 HelixSR**：“下载并构建 HelixSR”（在 HelixSR 窗口与 Steam Deck 插件中）会从 GitHub 发布页下载最新的 HelixSR（2.0 及以上），校验 SHA-256 后放到 `~/.local/share/scaler-assistant/helixsr`，再用 HelixSR 自己的构建程序（`setup/helixsr_setup.py`，原样运行）在这台电脑上构建。做法与 HelixSR 自己的 App 相同，因此无需终端，也不会进入游戏安装步骤。构建所需的东西也会备齐：带 numpy 的 Python（系统 Python 无法解压 NVIDIA 的 zstd 包时改用便携版 Python 3.14，帧生成无需另装 `zstd`），以及通过 Steam 的 Proton 或 Wine 运行的 Microsoft DirectX 着色器编译器。NVIDIA 的文件只在你于 App 中同意后才下载，构建结果只留在你的电脑上。Flatpak 版在主机上构建。再次运行只会补建缺少的部分；有新版本时会替换之前下载的版本。
 - **HelixSR 2.0 及以上**把构建好的 DLL 放在 `HelixSR-fsrfg`，并提供两种方式：**HelixSR Scaler**（HelixSR 自带、放在 `.exe` 旁的 OptiScaler：游戏内选 DLSS；DX11 和 Vulkan 游戏也能用）与 **FSR 方式**（FSR drop-in）。Scaler 助手通过你 HelixSR 文件夹里的安装程序（`setup/helixsr_bridge.py`，即 HelixSR 官方应用使用的那一个）安装这两种方式，所以 HelixSR 的 setup、它的应用和 Scaler 助手都能识别、更新、移除彼此的安装。文件名仍由 Scaler 助手选择，需要时也会加入启动选项。以旧方式设置的游戏在更新时会改用 HelixSR Scaler。HelixSR 1.8／1.9 文件夹仍是原来的三种方式。
 - **HelixSR 帧生成**（HelixSR 2.0）：带有 DLSS Frame Generation（Streamline 的 `sl.dlss_g.dll`）的 DirectX 12 游戏，安装 HelixSR Scaler 后卡片上（以及 Steam Deck 插件中）会出现“HelixSR 帧生成”开关。它通过 HelixSR 自己的安装程序（`scaler-fg`）切换，只修改 OptiScaler.ini 的 `[FrameGen]` 选项；打开后在游戏中开启 DLSS Frame Generation。需要 `./helixsr-setup.sh` 生成的帧生成文件（会下载 NVIDIA 的 DLSS Frame Generation 文件），在此之前开关会变灰并说明原因。新安装时默认关闭；更新或更改 OptiScaler 文件名会保留原来的状态。其他 DX12 游戏仍可在 HelixSR Scaler 菜单（Insert）中选择 AMD FSR 或 XeSS 帧生成；DX11／Vulkan 游戏与 FSR 方式只有超分。
-- **HelixSR 3.0**：构建好的 DLL 改为 `HelixSR/helixsr.dll`（HelixSR Scaler 的 DLSS 超分器“HLX DLSS”），FSR 方式改装 **HLX FSR 4**——HelixSR 自己的 FSR 4 流程，由 HelixSR 的 setup 从 AMD 的 FSR 4 驱动文件构建（会从 AMD 下载驱动程序包中约 420 MB；“下载并构建 HelixSR”会先询问，并一并准备第二个着色器编译器 DXC 1.9.2609）。Scaler 助手与 2.0 相同，通过发布版内的安装程序安装、更新、切换与移除两种方式；用 2.0 设置的游戏在更新时会从 `HelixSR-fsrfg` 移到 `HelixSR`。HelixSR 3.0 没有帧生成，所以搭配 3.0 时不显示上面的开关；HelixSR Scaler 菜单中仍可选 AMD FSR 与 XeSS 帧生成。
+- **HelixSR 3.0**：构建好的 DLL 改为 `HelixSR/helixsr.dll`（HelixSR Scaler 的 DLSS 超分器“HLX DLSS”），FSR 方式改装 **HLX FSR 4**——HelixSR 自己的 FSR 4 流程，由 HelixSR 的 setup 从 AMD 的 FSR 4 驱动文件构建（会从 AMD 下载驱动程序包中约 420 MB；“下载并构建 HelixSR”会先询问，并一并准备第二个着色器编译器 DXC 1.9.2609）。Scaler 助手与 2.0 相同，通过发布版内的安装程序安装、更新、切换与移除两种方式；用 2.0 设置的游戏在更新时会从 `HelixSR-fsrfg` 移到 `HelixSR`。HelixSR 3.0 没有帧生成，所以搭配 3.0 时不显示上面的开关；HelixSR Scaler 菜单中仍可选 AMD FSR 与 XeSS 帧生成。 HelixSR 3.2 起，HLX FSR 4 已在 ZIP 中构建好（由 AMD FSR SDK 2.4.0 的 FSR 4.1.2 构建）：setup 不再下载 AMD 驱动程序包，HelixSR Scaler 中与它并列的 AMD 原版 FSR 也换成 FSR 4.1.2。
 - **较旧的 HelixSR 版本**：1.8.x 三种方式（FSR 方式、OptiScaler 方式、DLSS 方式）都能用。HelixSR 1.9.0～1.9.3 只附 FSR 方式的文件，所以 OptiScaler 与 DLSS 方式会变灰（“需要 HelixSR 1.8 或 2.0”）；没有 FSR 3.1 的游戏需要 HelixSR 2.0（HelixSR Scaler）。1.8.0 以前的版本不支持。
 - **DLSS 方式仅限 GeForce**：使用 AMD 或 Intel GPU 时，游戏中无法选择 DLSS，所以（HelixSR 1.x 的）DLSS 方式会变灰并说明原因。
 - **推荐 FSR 4.1 Lossy**：集成显卡（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）与 Intel GPU 只会在 FSR 4.1 的选项中标示“★ 推荐”。
@@ -194,7 +194,7 @@ flatpak run io.github.mosesmoon.ScalerAssistant
 
 - **只支持 Steam 游戏。** FSR 4.1／FSR 3 的安装方式已用 OptiScaler 0.9.4 逐一核对过文件；但每款游戏表现不同，游戏出问题时请查 OptiScaler 的兼容性列表，或为 OptiScaler 换个文件名。
 - Direct3D 11 与 Vulkan 游戏的 FSR 4.1 经由 OptiScaler 的 Direct3D 12 路径，测试程度较低。
-- HelixSR 变化很快。Scaler 助手需要 HelixSR 1.8.0 或更新版本，并遵循 1.8.x／1.9.x／2.0.x / 3.0.x / 3.1.x 的文件布局。
+- HelixSR 变化很快。Scaler 助手需要 HelixSR 1.8.0 或更新版本，并遵循 1.8.x／1.9.x／2.0.x / 3.0.x / 3.1.x／3.2.x 的文件布局。
 - Steam Deck 游戏模式（gamescope）下不会显示浮层提示。Decky 插件会改用 Steam 通知显示。
 - 泰语、越南语、马来语和印地语的右键菜单为英文（Qt 没有官方翻译）。Steam 没有马来语和印地语的游戏名称。
 

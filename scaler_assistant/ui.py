@@ -493,7 +493,7 @@ class LossyDialog(QDialog):
 
     def __init__(self, text: str, parent: QWidget, variant: str = "lossy") -> None:
         super().__init__(parent)
-        prefix = "lossy2_" if variant == "lossy2" else "lossy_"
+        prefix = "lite_lossy_" if variant == "lite_lossy" else "lossy_"
         self.setWindowTitle(tr(prefix + "title"))
         self.resize(820, 600)
         layout = QVBoxLayout(self)

@@ -1,4 +1,5 @@
 import json
+import json
 import os
 import tempfile
 import unittest
@@ -325,7 +326,7 @@ class FsrTest(Base):
     def test_choices_follow_the_gpu(self):
         self.assertEqual(self.entry(FSR).choices,
                          ["helixsr:direct", "helixsr:optiscaler",   # DLSS way: GeForce only
-                          "fsr4:exact", "fsr4:lossy", "fsr4:lossy2", "fsr3"])
+                          "fsr4:exact", "fsr4:lossy", "fsr4:lite", "fsr4:lite_lossy", "fsr3"])
         self.service._gpus = [gpu.Gpu("AMD", 0x7550, (12, 0, 1))]   # RX 9070: RDNA 4
         self.assertEqual([c for c in self.entry(FSR).choices if c.startswith("fsr")],
                          ["fsr4:native", "fsr3"])
@@ -349,7 +350,7 @@ class FsrTest(Base):
         entry = self.entry(FSR)
         self.assertEqual([c for c in entry.choices if c.startswith("fsr")], ["fsr3"])
         self.assertEqual({c: r for c, r in entry.blocked.items() if c.startswith("fsr4")},
-                         dict.fromkeys(["fsr4:exact", "fsr4:lossy", "fsr4:lossy2"],
+                         dict.fromkeys(["fsr4:exact", "fsr4:lossy", "fsr4:lite", "fsr4:lite_lossy"],
                                        "blk_fsr4_rdna1"))
         self.assertNotIn("fsr4:exact", self.entry(PLAIN).blocked)   # no OptiScaler there
         with self.assertRaises(installer.InstallError):
@@ -398,10 +399,26 @@ class FsrTest(Base):
         self.assertEqual((sc / "amd_fidelityfx_upscaler_dx12.dll").read_bytes(),
                          b"MZ ffxCreateContext fsr4-rx7000 lossy/amd_fidelityfx_upscaler_dx12.dll")
         self.assertEqual(self.entry(DLSS).status.choice, "fsr4:lossy")
-        self.service.apply(DLSS, "fsr4:lossy2")
+        self.service.apply(DLSS, "fsr4:lite")
         self.assertEqual((sc / "amd_fidelityfx_upscaler_dx12.dll").read_bytes(),
-                         b"MZ ffxCreateContext fsr4-rx7000 lossy2/amd_fidelityfx_upscaler_dx12.dll")
-        self.assertEqual(self.entry(DLSS).status.choice, "fsr4:lossy2")
+                         b"MZ ffxCreateContext fsr4-rx7000 4.1.2l-exact/amd_fidelityfx_upscaler_dx12.dll")
+        self.assertEqual(self.entry(DLSS).status.choice, "fsr4:lite")
+        self.service.apply(DLSS, "fsr4:lite_lossy")
+        self.assertEqual((sc / "amd_fidelityfx_upscaler_dx12.dll").read_bytes(),
+                         b"MZ ffxCreateContext fsr4-rx7000 4.1.2l-lossy/amd_fidelityfx_upscaler_dx12.dll")
+        self.assertEqual(self.entry(DLSS).status.choice, "fsr4:lite_lossy")
+        # a game set up with Lossy2 of dll-2026-10-22: shown as outdated, updated to Lossy
+        record = sc / "scaler-install.json"
+        data = json.loads(record.read_text())
+        data.update(variant="lossy2", source="fsr4-rx7000-dll-2026-10-22")
+        record.write_text(json.dumps(data))
+        entry = self.entry(DLSS)
+        self.assertEqual((entry.status.choice, entry.outdated), ("fsr4:lossy2", True))
+        self.service.apply(DLSS, entry.status.choice)
+        self.assertEqual((sc / "amd_fidelityfx_upscaler_dx12.dll").read_bytes(),
+                         b"MZ ffxCreateContext fsr4-rx7000 lossy/amd_fidelityfx_upscaler_dx12.dll")
+        self.assertEqual((self.entry(DLSS).status.choice, self.entry(DLSS).outdated),
+                         ("fsr4:lossy", False))
         self.assertIn("Fsr4ForceEnableInt8=true\r\n", (self.dlss_bin / "OptiScaler.ini").read_bytes().decode())
         self.service.apply(DLSS, "fsr3")
         ini = (self.dlss_bin / "OptiScaler.ini").read_text()
@@ -504,13 +521,16 @@ class FsrTest(Base):
 
     def test_each_lossy_warning_is_accepted_once(self):
         self.assertEqual(self.service.plan(DLSS, "fsr4:lossy").lossy_warning, "lossy")
-        self.assertEqual(self.service.plan(DLSS, "fsr4:lossy2").lossy_warning, "lossy2")
+        self.assertEqual(self.service.plan(DLSS, "fsr4:lite_lossy").lossy_warning, "lite_lossy")
         self.assertIsNone(self.service.plan(DLSS, "fsr4:exact").lossy_warning)
-        self.assertEqual(self.service.lossy_warning_text("lossy2"),
-                         "fsr4-rx7000 lossy2/WARNING.txt\n")
-        self.service.accept_lossy("lossy2")
-        self.assertIsNone(self.service.plan(DLSS, "fsr4:lossy2").lossy_warning)
+        self.assertIsNone(self.service.plan(DLSS, "fsr4:lite").lossy_warning)
+        self.assertEqual(self.service.lossy_warning_text("lite_lossy"),
+                         "fsr4-rx7000 4.1.2l-lossy/WARNING.txt\n")
+        self.service.accept_lossy("lite_lossy")
+        self.assertIsNone(self.service.plan(DLSS, "fsr4:lite_lossy").lossy_warning)
         self.assertEqual(self.service.plan(DLSS, "fsr4:lossy").lossy_warning, "lossy")
+        self.service.state["lossy_accepted"] = True   # read for the earlier, untrained Lossy
+        self.assertEqual(self.service.plan(DLSS, "fsr4:lossy2").lossy_warning, "lossy")
         self.service.accept_lossy()
         self.assertIsNone(self.service.plan(DLSS, "fsr4:lossy").lossy_warning)
 

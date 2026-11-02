@@ -27,12 +27,12 @@ Scaler アシスタントはこれらをひとつのウィンドウで行い、�
 | **DLSS 3.7（HelixSR）· DLSS 方式**（実験的） | Direct3D 12、DLSS | HelixSR の DLSS ローダー（`dxgi.dll`）と `nvngx.dll` としての HelixSR | DLSS |
 | **FSR 4.1 Exact** | 4 つのアップスケーラーのいずれか | `.exe` の隣に OptiScaler、`ScalerAssistant` フォルダーに FidelityFX DLL と Exact 版 FSR 4.1 DLL | DLSS・FSR・XeSS |
 | **FSR 4.1 Lossy** | 同上 | 同上（Lossy 版 FSR 4.1 DLL） | DLSS・FSR・XeSS |
-| **FSR 4.1 Lossy2** | 同上 | 同上（Lossy2 版 FSR 4.1 DLL） | DLSS・FSR・XeSS |
+| **FSR 4.1.2 Lite / Lite Lossy** | 同上 | 同上（4.1.2l-exact / 4.1.2l-lossy 版 FSR 4.1 DLL） | DLSS・FSR・XeSS |
 | **FSR 4.1（AMD）** — RX 9000（RDNA 4）では Exact／Lossy の代わり | 同上 | 同上（AMD 純正 FSR 4.1 DLL） | DLSS・FSR・XeSS |
 | **FSR 3** | 同上 | 同上。OptiScaler は FSR 3.1.5 を使用 | DLSS・FSR・XeSS |
 
 - **Exact** は AMD の FSR 4.1 と 1 バイト単位で同じ画を、より速いシェーダーで出します。**Lossy** はさらに速い代わりに画がわずかに変わります。初めて使う前に `WARNING.txt` を一度表示します。迷ったら Exact を選んでください。
-- **Lossy2** は、ネットワーク 12 層のうち 6 層を再学習した Lossy です。揺れる葉が AMD の画に近く輝点ノイズも減りますが、明るくなる変化への追従は遅く、Ultra Performance では Lossy と同じです。比較できるよう Lossy と並べて提供し、初回は専用の `WARNING.txt` を一度表示します。
+- **Lossy** は dll-2026-10-29 の DLL から、旧 Lossy2 をさらに学習させたものです（旧 Lossy は廃止）。葉の中の黒い点が大幅に減りましたが、明るくなる変化への追従は遅くなりました。**Lite** と **Lite Lossy** は AMD の小さい FSR 4.1.2 Lite ネットワーク（AMD のドライバーが内蔵グラフィックスで使っているとみられるもの）を使います。Lite は AMD の Lite と完全に同じ画面でわずかに高速、Lite Lossy はネットワークを 2 フレームに 1 回だけ実行する最速のビルドで、画面は Lite に近いものです。Lite は静止画と一部の動きでフル FSR 4 よりわずかに不正確で、別の動きではより良好です。Lossy と Lite Lossy はそれぞれの `WARNING.txt` を一度表示します。Lossy2 で設定したゲームは更新対象として表示され、更新すると Lossy になります。
 - HelixSR は **Direct3D 12** のゲーム専用なので、DLSS 3.7 はそこでのみ表示されます。FSR 4.1 と FSR 3 は **Direct3D 11 と Vulkan** のゲームでも使えます（FSR 3 はネイティブ、FSR 4.1 は OptiScaler の Direct3D 12 経由で、Direct3D 12 のゲームほどは検証されていません）。
 - ゲームの行の **「アップスケーラーを選ぶ」**（導入済みなら **「アップスケーラー」**）を押します。DLSS 3.7（HelixSR）はサブメニューで方式を選べ、現在の選択にはチェックが付きます。切り替え時は現在のものを先に削除してすべて元に戻します。
 
@@ -78,7 +78,7 @@ Proton では `dxgi.dll` と `d3d12.dll` は追加設定なしで読み込まれ
 
 上部の **OptiScaler** ピル（または GPU ピル）を押します。
 
-- **OptiScaler 0.9.4**（AMD の FidelityFX DLL：FSR 3 と AMD の FSR 4.1、fakenvapi を含む）と、お使いの GPU 向けビルドの **FSR 4.1 Exact／Lossy／Lossy2**：RX 7000、RX 6000、CPU 内蔵の RDNA 3 グラフィックス（GeForce・Intel Arc・その他の GPU も）、または Steam Deck と CPU 内蔵の RDNA 2 グラフィックス。どのビルドもこれらすべてで動き、お使いの GPU 向けが最速です。Exact でゲームが落ちる場合は内蔵グラフィックス向けのビルドを選んでください。
+- **OptiScaler 0.9.4**（AMD の FidelityFX DLL：FSR 3 と AMD の FSR 4.1、fakenvapi を含む）と、お使いの GPU 向けビルドの **FSR 4.1 Exact／Lossy／Lite／Lite Lossy**：RX 7000、RX 6000、CPU 内蔵の RDNA 3 グラフィックス（GeForce・Intel Arc・その他の GPU も）、または Steam Deck と CPU 内蔵の RDNA 2 グラフィックス。どのビルドもこれらすべてで動き、お使いの GPU 向けが最速です。Exact でゲームが落ちる場合は内蔵グラフィックス向けのビルドを選んでください。
 - 同意するまで何もダウンロードしません。各ダウンロードは固定のリリースで、展開前にサイズと SHA-256 を照合し、ゲームに必要なファイルだけを `~/.local/share/scaler-assistant/components/` に保存します。
 - **FSR 4.1 のビルド**：GPU から自動選択（RX 9000／RDNA 4 → AMD 純正 FSR 4.1、内蔵グラフィックスと Steam Deck → 内蔵用、その他 → グラフィックスカード用）、または手動で選択。RDNA 4 では改変 DLL を使いません。それ以外の GPU では OptiScaler を FSR 4 の INT8 モデルに設定します。
 - 「ダウンロードを削除」で削除できます。ゲーム内のコピーはそのままです。
@@ -138,7 +138,7 @@ DLSS 3.7 では「⚙ 設定」でゲームの `helixsr.ini`（シャープ化�
 - **HelixSR のダウンロードとビルドを一度に**：「HelixSR をダウンロードしてビルド」（HelixSR ウィンドウと Steam Deck プラグイン）は、最新の HelixSR（2.0 以降）を GitHub のリリースから SHA-256 を確認してダウンロードし `~/.local/share/scaler-assistant/helixsr` に置き、HelixSR 自身のビルドプログラム（`setup/helixsr_setup.py`、そのまま実行）でこの PC 上にビルドします。HelixSR 公式アプリと同じ方法なので、ターミナルもゲームの手順も不要です。ビルドに必要なもの（numpy 入りの Python。システムの Python が NVIDIA の zstd パッケージを展開できない場合はポータブル Python 3.14 を使うので、フレーム生成に `zstd` は不要。Steam の Proton または Wine で動く Microsoft の DirectX シェーダーコンパイラー）もそろえます。NVIDIA のファイルはアプリで同意した後にだけダウンロードされ、ビルド結果はこの PC に残ります。Flatpak ではホスト側でビルドします。再実行では足りない部分だけをビルドし、新しいリリースは以前ダウンロードしたものを置き換えます。
 - **HelixSR 2.0 以降**はビルド済み DLL を `HelixSR-fsrfg` に置き、2 つの方式があります：**HelixSR Scaler**（`.exe` の横に置く HelixSR 独自の OptiScaler。ゲームで DLSS を選択。DX11 と Vulkan のゲームにも対応）と **FSR 方式**（FSR ドロップイン）。Scaler アシスタントは HelixSR フォルダー内のインストーラー（`setup/helixsr_bridge.py`、HelixSR 公式アプリが使うもの）で両方をインストールするため、HelixSR のセットアップ、そのアプリ、Scaler アシスタントは互いのインストールを認識・更新・削除できます。ファイル名は引き続き Scaler アシスタントが選び、必要なら起動オプションも追加します。以前の方式で設定したゲームは更新時に HelixSR Scaler へ移ります。HelixSR 1.8／1.9 のフォルダーでは従来の 3 方式のままです。
 - **HelixSR フレーム生成**（HelixSR 2.0）：DLSS Frame Generation（Streamline の `sl.dlss_g.dll`）を持つ DirectX 12 ゲームでは、HelixSR Scaler を入れるとカード（と Steam Deck プラグイン）に「HelixSR フレーム生成」スイッチが表示されます。HelixSR 自身のインストーラー（`scaler-fg`）で切り替え、OptiScaler.ini の `[FrameGen]` の選択だけを変更します。オンにしたらゲームで DLSS Frame Generation をオンにしてください。`./helixsr-setup.sh` が作成するフレーム生成（NVIDIA の DLSS Frame Generation ファイルをダウンロード）が必要で、それまではスイッチが理由付きでグレー表示になります。新規インストールではオフ、更新や OptiScaler のファイル名変更では状態を保ちます。ほかの DX12 ゲームでは HelixSR Scaler のメニュー（Insert）で AMD FSR や XeSS のフレーム生成を選べます。DX11／Vulkan ゲームと FSR 方式はアップスケールのみです。
-- **HelixSR 3.0**：ビルド済み DLL は `HelixSR/helixsr.dll`（HelixSR Scaler の DLSS アップスケーラー「HLX DLSS」）になり、FSR 方式では **HLX FSR 4**（HelixSR 独自の FSR 4 パイプライン）を入れます。これは HelixSR の setup が AMD の FSR 4 ドライバーファイルからビルドします（AMD のドライバーパッケージのうち約 420 MB を AMD からダウンロード。「HelixSR をダウンロードしてビルド」は事前に確認し、2 つ目のシェーダーコンパイラー DXC 1.9.2609 も用意します）。Scaler アシスタントは 2.0 と同じく、リリース内のインストーラーで両方式のインストール・更新・切り替え・削除を行います。2.0 で設定したゲームは更新時に `HelixSR-fsrfg` から `HelixSR` へ移ります。HelixSR 3.0 にはフレーム生成がないため、3.0 では上のスイッチは表示されません。AMD FSR と XeSS のフレーム生成は HelixSR Scaler のメニューに残ります。
+- **HelixSR 3.0**：ビルド済み DLL は `HelixSR/helixsr.dll`（HelixSR Scaler の DLSS アップスケーラー「HLX DLSS」）になり、FSR 方式では **HLX FSR 4**（HelixSR 独自の FSR 4 パイプライン）を入れます。これは HelixSR の setup が AMD の FSR 4 ドライバーファイルからビルドします（AMD のドライバーパッケージのうち約 420 MB を AMD からダウンロード。「HelixSR をダウンロードしてビルド」は事前に確認し、2 つ目のシェーダーコンパイラー DXC 1.9.2609 も用意します）。Scaler アシスタントは 2.0 と同じく、リリース内のインストーラーで両方式のインストール・更新・切り替え・削除を行います。2.0 で設定したゲームは更新時に `HelixSR-fsrfg` から `HelixSR` へ移ります。HelixSR 3.0 にはフレーム生成がないため、3.0 では上のスイッチは表示されません。AMD FSR と XeSS のフレーム生成は HelixSR Scaler のメニューに残ります。 HelixSR 3.2 からは HLX FSR 4 がビルド済みで ZIP に入っています（AMD FSR SDK 2.4.0 の FSR 4.1.2 から作成）。setup は AMD のドライバーパッケージをダウンロードしなくなり、HelixSR Scaler で並ぶ AMD 純正 FSR も FSR 4.1.2 になりました。
 - **以前の HelixSR**：1.8.x は 3 方式（FSR 方式、OptiScaler 方式、DLSS 方式）すべて使えます。HelixSR 1.9.0～1.9.3 は FSR 方式のファイルしか含まないため、OptiScaler 方式と DLSS 方式はグレー表示（「HelixSR 1.8 か 2.0 が必要」）。FSR 3.1 のないゲームには HelixSR 2.0（HelixSR Scaler）が必要です。1.8.0 より前は非対応です。
 - **DLSS 方式は GeForce のみ**：AMD や Intel の GPU ではゲームで DLSS を選べないため、（HelixSR 1.x の）DLSS 方式は理由つきでグレー表示になります。
 - **FSR 4.1 Lossy をおすすめ**：内蔵グラフィックス（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）と Intel GPU では、FSR 4.1 の選択肢の中だけで「★ おすすめ」と表示します。
@@ -194,7 +194,7 @@ flatpak run io.github.mosesmoon.ScalerAssistant
 
 - **Steam のゲームのみ。** FSR 4.1／FSR 3 の導入方法は OptiScaler 0.9.4 でファイル単位に確認済みですが、ゲームごとに挙動は異なります。不具合があれば OptiScaler の互換性リストを確認するか、OptiScaler のファイル名を変えてください。
 - Direct3D 11 と Vulkan のゲームでの FSR 4.1 は OptiScaler の Direct3D 12 経由で、検証が少なめです。
-- HelixSR は変化が速いです。Scaler アシスタントは HelixSR 1.8.0 以降が必要で、1.8.x／1.9.x／2.0.x / 3.0.x / 3.1.x の構成に合わせています。
+- HelixSR は変化が速いです。Scaler アシスタントは HelixSR 1.8.0 以降が必要で、1.8.x／1.9.x／2.0.x / 3.0.x / 3.1.x／3.2.x の構成に合わせています。
 - Steam Deck のゲームモード（gamescope）ではオーバーレイは表示されません。Decky プラグインでは代わりに Steam の通知で表示します。
 - タイ語、ベトナム語、マレー語、ヒンディー語の右クリックメニューは英語です（Qt の公式翻訳がないため）。Steam にはマレー語とヒンディー語のゲーム名がありません。
 

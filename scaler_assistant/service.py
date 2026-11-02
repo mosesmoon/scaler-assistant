@@ -4,7 +4,7 @@ Choices per game (``installer.CHOICES``):
 
 * ``helixsr:direct`` / ``helixsr:optiscaler`` / ``helixsr:dlss`` — DLSS 3.7 (HelixSR)
   from the user's own HelixSR folder, the ways HelixSR documents.
-* ``fsr4:exact`` / ``fsr4:lossy`` / ``fsr4:lossy2`` — FSR 4.1 through OptiScaler with the
+* ``fsr4:exact`` / ``fsr4:lossy`` / ``fsr4:lite`` / ``fsr4:lite_lossy`` — FSR 4.1 through OptiScaler with the
   modified DLLs from zgauthier2000/fsr4-shader-performance-overrides (GPUs before RDNA 4).
 * ``fsr4:native`` — FSR 4.1 through OptiScaler with AMD's own DLL (RDNA 4).
 * ``fsr3`` — FSR 3 through OptiScaler.
@@ -40,10 +40,14 @@ STAMP = f"Scaler Assistant {__version__}"
 FSR4_BUILDS = ("auto", *components.FSR4_PACKS, "native")
 # The builds of releases before dll-2026-10-22 (one for graphics cards, one built-in).
 LEGACY_FSR4_BUILDS = ("dgpu", "igpu")
-FSR4_VARIANTS = ("exact", "lossy", "lossy2")
+# exact / lossy: the full FSR 4 network; lite / lite_lossy: AMD's FSR 4.1.2 Lite network.
+FSR4_VARIANTS = ("exact", "lossy", "lite", "lite_lossy")
 FSR4_MODIFIED = tuple(f"fsr4:{v}" for v in FSR4_VARIANTS)
 # Variants that change the picture: their WARNING.txt is shown once before the first use.
-LOSSY_VARIANTS = ("lossy", "lossy2")
+LOSSY_VARIANTS = ("lossy", "lite_lossy")
+# Choices of earlier releases and what they are now: since dll-2026-10-29 "lossy" is the former
+# lossy2, retrained (the older lossy build is gone).
+LEGACY_CHOICES = {"fsr4:lossy2": "fsr4:lossy"}
 # Raised when games.detect_layout changes what it finds, so cached scans are redone.
 LAYOUT_VERSION = 4
 
@@ -256,6 +260,7 @@ class AssistantService:
         if upscaler_of(choice) not in ("fsr4", "fsr3"):
             return []
         needed = [components.OPTISCALER]
+        choice = LEGACY_CHOICES.get(choice, choice)
         if choice in FSR4_MODIFIED:
             needed.append(self._fsr4_component())
         return needed
@@ -301,7 +306,8 @@ class AssistantService:
 
     def lossy_warning_text(self, variant: str = "lossy") -> str:
         variant = variant if variant in LOSSY_VARIANTS else "lossy"
-        path = components.path(self._fsr4_component(), f"{variant}/WARNING.txt",
+        path = components.path(self._fsr4_component(),
+                               f"{components.FSR4_FOLDERS[variant]}/WARNING.txt",
                                self.components_root)
         try:
             return path.read_text(encoding="utf-8", errors="replace")
@@ -314,9 +320,11 @@ class AssistantService:
 
     def _source_for(self, choice: str) -> tuple[Component, Path]:
         """The component the upscaler DLL of a choice comes from, and the DLL in it."""
+        choice = LEGACY_CHOICES.get(choice, choice)
         if choice in FSR4_MODIFIED:
             component = self._fsr4_component()
-            member = f"{choice.partition(':')[2]}/{installer.FFX_FILES['upscaler']}"
+            folder = components.FSR4_FOLDERS[choice.partition(":")[2]]
+            member = f"{folder}/{installer.FFX_FILES['upscaler']}"
         else:
             component = components.OPTISCALER
             member = installer.FFX_FILES["upscaler"]
@@ -605,7 +613,9 @@ class AssistantService:
         return result
 
     def modern_choice(self, choice: str, folder: Optional[HelixSRFolder]) -> str:
-        """With HelixSR 2.0 an earlier way (OptiScaler, DLSS loader) is updated to HelixSR Scaler."""
+        """With HelixSR 2.0 an earlier way (OptiScaler, DLSS loader) is updated to HelixSR Scaler;
+        FSR 4.1 Lossy2 of earlier releases is Lossy now."""
+        choice = LEGACY_CHOICES.get(choice, choice)
         if folder is not None and folder.modern and choice in ("helixsr:optiscaler", "helixsr:dlss"):
             return "helixsr:hscaler"
         return choice
@@ -787,7 +797,8 @@ class AssistantService:
             anti_cheat=list(layout.anti_cheat))
 
     def _needs_warning(self, choice: str) -> Optional[str]:
-        """'lossy' / 'lossy2' when that variant's WARNING.txt has not been accepted yet."""
+        """'lossy' / 'lite_lossy' when that variant's WARNING.txt has not been accepted yet."""
+        choice = LEGACY_CHOICES.get(choice, choice)
         variant = choice.partition(":")[2] if upscaler_of(choice) == "fsr4" else ""
         if variant in LOSSY_VARIANTS and not self.state.get(_accepted_key(variant)):
             return variant
@@ -1009,7 +1020,8 @@ class AssistantService:
 
 
 def _accepted_key(variant: str) -> str:
-    return "lossy2_accepted" if variant == "lossy2" else "lossy_accepted"
+    # lossy is a retrained build since dll-2026-10-29 with its own WARNING.txt: read it again
+    return "lite_lossy_accepted" if variant == "lite_lossy" else "lossy_r2_accepted"
 
 
 def choice_label(choice: Optional[str]) -> str:
