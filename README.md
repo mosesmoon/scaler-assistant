@@ -20,7 +20,7 @@ A desktop tool (PyQt6) that lets you choose the upscaler for each Steam game —
 
 | | |
 |---|---|
-| ![Choose upscaler](screenshot/02-choose-upscaler.png)<br>The upscaler menu on a Steam Deck with HelixSR 2.0: HelixSR Scaler, and FSR 4.1 Lossy recommended | ![Downloads](screenshot/03-downloads.png)<br>OptiScaler and FSR 4.1 downloads and the FSR 4.1 build for your GPU |
+| ![Choose upscaler](screenshot/02-choose-upscaler.png)<br>The upscaler menu on a Steam Deck with HelixSR 2.0: HelixSR Scaler, and FSR 4.1.2 Lite Lossy recommended | ![Downloads](screenshot/03-downloads.png)<br>OptiScaler and FSR 4.1 downloads and the FSR 4.1 build for your GPU |
 | ![OptiScaler file name](screenshot/04-optiscaler-name.png)<br>OptiScaler's file name, chosen automatically or by hand | ![HelixSR](screenshot/05-helixsr.png)<br>The HelixSR folder for DLSS 3.7 |
 | ![Light theme](screenshot/06-light-theme.png)<br>The light theme (Auto follows the desktop) | |
 
@@ -32,7 +32,7 @@ Multilingual release notes for each version are in [`docs/releases/`](docs/relea
 
 | Version | Date | Summary |
 |---|---|---|
-| [1.0.5](docs/releases/1.0.5.md) | 2026-11-02 | FSR 4.1 DLLs of dll-2026-11-01: new FSR 4.1.2 Lite and Lite Lossy, Lossy is the former Lossy2 retrained; HelixSR 3.2 (HLX FSR 4 comes built) |
+| [1.0.5](docs/releases/1.0.5.md) | 2026-11-02 | FSR 4.1 DLLs of dll-2026-11-01: new FSR 4.1.2 Lite and Lite Lossy, Lossy is the former Lossy2 retrained, Lite Lossy recommended on built-in and Intel graphics; HelixSR 3.2 (HLX FSR 4 comes built) |
 | [1.0.4](docs/releases/1.0.4.md) | 2026-10-29 | HelixSR 3.1 (HelixSR Scaler 2.1.0): installs, updates and switches like 3.0; the HelixSR Scaler hint no longer mentions frame generation |
 | [1.0.3](docs/releases/1.0.3.md) | 2026-10-28 | HelixSR 3.0: its new layout and HLX FSR 4 (FSR way); one-step download builds HLX FSR 4 too; no HelixSR frame generation with 3.0 |
 | [1.0.2](docs/releases/1.0.2.md) | 2026-10-27 | FSR 4.1 greyed out on Radeon RX 5000 (RDNA 1): no FSR 4.1 build gives a picture there |
@@ -53,7 +53,7 @@ Multilingual release notes for each version are in [`docs/releases/`](docs/relea
 - **HelixSR 2.0**: HelixSR Scaler (select DLSS in the game; also DX11 and Vulkan) and the FSR way, installed through the installer inside your HelixSR folder, so HelixSR's own setup and app recognise the games and the other way round. HelixSR 1.8.x keeps its three ways; 1.9.0 – 1.9.3 only carry the FSR way's files, so the other ways are greyed out there.
 - **HelixSR frame generation** (HelixSR 2.0): in DirectX 12 games that have DLSS Frame Generation (Streamline's `sl.dlss_g.dll`), a game with HelixSR Scaler gets a "HelixSR frame generation" switch on its card (and in the Steam Deck plugin). It runs HelixSR's own installer (`scaler-fg`), which only changes OptiScaler.ini's `[FrameGen]` choice; then turn on DLSS Frame Generation in the game. It needs the frame generation that `./helixsr-setup.sh` builds (it downloads NVIDIA's DLSS Frame Generation files); until then the switch is greyed out with the reason. New installs leave it off; an update or a new OptiScaler file name keeps it as it was. Other DX12 games can still pick AMD FSR or XeSS frame generation in HelixSR Scaler's menu (Insert); DX11 / Vulkan games and the FSR way get upscaling only.
 - **HelixSR 3.0 – 3.2**: the built DLL is `HelixSR/helixsr.dll` (HelixSR Scaler's DLSS upscaler, "HLX DLSS"), and the FSR way puts in **HLX FSR 4**, HelixSR's own FSR 4 pipeline, which HelixSR's setup builds from AMD's FSR 4 driver file (it downloads about 420 MB of AMD's driver package from AMD; "Download and build HelixSR" asks before it and also brings the second shader compiler, DXC 1.9.2609). Scaler Assistant installs, updates, switches and removes both ways through the release's installer as with 2.0; games set up with 2.0 move from `HelixSR-fsrfg` to `HelixSR` on update. HelixSR 3.0 has no frame generation, so the switch above is not shown with it; AMD FSR and XeSS frame generation stay in HelixSR Scaler's menu. From HelixSR 3.2, HLX FSR 4 comes built in the ZIP (made from AMD's FSR SDK 2.4.0, FSR 4.1.2), so the setup no longer downloads AMD's driver package.
-- **Choices that fit your GPU**: the DLSS way is greyed out without a GeForce (AMD and Intel GPUs can't select DLSS in games); on built-in graphics (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) and Intel GPUs, FSR 4.1 Lossy is marked "★ Recommended" among the FSR 4.1 choices.
+- **Choices that fit your GPU**: the DLSS way is greyed out without a GeForce (AMD and Intel GPUs can't select DLSS in games); on built-in graphics (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) and Intel GPUs, FSR 4.1.2 Lite Lossy is marked "★ Recommended" among the FSR 4.1 choices.
 - **Detects each game**: upscaler DLLs, the main `.exe` folder, the graphics API (from the `.exe`'s imports) and anti-cheat.
 - **OptiScaler's file name** picked for the game: your choice, an existing OptiScaler, OptiScaler's compatibility list, `winmm.dll` for Vulkan, a free name when `dxgi.dll` is taken (game, ReShade or your launch options), else `dxgi.dll`. Files already there go to a backup folder.
 - **Launch options left intact**: names other than `dxgi.dll` / `d3d12.dll` need `WINEDLLOVERRIDES`; only that one entry is inserted (inside your existing `WINEDLLOVERRIDES` if you have one) and later only that entry is taken out. Written live through Steam when possible, otherwise Steam is closed and restarted first (with your confirmation).
@@ -139,7 +139,7 @@ Scaler Assistant is an independent, unofficial tool, not affiliated with or endo
 
 | | |
 |---|---|
-| ![選擇升頻](screenshot/02-choose-upscaler.png)<br>Steam Deck 上搭配 HelixSR 2.0 的升頻選單：HelixSR Scaler，並推薦 FSR 4.1 Lossy | ![下載檔](screenshot/03-downloads.png)<br>OptiScaler 與 FSR 4.1 下載檔，以及適合你顯示卡的 FSR 4.1 版本 |
+| ![選擇升頻](screenshot/02-choose-upscaler.png)<br>Steam Deck 上搭配 HelixSR 2.0 的升頻選單：HelixSR Scaler，並推薦 FSR 4.1.2 Lite Lossy | ![下載檔](screenshot/03-downloads.png)<br>OptiScaler 與 FSR 4.1 下載檔，以及適合你顯示卡的 FSR 4.1 版本 |
 | ![OptiScaler 檔名](screenshot/04-optiscaler-name.png)<br>OptiScaler 的檔名可自動或手動選擇 | ![HelixSR](screenshot/05-helixsr.png)<br>DLSS 3.7 使用的 HelixSR 資料夾 |
 | ![淺色主題](screenshot/06-light-theme.png)<br>淺色主題（「自動」跟隨桌面設定） | |
 
@@ -151,7 +151,7 @@ Scaler Assistant is an independent, unofficial tool, not affiliated with or endo
 
 | 版本 | 日期 | 摘要 |
 |---|---|---|
-| [1.0.5](docs/releases/1.0.5.md) | 2026-11-02 | FSR 4.1 DLL 更新為 dll-2026-11-01：新增 FSR 4.1.2 Lite 與 Lite Lossy，Lossy 改為原本的 Lossy2 再經訓練；支援 HelixSR 3.2（HLX FSR 4 已內建好） |
+| [1.0.5](docs/releases/1.0.5.md) | 2026-11-02 | FSR 4.1 DLL 更新為 dll-2026-11-01：新增 FSR 4.1.2 Lite 與 Lite Lossy，Lossy 改為原本的 Lossy2 再經訓練，內建顯示晶片與 Intel GPU 改推薦 Lite Lossy；支援 HelixSR 3.2（HLX FSR 4 已內建好） |
 | [1.0.4](docs/releases/1.0.4.md) | 2026-10-29 | HelixSR 3.1（HelixSR Scaler 2.1.0）：與 3.0 相同方式安裝、更新與切換；HelixSR Scaler 的提示不再提到影格生成 |
 | [1.0.3](docs/releases/1.0.3.md) | 2026-10-28 | HelixSR 3.0：新的檔案配置與 HLX FSR 4（FSR 方式）；一鍵下載也會建置 HLX FSR 4；搭配 3.0 時沒有 HelixSR 影格生成 |
 | [1.0.2](docs/releases/1.0.2.md) | 2026-10-27 | Radeon RX 5000（RDNA 1）上的 FSR 4.1 改為反灰：任何 FSR 4.1 版本在該顯示卡上都沒有畫面 |
@@ -172,7 +172,7 @@ Scaler Assistant is an independent, unofficial tool, not affiliated with or endo
 - **HelixSR 2.0**：HelixSR Scaler（遊戲內選 DLSS；DX11 與 Vulkan 也能用）與 FSR 方式，透過你 HelixSR 資料夾內的安裝程式安裝，所以 HelixSR 本身的 setup 與 App 能辨識這些遊戲，反之亦然。HelixSR 1.8.x 仍有三種方式；1.9.0～1.9.3 只附 FSR 方式的檔案，其他方式會反灰。
 - **HelixSR 影格生成**（HelixSR 2.0）：有 DLSS Frame Generation（Streamline 的 `sl.dlss_g.dll`）的 DirectX 12 遊戲，裝了 HelixSR Scaler 後卡片上（以及 Steam Deck 外掛中）會出現「HelixSR 影格生成」開關。它透過 HelixSR 自己的安裝程式（`scaler-fg`）切換，只改 OptiScaler.ini 的 `[FrameGen]` 選項；打開後在遊戲中開啟 DLSS Frame Generation。需要 `./helixsr-setup.sh` 建好的影格生成（會下載 NVIDIA 的 DLSS Frame Generation 檔案），在那之前開關會反灰並說明原因。新安裝時預設關閉；更新或改 OptiScaler 檔名會保留原本的狀態。其他 DX12 遊戲仍可在 HelixSR Scaler 選單（Insert）選 AMD FSR 或 XeSS 影格生成；DX11／Vulkan 遊戲與 FSR 方式只有升頻。
 - **HelixSR 3.0～3.2**：建置好的 DLL 改為 `HelixSR/helixsr.dll`（HelixSR Scaler 的 DLSS 升頻器「HLX DLSS」），FSR 方式改裝 **HLX FSR 4**——HelixSR 自己的 FSR 4 流程，由 HelixSR 的 setup 從 AMD 的 FSR 4 驅動程式檔案建置（會從 AMD 下載驅動程式套件中約 420 MB；「下載並建置 HelixSR」會先詢問，並一併備好第二個著色器編譯器 DXC 1.9.2609）。Scaler 助手與 2.0 相同，透過發布版內的安裝程式安裝、更新、切換與移除兩種方式；用 2.0 設定的遊戲在更新時會從 `HelixSR-fsrfg` 移到 `HelixSR`。HelixSR 3.0 沒有影格生成，所以搭配 3.0 時不顯示上面的開關；HelixSR Scaler 選單中仍可選 AMD FSR 與 XeSS 影格生成。HelixSR 3.2 起 HLX FSR 4 已在 ZIP 中建置好（由 AMD FSR SDK 2.4.0 的 FSR 4.1.2 建置），setup 不再下載 AMD 驅動程式套件。
-- **依顯示卡提供選項**：沒有 GeForce 時 DLSS 方式會反灰（AMD 與 Intel GPU 在遊戲中無法選擇 DLSS）；內建顯示晶片（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）與 Intel GPU 會在 FSR 4.1 選項中把 Lossy 標示為「★ 推薦」。
+- **依顯示卡提供選項**：沒有 GeForce 時 DLSS 方式會反灰（AMD 與 Intel GPU 在遊戲中無法選擇 DLSS）；內建顯示晶片（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）與 Intel GPU 會在 FSR 4.1 選項中把 Lite Lossy 標示為「★ 推薦」。
 - **偵測每款遊戲**：升頻 DLL、主要 `.exe` 資料夾、繪圖 API（讀 `.exe` 的匯入表）與反作弊。
 - **替 OptiScaler 選檔名**：你的選擇、已存在的 OptiScaler、OptiScaler 相容性清單、Vulkan 用 `winmm.dll`、`dxgi.dll` 被占用（遊戲、ReShade 或你的啟動選項）時改用空著的名稱，否則 `dxgi.dll`。原本就在的檔案會移到備份資料夾。
 - **啟動選項保持原樣**：`dxgi.dll`／`d3d12.dll` 以外的檔名需要 `WINEDLLOVERRIDES`；只插入這一項（若你已有 `WINEDLLOVERRIDES` 就加在它裡面），之後也只移除這一項。可以時透過 Steam 即時寫入，否則先經你確認再關閉並重新開啟 Steam。

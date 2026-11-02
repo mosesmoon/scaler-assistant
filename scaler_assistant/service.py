@@ -598,9 +598,12 @@ class AssistantService:
         return blocked
 
     def recommended_choice(self, choices: list[str]) -> Optional[str]:
-        """Built-in graphics (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) and Intel GPUs: Lossy."""
-        if self.gpu_kind() in ("amd_apu", "intel") and "fsr4:lossy" in choices:
-            return "fsr4:lossy"
+        """Built-in graphics (Steam Deck, ROG Ally Z1 / Z2, Ryzen AI MAX) and Intel GPUs: FSR 4.1.2
+        Lite Lossy, the fastest FSR 4.1 build (Lossy when Lite Lossy isn't offered)."""
+        if self.gpu_kind() in ("amd_apu", "intel"):
+            for choice in ("fsr4:lite_lossy", "fsr4:lossy"):
+                if choice in choices:
+                    return choice
         return None
 
     def choices_for(self, layout: GameLayout, folder: Optional[HelixSRFolder] = None,

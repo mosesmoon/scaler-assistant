@@ -141,7 +141,7 @@ DLSS 3.7 では「⚙ 設定」でゲームの `helixsr.ini`（シャープ化�
 - **HelixSR 3.0**：ビルド済み DLL は `HelixSR/helixsr.dll`（HelixSR Scaler の DLSS アップスケーラー「HLX DLSS」）になり、FSR 方式では **HLX FSR 4**（HelixSR 独自の FSR 4 パイプライン）を入れます。これは HelixSR の setup が AMD の FSR 4 ドライバーファイルからビルドします（AMD のドライバーパッケージのうち約 420 MB を AMD からダウンロード。「HelixSR をダウンロードしてビルド」は事前に確認し、2 つ目のシェーダーコンパイラー DXC 1.9.2609 も用意します）。Scaler アシスタントは 2.0 と同じく、リリース内のインストーラーで両方式のインストール・更新・切り替え・削除を行います。2.0 で設定したゲームは更新時に `HelixSR-fsrfg` から `HelixSR` へ移ります。HelixSR 3.0 にはフレーム生成がないため、3.0 では上のスイッチは表示されません。AMD FSR と XeSS のフレーム生成は HelixSR Scaler のメニューに残ります。 HelixSR 3.2 からは HLX FSR 4 がビルド済みで ZIP に入っています（AMD FSR SDK 2.4.0 の FSR 4.1.2 から作成）。setup は AMD のドライバーパッケージをダウンロードしなくなり、HelixSR Scaler で並ぶ AMD 純正 FSR も FSR 4.1.2 になりました。
 - **以前の HelixSR**：1.8.x は 3 方式（FSR 方式、OptiScaler 方式、DLSS 方式）すべて使えます。HelixSR 1.9.0～1.9.3 は FSR 方式のファイルしか含まないため、OptiScaler 方式と DLSS 方式はグレー表示（「HelixSR 1.8 か 2.0 が必要」）。FSR 3.1 のないゲームには HelixSR 2.0（HelixSR Scaler）が必要です。1.8.0 より前は非対応です。
 - **DLSS 方式は GeForce のみ**：AMD や Intel の GPU ではゲームで DLSS を選べないため、（HelixSR 1.x の）DLSS 方式は理由つきでグレー表示になります。
-- **FSR 4.1 Lossy をおすすめ**：内蔵グラフィックス（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）と Intel GPU では、FSR 4.1 の選択肢の中だけで「★ おすすめ」と表示します。
+- **FSR 4.1.2 Lite Lossy をおすすめ**：内蔵グラフィックス（Steam Deck、ROG Ally Z1／Z2、Ryzen AI MAX）と Intel GPU では、FSR 4.1 の選択肢の中だけで「★ おすすめ」と表示します。
 
 ## HelixSR 本体の setup との連携
 

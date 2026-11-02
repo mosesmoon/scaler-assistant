@@ -869,10 +869,10 @@ class GpuChoicesTest(Base):
         self.assertIn("helixsr:dlss", self.entry(DLSS).choices)
         self.assertEqual(self.entry(DLSS).blocked, {})
 
-    def test_lossy_recommended_on_built_in_and_intel_graphics(self):
-        cases = [(gpu.Gpu("AMD", 0x163f, (10, 3, 3), apu=True), "fsr4:lossy"),     # Steam Deck
-                 (gpu.Gpu("AMD", 0x1586, (11, 5, 1), apu=True), "fsr4:lossy"),     # Ryzen AI MAX
-                 (gpu.Gpu("Intel", 0x7d55, None, apu=True), "fsr4:lossy"),
+    def test_lite_lossy_recommended_on_built_in_and_intel_graphics(self):
+        cases = [(gpu.Gpu("AMD", 0x163f, (10, 3, 3), apu=True), "fsr4:lite_lossy"),     # Steam Deck
+                 (gpu.Gpu("AMD", 0x1586, (11, 5, 1), apu=True), "fsr4:lite_lossy"),     # Ryzen AI MAX
+                 (gpu.Gpu("Intel", 0x7d55, None, apu=True), "fsr4:lite_lossy"),
                  (gpu.Gpu("AMD", 0x744c, (11, 0, 0)), None),                       # RX 7900
                  (gpu.Gpu("AMD", 0x7550, (12, 0, 1)), None)]                       # RX 9070
         for card, want in cases:
@@ -880,6 +880,8 @@ class GpuChoicesTest(Base):
             self.assertEqual(self.entry(DLSS).recommended, want, card)
         self.service._gpus = []
         self.assertIsNone(self.entry(DLSS).recommended)
+        self.service._gpus = [cases[0][0]]
+        self.assertEqual(self.service.recommended_choice(["fsr4:exact", "fsr4:lossy"]), "fsr4:lossy")
 
 
 class ModernHelixSRTest(Base):
