@@ -229,6 +229,14 @@ if command == "install":
         files.append("OptiScaler.ini")
         if ngx:   # made when the game starts; removed with HelixSR Scaler
             (t / helix / "helixsr.ini").write_text("[HelixSR]\n")
+        k = release / helix / "k"   # HelixSR 3.2.1: Preset K, when the setup built it
+        if ngx and all((k / n).is_file() for n in ("helixsr.dll", "helixsr_modelk_kernels.pak",
+                                                    "helixsr_modelk_weights.bin")):
+            (t / helix / "k").mkdir(exist_ok=True)
+            for n in ("helixsr.dll", "helixsr_modelk_kernels.pak", "helixsr_modelk_weights.bin",
+                      "helixsr.ini"):
+                shutil.copyfile(k / n, t / helix / "k" / n)
+                files.append(helix + "/k/" + n)
         if args.get("--fg") == "on" and not ngx:
             (t / "HelixSR-fsrfg" / "helixsr-fg").mkdir(exist_ok=True)
             (t / "HelixSR-fsrfg" / "helixsr-fg" / "nvexec64.dll").write_bytes(b"MZ fg")
@@ -305,9 +313,9 @@ def hlx_dll(built: bool = True) -> bytes:
 
 
 def make_helixsr_ngx(folder: Path, version: str = "3.0.0", built: bool = True,
-                     hlx: bool = True, scaler: str = "2.0.0") -> Path:
+                     hlx: bool = True, scaler: str = "2.0.0", preset_k: bool = False) -> Path:
     """A HelixSR 3.0 style release: HelixSR/helixsr.dll, HLX-FSR4, helixsr-scaler, the installer
-    and no frame generation."""
+    and no frame generation; preset_k: HelixSR 3.2.1's optional Preset K built (HelixSR/k)."""
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "helixsr-setup.sh").write_text("#!/bin/sh\n")
     (folder / "HelixSR").mkdir(exist_ok=True)
@@ -320,4 +328,11 @@ def make_helixsr_ngx(folder: Path, version: str = "3.0.0", built: bool = True,
         b"MZ OptiScaler HelixSR Scaler v" + scaler.encode() + b" (marker)")
     (folder / "setup" / "hlxfsr4").mkdir(parents=True, exist_ok=True)
     (folder / "setup" / "helixsr_bridge.py").write_text(FAKE_BRIDGE)
+    if preset_k:
+        k = folder / "HelixSR" / "k"
+        k.mkdir(exist_ok=True)
+        (k / "helixsr.dll").write_bytes(helixsr_dll(version, built=False, extra=b"Preset K"))
+        (k / "helixsr.ini").write_text("[HelixSR]\nDeepReuse = Exact\n")
+        (k / "helixsr_modelk_kernels.pak").write_bytes(b"fake kernels")
+        (k / "helixsr_modelk_weights.bin").write_bytes(b"fake weights")
     return folder

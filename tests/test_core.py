@@ -1048,6 +1048,25 @@ class NgxHelixSRTest(Base):
             self.assertEqual(snapshot(self.common / name), before[app])
 
 
+    def test_helixsr_3_2_1_preset_k(self):
+        # HelixSR 3.2.1: an optional Preset K (HelixSR/k) goes into the game with HelixSR Scaler;
+        # the log it writes there while the game runs goes out with it
+        from tests.fakes import make_helixsr_ngx
+        hx = make_helixsr_ngx(self.root / "HelixSR-3.2.1", "3.2.1", scaler="2.2.0", preset_k=True)
+        self.service.set_helixsr_folder(hx)
+        before = snapshot(self.common / "DlssGame")
+        self.service.apply(DLSS, "helixsr:hscaler")
+        entry = self.entry(DLSS)
+        self.assertEqual((entry.status.choice, entry.status.version), ("helixsr:hscaler", "3.2.1"))
+        self.assertEqual(entry.issues, [])
+        k = self.dlss_bin / "HelixSR" / "k"
+        self.assertTrue((k / "helixsr_modelk_weights.bin").is_file())
+        (k / "helixsr.log").write_text("Preset K ran")
+        (self.dlss_bin / "HelixSR" / "helixsr.log").write_text("ran")
+        self.service.uninstall(DLSS, False)
+        self.assertEqual(snapshot(self.common / "DlssGame"), before)
+
+
 class AntiCheatTest(unittest.TestCase):
     def test_vendors_helixsr_knows(self):
         import tempfile

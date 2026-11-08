@@ -52,7 +52,7 @@ hlx = rel / "HLX-FSR4" / "amd_fidelityfx_upscaler_dx12.dll"
 built = lambda: hlx.read_bytes()[-24:-16] == b"HLXFSR4D"
 if "--status" in sys.argv:
     net = dll.read_bytes()[-32:-24] == b"HXSRNET1"
-    print(f"network={int(net)} fg=0 hlx={int(built())}")
+    print(f"network={int(net)} fg=0 hlx={int(built())} k=0")   # 3.2.1 adds k=
     sys.exit(0)
 assert "--yes" in sys.argv and "--dxc" in sys.argv
 for k in ("--dxc-dir", "--dxc2609-dir", "--wine", "--wineprefix"):

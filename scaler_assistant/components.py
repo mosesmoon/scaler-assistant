@@ -65,7 +65,7 @@ OPTISCALER = Component(
     licence="GPL-3.0 (OptiScaler), MIT (fakenvapi), AMD FidelityFX licence (AMD DLLs)",
 )
 
-_FSR4_RELEASE = "dll-2026-11-01"
+_FSR4_RELEASE = "dll-2026-11-05"
 _FSR4_BASE = ("https://github.com/zgauthier2000/fsr4-shader-performance-overrides/releases/download/"
               f"{_FSR4_RELEASE}/")
 # Four builds in every archive: the full FSR 4 network (exact; lossy, retrained, network on every
@@ -80,14 +80,14 @@ _FSR4_MEMBERS = ("NOTICE.md", "WHICH-SHOULD-I-CHOOSE.txt",
 # One build per kind of GPU (gpu.fsr4_pack): each carries only the shader changes that help it.
 # Every build runs on every GPU before RDNA 4; the one for the GPU is the fastest there.
 _FSR4_PACKS = {
-    "rx7000": ("fsr4.1.2-cyboman-rx7000-2026-11-01.7z",
-               "743adcd599dee3cbf6035ed08ceeced987b75178f74a22b945a421d030d8d34e", 9966908),
-    "rx6000": ("fsr4.1.2-cyboman-rx6000-2026-11-01.7z",
-               "c20ba73a9a5e6dc16ef7bf6329698541539cb1bc4a67846ef285c85676590315", 9978508),
-    "igpu_rdna3": ("fsr4.1.2-igpu-cyboman-rdna3-2026-11-01.7z",
-                   "76d23e608e42b3c1cc58d05c6efb4f522162896c0635719705e850a30d5c7658", 9922815),
-    "igpu_rdna2": ("fsr4.1.2-igpu-cyboman-rdna2-2026-11-01.7z",
-                   "258912efd91b95ac2bffdfb392375ba7b46bc67beefd0732ebe94a27ada17779", 9664389),
+    "rx7000": ("fsr4.1.2-cyboman-rx7000-2026-11-05.7z",
+               "182dc6e4e608b584e63ae043f4e0c2455593164ddb989275d895de5bb750ab52", 9422171),
+    "rx6000": ("fsr4.1.2-cyboman-rx6000-2026-11-05.7z",
+               "58eb2b04a729460844efeb8d8b21bca67e2fc835c7f2c1ca064d243c0352389d", 9612224),
+    "igpu_rdna3": ("fsr4.1.2-igpu-cyboman-rdna3-2026-11-05.7z",
+                   "6553cfeaa824fd1fa36985278e5ce835d27bbb758e99a1db5efaf331fe72dc4f", 9553046),
+    "igpu_rdna2": ("fsr4.1.2-igpu-cyboman-rdna2-2026-11-05.7z",
+                   "da7c7681bffe7ac60a01e859d5b107900d963557793ef67ddcfd03a832e1c03f", 9567439),
 }
 FSR4 = {
     pack: Component(

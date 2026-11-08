@@ -226,7 +226,8 @@ def _over_foreign(record: dict, store: Path, name: str) -> bool:
 HX_MADE = ("OptiScaler.log", "HelixSR-Scaler-remove.sh", "HelixSR-previous.zip") + tuple(
     f"{d}/{n}" for d in (HX_FSRFG, NGX_DIR)
     for n in ("helixsr.log", "helixsr.ini", "helixsr-fg/nvexec.log",
-              "amd_fidelityfx_upscaler_dx12.amd.dll"))
+              "amd_fidelityfx_upscaler_dx12.amd.dll",
+              "k/helixsr.log"))   # HelixSR 3.2.1: Preset K's log, next to its own DLL
 HX_DLL = f"{HX_FSRFG}/{DLL}"
 HX_NGX_DLL = f"{NGX_DIR}/{NGX_DLL}"
 HX_NGX_LINE = "# layout=ngx"
