@@ -4,7 +4,7 @@
     "repo": "https://github.com/lonewolf0622/HelixSR",
     "latest_release": "v3.3.0",
     "head": "9ff09f96aeb62fffb67f6f7536b9cff08e288eda",
-    "supported": "1.8.0 - 3.3.x (2.0: HelixSR Scaler and FSR drop-in through setup/helixsr_bridge.py; 3.0: HelixSR/helixsr.dll and HLX FSR 4, no frame generation; 3.2: HLX FSR 4 ships built; 3.2.1: optional Preset K in HelixSR/k, not built by Scaler Assistant; 3.3.0: HelixSR Scaler 2.3.0, HLX FSR 4 for Vulkan in the Scaler, no setup/hlxfsr4 (HLX FSR 4 only built, no DXC 1.9.2609 needed), optional --vulkan kernels not built by Scaler Assistant)"
+    "supported": "1.8.0 - 3.3.x (2.0: HelixSR Scaler and FSR drop-in through setup/helixsr_bridge.py; 3.0: HelixSR/helixsr.dll and HLX FSR 4, no frame generation; 3.2: HLX FSR 4 ships built; 3.2.1: optional Preset K in HelixSR/k, not built by Scaler Assistant; 3.3.0: HelixSR Scaler 2.3.0, HLX FSR 4 for Vulkan in the Scaler, no setup/hlxfsr4 (HLX FSR 4 only built, no DXC 1.9.2609 needed), its --vulkan (HLX DLSS's Vulkan kernels) always built by Download and build HelixSR)"
   },
   "fsr4": {
     "repo": "https://github.com/zgauthier2000/fsr4-shader-performance-overrides",

@@ -58,6 +58,8 @@ DXC_SHA = "a1dfb116ba3eeae6a1582291b53a8e7bf65ad760676bd3194685c8f7367cd241"
 DXC2609_URL = ("https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2609/"
                "dxc_2026_09_29.zip")
 DXC2609_SHA = "ad31b1fc8443175d204f77a611fdb3ef2ec42759bdc2f1167368de24a4a7e7f1"
+VK_SETUP = "setup/lib/setup_vk_shaders.py"   # releases that build HLX DLSS's Vulkan kernels (3.3)
+BUILD_INFO = "helixsr_setup.json"         # what the setup built, written next to setup/ by each build
 HLX_SETUP = "setup/hlxfsr4"        # releases that build HLX FSR 4 (3.0 - 3.2; 3.3 ships it built only)
 FG_SETUP = "setup/fg/fg_setup.py"  # releases that build HelixSR's frame generation
 
@@ -369,6 +371,20 @@ def has_hlx(folder: Path) -> bool:
     return (folder / HLX_SETUP).is_dir()
 
 
+def has_vulkan(folder: Path) -> bool:
+    """The release can build HLX DLSS's Vulkan kernels (HelixSR 3.3, its setup's --vulkan): HLX DLSS
+    then runs natively in Vulkan games instead of through HelixSR Scaler's DirectX 12 bridge."""
+    return (folder / VK_SETUP).is_file()
+
+
+def vulkan_built(folder: Path) -> bool:
+    """The network in the release was built with --vulkan (the setup records it in helixsr_setup.json)."""
+    try:
+        return json.loads((folder / BUILD_INFO).read_text()).get("vulkan") is True
+    except (OSError, ValueError, AttributeError):
+        return False
+
+
 def _env() -> dict:
     env = dict(os.environ)
     for name in ("PYTHONHOME", "PYTHONPATH", "LD_LIBRARY_PATH", "LD_PRELOAD"):
@@ -378,17 +394,19 @@ def _env() -> dict:
 
 
 def build(python: str, folder: Path, dxc: Path, report: Report,
-          fg_only: bool = False, hlx: Optional[tuple[Path, Path, str]] = None
-          ) -> tuple[list[str], int]:
+          fg_only: bool = False, hlx: Optional[tuple[Path, Path, str]] = None,
+          vulkan: bool = False) -> tuple[list[str], int]:
     """Run HelixSR's build program; (its last lines, exit code). hlx: (DXC 1.9.2607 folder,
     DXC 1.9.2609 folder, wine) for releases that build HLX FSR 4, passed as helixsr-setup.sh
-    passes them (exit code 4 then: the network is built, HLX FSR 4 is not)."""
+    passes them (exit code 4 then: the network is built, HLX FSR 4 is not). vulkan: also HLX DLSS's
+    Vulkan kernels (--vulkan, part of the network's build, about as long again)."""
     tmp = tools_dir() / "tmp"   # in the home folder: the host and Flatpak's sandbox share it
     shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
     command = ["env", "-u", "PYTHONHOME", "-u", "PYTHONPATH", f"TMPDIR={tmp}",
                python, str(folder / "setup" / "helixsr_setup.py"), str(setup_target(folder)),
-               "--dxc", str(dxc), "--yes", *(["--fg-only"] if fg_only else [])]
+               "--dxc", str(dxc), "--yes", *(["--fg-only"] if fg_only else []),
+               *(["--vulkan"] if vulkan else [])]
     if hlx is not None:
         command += ["--dxc-dir", str(hlx[0]), "--dxc2609-dir", str(hlx[1]), "--wine", hlx[2],
                     "--wineprefix", str(tools_dir() / "wineprefix")]
@@ -432,6 +450,7 @@ class Result:
     lines: list[str]
     hlx: Optional[bool] = None      # HLX FSR 4 built (None: the release has none)
     fg_offered: bool = True         # the release has HelixSR frame generation (3.0 has none)
+    vulkan: Optional[bool] = None   # HLX DLSS's Vulkan kernels built (None: the release has none)
 
 
 def install(report: Report, release: Optional[Release] = None, opener=None) -> Result:
@@ -443,8 +462,11 @@ def install(report: Report, release: Optional[Release] = None, opener=None) -> R
     python = get_python(report, opener)
     network, fg, hlx = status(python, folder)
     fg_offered = has_fg(folder)
+    vk_offered = has_vulkan(folder)
     lines: list[str] = []
-    if not network or (fg_offered and not fg) or hlx is False:
+    # a network built without the Vulkan kernels is built again with them (they are part of it)
+    vk_missing = vk_offered and not vulkan_built(folder)
+    if not network or vk_missing or (fg_offered and not fg) or hlx is False:
         wine = find_wine()
         if not wine:
             from .i18n import tr
@@ -453,7 +475,9 @@ def install(report: Report, release: Optional[Release] = None, opener=None) -> R
         compilers = None
         if has_hlx(folder):
             compilers = (tools_dir() / "dxc-win" / "bin" / "x64", get_dxc2609(report, opener), wine)
-        lines, code = build(python, folder, dxc, report, fg_only=network, hlx=compilers)
+        fg_only = network and not vk_missing
+        lines, code = build(python, folder, dxc, report, fg_only=fg_only, hlx=compilers,
+                            vulkan=vk_offered and not fg_only)
         network, fg, hlx = status(python, folder)
         if not network:
             raise SetupError("\n".join(lines[-8:]) or f"exit code {code}")
@@ -461,7 +485,8 @@ def install(report: Report, release: Optional[Release] = None, opener=None) -> R
         if old.is_dir() and old.resolve() != folder.resolve():
             shutil.rmtree(old, ignore_errors=True)
     report("done", 1, 1, f"{time.monotonic() - started:.0f}s")
-    return Result(inspect(folder), network, fg, lines, hlx, fg_offered)
+    return Result(inspect(folder), network, fg, lines, hlx, fg_offered,
+                  vulkan_built(folder) if vk_offered else None)
 
 
 def is_managed(folder: Optional[HelixSRFolder]) -> bool:

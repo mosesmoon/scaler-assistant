@@ -89,9 +89,10 @@ def release_zip_ngx(version="3.0.0", hlx_ok=True) -> bytes:
 
 
 # HelixSR 3.3's build program: HLX FSR 4 comes built in the ZIP and the release has no builder for it
-# (no setup/hlxfsr4), so the compilers for it are not needed.
+# (no setup/hlxfsr4), so the compilers for it are not needed; --vulkan adds HLX DLSS's Vulkan kernels to
+# the network, recorded in helixsr_setup.json (a "vk-fail" file makes that step fail).
 FAKE_SETUP_HLX_BUILT = r'''
-import struct, sys
+import json, struct, sys
 from pathlib import Path
 rel = Path(sys.argv[1]); dll = rel / "HelixSR" / "helixsr.dll"
 hlx = rel / "HLX-FSR4" / "amd_fidelityfx_upscaler_dx12.dll"
@@ -100,15 +101,22 @@ if "--status" in sys.argv:
     print(f"network={int(net)} fg=0 hlx={int(hlx.read_bytes()[-24:-16] == b'HLXFSR4D')} k=0")
     sys.exit(0)
 assert "--yes" in sys.argv and "--dxc" in sys.argv
+assert "--fg-only" not in sys.argv
 with open(rel / "calls.txt", "a") as f:
     f.write(" ".join(sys.argv[2:]) + "\n")
-w = b"W" * 8
-with open(dll, "ab") as f:
-    f.write(w + w + b"HXSRNET1" + struct.pack("<QQQ", 8, 8, 1))
+data = dll.read_bytes()
+if data[-32:-24] == b"HXSRNET1":   # an earlier network is replaced
+    data = data[:-48]
+dll.write_bytes(data + b"W" * 16 + b"HXSRNET1" + struct.pack("<QQQ", 8, 8, 1))
+vk = "--vulkan" in sys.argv
+if vk and (rel / "vk-fail").exists():
+    print("[helixsr-setup] Vulkan shaders: the compiler ran out of memory", flush=True)
+    sys.exit(1)
+(rel / "helixsr_setup.json").write_text(json.dumps({"shaders": 2, "vulkan": vk}))
 '''
 
 
-def release_zip_hlx_built(version="3.3.0") -> bytes:
+def release_zip_hlx_built(version="3.3.0", vulkan=True) -> bytes:
     data = io.BytesIO()
     top = f"HelixSR-{version}/"
     with zipfile.ZipFile(data, "w") as z:
@@ -118,6 +126,8 @@ def release_zip_hlx_built(version="3.3.0") -> bytes:
         z.writestr(top + "helixsr-scaler/OptiScaler.dll", b"MZ OptiScaler HelixSR Scaler v2.3.0")
         z.writestr(top + "setup/helixsr_setup.py", FAKE_SETUP_HLX_BUILT)
         z.writestr(top + "setup/helixsr_bridge.py", "")
+        if vulkan:
+            z.writestr(top + "setup/lib/setup_vk_shaders.py", "")
     return data.getvalue()
 
 
@@ -254,6 +264,7 @@ class HxSetupTest(Base):
         call = (folder.path / "calls.txt").read_text().splitlines()[0]
         self.assertIn(f"--dxc2609-dir {self.root / 'dxc2609'}", call)
         self.assertIn("--wine /bin/true", call)
+        self.assertNotIn("--vulkan", call)                  # only 3.3 and newer build them
         # again: only HLX FSR 4 is retried
         (folder.path / "hlx-ok").write_text("")
         with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
@@ -270,7 +281,7 @@ class HxSetupTest(Base):
         # HelixSR 3.3: no HLX FSR 4 builder in the release; only the network is built, without
         # DXC 1.9.2609 (not downloaded) and without the compiler options for HLX FSR 4
         from scaler_assistant.i18n import tr
-        self.files["HelixSR-3.3.0.zip"] = release_zip_hlx_built()
+        self.files["HelixSR-3.3.0.zip"] = release_zip_hlx_built(vulkan=False)
         self.listing = api(("3.3.0", self.files["HelixSR-3.3.0.zip"], False))
         with mock.patch("scaler_assistant.hxsetup.open_url", self.opener), \
                 mock.patch.object(hxsetup, "get_dxc2609", side_effect=AssertionError("downloaded")):
@@ -286,6 +297,58 @@ class HxSetupTest(Base):
         with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
             self.service.build_helixsr()
         self.assertEqual(len((folder.path / "calls.txt").read_text().splitlines()), 1)
+
+    def test_helixsr_3_3_builds_vulkan_kernels(self):
+        # HelixSR 3.3 can build HLX DLSS's Vulkan kernels: the one-step build always asks for them
+        from scaler_assistant.i18n import tr
+        self.files["HelixSR-3.3.0.zip"] = release_zip_hlx_built()
+        self.listing = api(("3.3.0", self.files["HelixSR-3.3.0.zip"], False))
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            message = self.service.build_helixsr()
+        folder = self.service.helixsr()
+        self.assertTrue(folder.ready and folder.built, message)
+        self.assertIn(tr("hxa_vk_ready"), message)
+        self.assertNotIn(tr("hxa_no_vk"), message)
+        calls = (folder.path / "calls.txt").read_text().splitlines()
+        self.assertEqual(len(calls), 1)
+        self.assertIn("--vulkan", calls[0])
+        self.assertTrue(hxsetup.vulkan_built(folder.path))
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            self.service.build_helixsr()          # built with them: nothing to do
+        self.assertEqual(len((folder.path / "calls.txt").read_text().splitlines()), 1)
+
+    def test_helixsr_3_3_network_without_vulkan_is_built_again(self):
+        # built earlier without the Vulkan kernels (HelixSR's own setup, or the kernels failed):
+        # the network is built again with them, not only the parts after it (--fg-only)
+        from scaler_assistant.i18n import tr
+        self.files["HelixSR-3.3.0.zip"] = release_zip_hlx_built()
+        self.listing = api(("3.3.0", self.files["HelixSR-3.3.0.zip"], False))
+        target = hxsetup.release_dir("3.3.0")
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            hxsetup.get_release(hxsetup.latest_release(self.opener), lambda *a: None, self.opener)
+        (target / "vk-fail").write_text("")
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            hxsetup.build(sys.executable, target, Path("/bin/true"), lambda *a: None)   # no --vulkan
+        self.assertFalse(hxsetup.vulkan_built(target))
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            message = self.service.build_helixsr()
+        self.assertIn(tr("hxa_no_vk"), message)              # the Vulkan step failed: said so
+        self.assertIn("ran out of memory", message)
+        self.assertTrue(self.service.helixsr().ready)        # the earlier network still works
+        (target / "vk-fail").unlink()
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            message = self.service.build_helixsr()
+        self.assertIn(tr("hxa_vk_ready"), message)
+        calls = (target / "calls.txt").read_text().splitlines()
+        self.assertEqual(len(calls), 3)
+        self.assertNotIn("--vulkan", calls[0])
+        self.assertTrue(all("--vulkan" in c and "--fg-only" not in c for c in calls[1:]))
+
+    def test_consent_names_vulkan_build_before_the_question(self):
+        from scaler_assistant.i18n import tr
+        text = self.service.helixsr_auto_consent()
+        self.assertIn(tr("hxa_consent_vk"), text)
+        self.assertTrue(text.endswith(tr("hxa_consent").rpartition("\n\n")[2]))
 
     def test_consent_names_amd_download(self):
         text = self.service.helixsr_auto_consent()

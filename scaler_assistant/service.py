@@ -390,8 +390,10 @@ class AssistantService:
 
     @staticmethod
     def helixsr_auto_consent() -> str:
-        return tr("hxa_consent", releases=hxsetup.RELEASES, data=hxsetup.data_root(),
+        text = tr("hxa_consent", releases=hxsetup.RELEASES, data=hxsetup.data_root(),
                   licences="\n".join(hxsetup.NVIDIA_LICENSES), amd=hxsetup.AMD_DRIVERS)
+        body, _, question = text.rpartition("\n\n")   # the Vulkan note goes before the question
+        return f"{body}\n\n{tr('hxa_consent_vk')}\n\n{question}" if body else text
 
     @staticmethod
     def helixsr_auto_progress(stage: str, done: int, total: int, text: str) -> str:
@@ -420,6 +422,11 @@ class AssistantService:
         failed = False
         if result.hlx is False:       # HelixSR 3.0: HLX FSR 4, the FSR drop-in
             lines.append(tr("hxa_no_hlx"))
+            failed = True
+        if result.vulkan:             # HelixSR 3.3: HLX DLSS's Vulkan kernels
+            lines.append(tr("hxa_vk_ready"))
+        elif result.vulkan is False:
+            lines.append(tr("hxa_no_vk"))
             failed = True
         if result.fg:
             lines.append(tr("hxa_fg_ready"))
