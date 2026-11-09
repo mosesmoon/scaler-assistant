@@ -313,9 +313,11 @@ def hlx_dll(built: bool = True) -> bytes:
 
 
 def make_helixsr_ngx(folder: Path, version: str = "3.0.0", built: bool = True,
-                     hlx: bool = True, scaler: str = "2.0.0", preset_k: bool = False) -> Path:
+                     hlx: bool = True, scaler: str = "2.0.0", preset_k: bool = False,
+                     hlx_builder: bool = True) -> Path:
     """A HelixSR 3.0 style release: HelixSR/helixsr.dll, HLX-FSR4, helixsr-scaler, the installer
-    and no frame generation; preset_k: HelixSR 3.2.1's optional Preset K built (HelixSR/k)."""
+    and no frame generation; preset_k: HelixSR 3.2.1's optional Preset K built (HelixSR/k);
+    hlx_builder: False for HelixSR 3.3, which ships HLX FSR 4 built without setup/hlxfsr4."""
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "helixsr-setup.sh").write_text("#!/bin/sh\n")
     (folder / "HelixSR").mkdir(exist_ok=True)
@@ -326,7 +328,9 @@ def make_helixsr_ngx(folder: Path, version: str = "3.0.0", built: bool = True,
     (folder / "helixsr-scaler").mkdir(exist_ok=True)
     (folder / "helixsr-scaler" / "OptiScaler.dll").write_bytes(
         b"MZ OptiScaler HelixSR Scaler v" + scaler.encode() + b" (marker)")
-    (folder / "setup" / "hlxfsr4").mkdir(parents=True, exist_ok=True)
+    (folder / "setup").mkdir(parents=True, exist_ok=True)
+    if hlx_builder:
+        (folder / "setup" / "hlxfsr4").mkdir(exist_ok=True)
     (folder / "setup" / "helixsr_bridge.py").write_text(FAKE_BRIDGE)
     if preset_k:
         k = folder / "HelixSR" / "k"

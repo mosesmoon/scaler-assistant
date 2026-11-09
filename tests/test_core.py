@@ -1066,6 +1066,29 @@ class NgxHelixSRTest(Base):
         self.service.uninstall(DLSS, False)
         self.assertEqual(snapshot(self.common / "DlssGame"), before)
 
+    def test_helixsr_3_3_without_hlx_builder(self):
+        # HelixSR 3.3: HLX FSR 4 comes built and setup/hlxfsr4 is gone; both ways still install,
+        # and a game set up with 3.2.1 is offered the update
+        from tests.fakes import make_helixsr_ngx
+        old = make_helixsr_ngx(self.root / "HelixSR-3.2.1", "3.2.1", scaler="2.2.0")
+        new = make_helixsr_ngx(self.root / "HelixSR-3.3.0", "3.3.0", scaler="2.3.0", hlx_builder=False)
+        folder = helixsr.inspect(new)
+        self.assertTrue(folder.ngx and folder.ready and folder.hlx_ready and folder.can_install("direct"))
+        before = {app: snapshot(self.common / name) for app, name in ((FSR, "FsrGame"), (DLSS, "DlssGame"))}
+        self.service.set_helixsr_folder(old)
+        self.service.apply(FSR, "helixsr:direct")
+        self.service.apply(DLSS, "helixsr:hscaler")
+        self.service.set_helixsr_folder(new)
+        self.service.scan()
+        self.assertTrue(self.entry(FSR).outdated and self.entry(DLSS).outdated)
+        self.service.update_all()
+        for app in (FSR, DLSS):
+            entry = self.entry(app)
+            self.assertEqual((entry.status.version, entry.outdated, entry.issues), ("3.3.0", False, []))
+            self.service.uninstall(app, False)
+        self.assertEqual(snapshot(self.common / "FsrGame"), before[FSR])
+        self.assertEqual(snapshot(self.common / "DlssGame"), before[DLSS])
+
 
 class AntiCheatTest(unittest.TestCase):
     def test_vendors_helixsr_knows(self):

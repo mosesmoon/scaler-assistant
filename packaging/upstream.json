@@ -2,16 +2,16 @@
   "_comment": "Upstream versions Scaler Assistant has been checked against (updated by the daily upstream check).",
   "helixsr": {
     "repo": "https://github.com/lonewolf0622/HelixSR",
-    "latest_release": "v3.2.1",
-    "head": "68718a6ac39a4329e45d1da63c9cf3a8b9033601",
-    "supported": "1.8.0 - 3.2.x (2.0: HelixSR Scaler and FSR drop-in through setup/helixsr_bridge.py; 3.0: HelixSR/helixsr.dll and HLX FSR 4, no frame generation; 3.2: HLX FSR 4 ships built; 3.2.1: optional Preset K in HelixSR/k, not built by Scaler Assistant)"
+    "latest_release": "v3.3.0",
+    "head": "9ff09f96aeb62fffb67f6f7536b9cff08e288eda",
+    "supported": "1.8.0 - 3.3.x (2.0: HelixSR Scaler and FSR drop-in through setup/helixsr_bridge.py; 3.0: HelixSR/helixsr.dll and HLX FSR 4, no frame generation; 3.2: HLX FSR 4 ships built; 3.2.1: optional Preset K in HelixSR/k, not built by Scaler Assistant; 3.3.0: HelixSR Scaler 2.3.0, HLX FSR 4 for Vulkan in the Scaler, no setup/hlxfsr4 (HLX FSR 4 only built, no DXC 1.9.2609 needed), optional --vulkan kernels not built by Scaler Assistant)"
   },
   "fsr4": {
     "repo": "https://github.com/zgauthier2000/fsr4-shader-performance-overrides",
     "latest_dll_release": "dll-2026-11-05",
     "pinned_in_components": "dll-2026-11-05",
-    "head": "00eabaffbb31f5b4540b37f6aed0d64aedb62020",
+    "head": "902aa576b5ef82a3204d632f352f9fb608e59652",
     "not_supported": "Radeon RX 5000 (RDNA 1): no build gives a picture (README, issue #43); FSR 4.1 greyed out there since 1.0.2"
   },
-  "checked": "2026-11-08"
+  "checked": "2026-11-09"
 }

@@ -58,7 +58,7 @@ DXC_SHA = "a1dfb116ba3eeae6a1582291b53a8e7bf65ad760676bd3194685c8f7367cd241"
 DXC2609_URL = ("https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2609/"
                "dxc_2026_09_29.zip")
 DXC2609_SHA = "ad31b1fc8443175d204f77a611fdb3ef2ec42759bdc2f1167368de24a4a7e7f1"
-HLX_SETUP = "setup/hlxfsr4"        # releases that build HLX FSR 4
+HLX_SETUP = "setup/hlxfsr4"        # releases that build HLX FSR 4 (3.0 - 3.2; 3.3 ships it built only)
 FG_SETUP = "setup/fg/fg_setup.py"  # releases that build HelixSR's frame generation
 
 NVIDIA_LICENSES = ("https://github.com/NVIDIA/DLSS/blob/v310.7.0/LICENSE.txt",
@@ -364,7 +364,8 @@ def has_fg(folder: Path) -> bool:
 
 
 def has_hlx(folder: Path) -> bool:
-    """The release builds HLX FSR 4 (HelixSR 3.0 and newer)."""
+    """The release builds HLX FSR 4 (HelixSR 3.0 - 3.2). HelixSR 3.3 ships it built without its
+    builder: then neither DXC 1.9.2609 nor the compiler options for it are needed."""
     return (folder / HLX_SETUP).is_dir()
 
 

@@ -88,6 +88,39 @@ def release_zip_ngx(version="3.0.0", hlx_ok=True) -> bytes:
     return data.getvalue()
 
 
+# HelixSR 3.3's build program: HLX FSR 4 comes built in the ZIP and the release has no builder for it
+# (no setup/hlxfsr4), so the compilers for it are not needed.
+FAKE_SETUP_HLX_BUILT = r'''
+import struct, sys
+from pathlib import Path
+rel = Path(sys.argv[1]); dll = rel / "HelixSR" / "helixsr.dll"
+hlx = rel / "HLX-FSR4" / "amd_fidelityfx_upscaler_dx12.dll"
+if "--status" in sys.argv:
+    net = dll.read_bytes()[-32:-24] == b"HXSRNET1"
+    print(f"network={int(net)} fg=0 hlx={int(hlx.read_bytes()[-24:-16] == b'HLXFSR4D')} k=0")
+    sys.exit(0)
+assert "--yes" in sys.argv and "--dxc" in sys.argv
+with open(rel / "calls.txt", "a") as f:
+    f.write(" ".join(sys.argv[2:]) + "\n")
+w = b"W" * 8
+with open(dll, "ab") as f:
+    f.write(w + w + b"HXSRNET1" + struct.pack("<QQQ", 8, 8, 1))
+'''
+
+
+def release_zip_hlx_built(version="3.3.0") -> bytes:
+    data = io.BytesIO()
+    top = f"HelixSR-{version}/"
+    with zipfile.ZipFile(data, "w") as z:
+        z.writestr(top + "helixsr-setup.sh", "#!/bin/sh\n")
+        z.writestr(top + "HelixSR/helixsr.dll", helixsr_dll(version, built=False))
+        z.writestr(top + "HLX-FSR4/amd_fidelityfx_upscaler_dx12.dll", hlx_dll(built=True))
+        z.writestr(top + "helixsr-scaler/OptiScaler.dll", b"MZ OptiScaler HelixSR Scaler v2.3.0")
+        z.writestr(top + "setup/helixsr_setup.py", FAKE_SETUP_HLX_BUILT)
+        z.writestr(top + "setup/helixsr_bridge.py", "")
+    return data.getvalue()
+
+
 def release_zip(version="2.0.0", fg_ok=True) -> bytes:
     data = io.BytesIO()
     top = f"HelixSR-{version}/"
@@ -232,6 +265,27 @@ class HxSetupTest(Base):
         with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
             self.service.build_helixsr()
         self.assertEqual(len((folder.path / "calls.txt").read_text().splitlines()), 2)
+
+    def test_helixsr_3_3_hlx_fsr4_comes_built(self):
+        # HelixSR 3.3: no HLX FSR 4 builder in the release; only the network is built, without
+        # DXC 1.9.2609 (not downloaded) and without the compiler options for HLX FSR 4
+        from scaler_assistant.i18n import tr
+        self.files["HelixSR-3.3.0.zip"] = release_zip_hlx_built()
+        self.listing = api(("3.3.0", self.files["HelixSR-3.3.0.zip"], False))
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener), \
+                mock.patch.object(hxsetup, "get_dxc2609", side_effect=AssertionError("downloaded")):
+            message = self.service.build_helixsr()
+        folder = self.service.helixsr()
+        self.assertEqual((folder.version, folder.ngx, folder.built, folder.hlx_ready),
+                         ("3.3.0", True, True, True), message)
+        self.assertFalse(hxsetup.has_hlx(folder.path))
+        self.assertNotIn(tr("hxa_no_hlx"), message)
+        calls = (folder.path / "calls.txt").read_text().splitlines()
+        self.assertEqual(len(calls), 1)
+        self.assertNotIn("--dxc2609-dir", calls[0])
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            self.service.build_helixsr()
+        self.assertEqual(len((folder.path / "calls.txt").read_text().splitlines()), 1)
 
     def test_consent_names_amd_download(self):
         text = self.service.helixsr_auto_consent()
