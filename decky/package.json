@@ -1,6 +1,6 @@
 {
   "name": "scaler-assistant-decky",
-  "version": "1.0.7",
+  "version": "1.0.8",
   "description": "Scaler Assistant for Decky Loader: DLSS 3.7 (HelixSR), FSR 4.1 or FSR 3 for Steam games",
   "type": "module",
   "scripts": {

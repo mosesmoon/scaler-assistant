@@ -58,6 +58,8 @@ DXC_SHA = "a1dfb116ba3eeae6a1582291b53a8e7bf65ad760676bd3194685c8f7367cd241"
 DXC2609_URL = ("https://github.com/microsoft/DirectXShaderCompiler/releases/download/v1.9.2609/"
                "dxc_2026_09_29.zip")
 DXC2609_SHA = "ad31b1fc8443175d204f77a611fdb3ef2ec42759bdc2f1167368de24a4a7e7f1"
+K_SETUP = "setup/preset-k/helixsr.dll"      # releases that build Preset K (3.2.1)
+K_FILES = ("helixsr.dll", "helixsr_modelk_kernels.pak", "helixsr_modelk_weights.bin")
 VK_SETUP = "setup/lib/setup_vk_shaders.py"   # releases that build HLX DLSS's Vulkan kernels (3.3)
 BUILD_INFO = "helixsr_setup.json"         # what the setup built, written next to setup/ by each build
 HLX_SETUP = "setup/hlxfsr4"        # releases that build HLX FSR 4 (3.0 - 3.2; 3.3 ships it built only)
@@ -114,9 +116,13 @@ def _get_json(url: str, opener=None):
         raise SetupError(f"{url}: {error}") from error
 
 
-def latest_release(opener=None) -> Release:
-    """The newest published HelixSR release (2.0 or newer) with its HelixSR-X.Y.Z.zip."""
-    best: Optional[Release] = None
+K_VERSION = (3, 2, 1)          # the first release whose setup can build Preset K (--preset-k)
+VK_VERSION = (3, 3, 0)         # the first release whose setup can build Vulkan kernels (--vulkan)
+
+
+def list_releases(opener=None) -> list[Release]:
+    """Every published HelixSR release (2.0 or newer) with its HelixSR-X.Y.Z.zip, newest first."""
+    found: dict[str, Release] = {}
     for item in _get_json(API, opener) or []:
         if item.get("draft") or item.get("prerelease"):
             continue
@@ -125,14 +131,27 @@ def latest_release(opener=None) -> Release:
             digest = str(asset.get("digest") or "")
             if not match or not digest.startswith("sha256:"):
                 continue
-            found = Release(match.group(1), str(asset["browser_download_url"]),
-                            digest.split(":", 1)[1].lower(), int(asset.get("size") or 0))
-            if found.version_tuple >= MIN_AUTO and (best is None
-                                                    or found.version_tuple > best.version_tuple):
-                best = found
-    if best is None:
+            release = Release(match.group(1), str(asset["browser_download_url"]),
+                              digest.split(":", 1)[1].lower(), int(asset.get("size") or 0))
+            if release.version_tuple >= MIN_AUTO:
+                found.setdefault(release.version, release)
+    return sorted(found.values(), key=lambda r: r.version_tuple, reverse=True)
+
+
+def latest_release(opener=None) -> Release:
+    """The newest published HelixSR release (2.0 or newer) with its HelixSR-X.Y.Z.zip."""
+    releases = list_releases(opener)
+    if not releases:
         raise SetupError(f"no HelixSR release 2.0 or newer found at {RELEASES}")
-    return best
+    return releases[0]
+
+
+def find_release(version: str, opener=None) -> Release:
+    """The published release of that version (2.0 or newer)."""
+    for release in list_releases(opener):
+        if release.version == version:
+            return release
+    raise SetupError(f"HelixSR {version} is not among the releases at {RELEASES}")
 
 
 def _download(url: str, target: Path, sha256: str, size: int, stage: str, report: Report,
@@ -371,6 +390,17 @@ def has_hlx(folder: Path) -> bool:
     return (folder / HLX_SETUP).is_dir()
 
 
+def has_preset_k(folder: Path) -> bool:
+    """The release can build Preset K (HelixSR 3.2.1, its setup's --preset-k: NVIDIA's DLSS 4
+    Preset K network for HLX DLSS, into HelixSR/k)."""
+    return (folder / K_SETUP).is_file()
+
+
+def preset_k_built(folder: Path) -> bool:
+    """Preset K is built in the release (HelixSR/k, which HelixSR's installer copies into games)."""
+    return all((folder / "HelixSR" / "k" / name).is_file() for name in K_FILES)
+
+
 def has_vulkan(folder: Path) -> bool:
     """The release can build HLX DLSS's Vulkan kernels (HelixSR 3.3, its setup's --vulkan): HLX DLSS
     then runs natively in Vulkan games instead of through HelixSR Scaler's DirectX 12 bridge."""
@@ -395,18 +425,19 @@ def _env() -> dict:
 
 def build(python: str, folder: Path, dxc: Path, report: Report,
           fg_only: bool = False, hlx: Optional[tuple[Path, Path, str]] = None,
-          vulkan: bool = False) -> tuple[list[str], int]:
+          vulkan: bool = False, preset_k: bool = False) -> tuple[list[str], int]:
     """Run HelixSR's build program; (its last lines, exit code). hlx: (DXC 1.9.2607 folder,
     DXC 1.9.2609 folder, wine) for releases that build HLX FSR 4, passed as helixsr-setup.sh
     passes them (exit code 4 then: the network is built, HLX FSR 4 is not). vulkan: also HLX DLSS's
-    Vulkan kernels (--vulkan, part of the network's build, about as long again)."""
+    Vulkan kernels (--vulkan, part of the network's build, about as long again). preset_k: also
+    Preset K (--preset-k; exit code 5 then: the network is built, Preset K is not)."""
     tmp = tools_dir() / "tmp"   # in the home folder: the host and Flatpak's sandbox share it
     shutil.rmtree(tmp, ignore_errors=True)
     tmp.mkdir(parents=True, exist_ok=True)
     command = ["env", "-u", "PYTHONHOME", "-u", "PYTHONPATH", f"TMPDIR={tmp}",
                python, str(folder / "setup" / "helixsr_setup.py"), str(setup_target(folder)),
                "--dxc", str(dxc), "--yes", *(["--fg-only"] if fg_only else []),
-               *(["--vulkan"] if vulkan else [])]
+               *(["--vulkan"] if vulkan else []), *(["--preset-k"] if preset_k else [])]
     if hlx is not None:
         command += ["--dxc-dir", str(hlx[0]), "--dxc2609-dir", str(hlx[1]), "--wine", hlx[2],
                     "--wineprefix", str(tools_dir() / "wineprefix")]
@@ -450,23 +481,29 @@ class Result:
     lines: list[str]
     hlx: Optional[bool] = None      # HLX FSR 4 built (None: the release has none)
     fg_offered: bool = True         # the release has HelixSR frame generation (3.0 has none)
-    vulkan: Optional[bool] = None   # HLX DLSS's Vulkan kernels built (None: the release has none)
+    vulkan: Optional[bool] = None   # HLX DLSS's Vulkan kernels built (None: not asked for)
+    preset_k: Optional[bool] = None  # Preset K built (None: not asked for)
 
 
-def install(report: Report, release: Optional[Release] = None, opener=None) -> Result:
+def install(report: Report, release: Optional[Release] = None, opener=None,
+            preset_k: bool = False, vulkan: bool = False) -> Result:
     """Everything: the release, the tools, the build. Only call it after the user agreed to
-    NVIDIA's (and AMD's) downloads (the build passes --yes to HelixSR's setup)."""
+    NVIDIA's (and AMD's) downloads (the build passes --yes to HelixSR's setup). preset_k /
+    vulkan: also build Preset K / HLX DLSS's Vulkan kernels, where the release can (both
+    optional, both take long); what an earlier build made is kept either way."""
     started = time.monotonic()
     release = release or latest_release(opener)
     folder = get_release(release, report, opener)
     python = get_python(report, opener)
     network, fg, hlx = status(python, folder)
     fg_offered = has_fg(folder)
-    vk_offered = has_vulkan(folder)
+    vk_wanted = vulkan and has_vulkan(folder)
+    k_wanted = preset_k and has_preset_k(folder)
     lines: list[str] = []
     # a network built without the Vulkan kernels is built again with them (they are part of it)
-    vk_missing = vk_offered and not vulkan_built(folder)
-    if not network or vk_missing or (fg_offered and not fg) or hlx is False:
+    vk_missing = vk_wanted and not vulkan_built(folder)
+    k_missing = k_wanted and not preset_k_built(folder)
+    if not network or vk_missing or k_missing or (fg_offered and not fg) or hlx is False:
         wine = find_wine()
         if not wine:
             from .i18n import tr
@@ -477,7 +514,7 @@ def install(report: Report, release: Optional[Release] = None, opener=None) -> R
             compilers = (tools_dir() / "dxc-win" / "bin" / "x64", get_dxc2609(report, opener), wine)
         fg_only = network and not vk_missing
         lines, code = build(python, folder, dxc, report, fg_only=fg_only, hlx=compilers,
-                            vulkan=vk_offered and not fg_only)
+                            vulkan=vk_wanted and not fg_only, preset_k=k_missing)
         network, fg, hlx = status(python, folder)
         if not network:
             raise SetupError("\n".join(lines[-8:]) or f"exit code {code}")
@@ -486,7 +523,8 @@ def install(report: Report, release: Optional[Release] = None, opener=None) -> R
             shutil.rmtree(old, ignore_errors=True)
     report("done", 1, 1, f"{time.monotonic() - started:.0f}s")
     return Result(inspect(folder), network, fg, lines, hlx, fg_offered,
-                  vulkan_built(folder) if vk_offered else None)
+                  vulkan_built(folder) if vk_wanted else None,
+                  preset_k_built(folder) if k_wanted else None)
 
 
 def is_managed(folder: Optional[HelixSRFolder]) -> bool:

@@ -36,7 +36,12 @@ import { FaLayerGroup } from "react-icons/fa";
 
 // ---- backend ---------------------------------------------------------------------------------
 
-interface Choice { id: string; label: string; hint: string; current: boolean; recommended: boolean }
+// HelixSR Scaler's upscaler (HelixSR 3.0+): HLX DLSS Preset E / K, HLX FSR 4 / FSR 4 Full;
+// id "" = can't be used here (hint says why), note = HelixSR's known issues for it
+interface HxOption { id: string; label: string; hint: string; note: string; current: boolean }
+interface Choice {
+  id: string; label: string; hint: string; current: boolean; recommended: boolean; options?: HxOption[];
+}
 interface LiveLine { label: string; detail: string; active: boolean }
 interface Live { headline: string; tone: string; lines: LiveLine[]; notes: string[]; loaded: boolean }
 interface Game {
@@ -46,6 +51,12 @@ interface Game {
   opti_name: string; opti_possible: boolean; launch_options: string; shows_launch: boolean;
   has_log: boolean; choices: Choice[]; running: Live | null;
   fg: boolean | null; fg_block: string;   // HelixSR frame generation (null: not offered)
+  hx: string;                             // HelixSR Scaler's upscaler ("" : not HelixSR Scaler)
+}
+interface BuildInfo {
+  title: string; text: string; ok: string; error: string; version_label: string;
+  versions: [string, string, boolean, boolean][];   // version ("" newest), label, Preset K, Vulkan
+  k: string; k_tip: string; vk: string; vk_tip: string;
 }
 interface Component {
   key: string; name: string; version: string; size: number; ready: boolean; wanted: boolean;
@@ -75,7 +86,8 @@ const overviewCall = callable<[rescan: boolean], Overview>("overview");
 const planCall = callable<[appId: number, choice: string], Plan>("plan");
 const lossyText = callable<[variant: string], string>("lossy_text");
 const acceptLossy = callable<[variant: string], void>("accept_lossy");
-const applyCall = callable<[appId: number, choice: string], Result>("apply");
+const applyCall = callable<[appId: number, choice: string, hx: string], Result>("apply");
+const setHxCall = callable<[appId: number, value: string], Result>("set_hx_upscaler");
 const removalCall = callable<[appId: number], Removal>("removal");
 const setFgCall = callable<[appId: number, on: boolean], Result>("set_frame_generation");
 const uninstallCall = callable<[appId: number, removeSettings: boolean], Result>("uninstall");
@@ -85,8 +97,8 @@ const removeDownloads = callable<[], Result>("remove_downloads");
 const setFsr4Build = callable<[value: string], void>("set_fsr4_build");
 const optiNamesCall = callable<[appId: number], OptiNames>("opti_names");
 const setOptiName = callable<[appId: number, name: string], Result>("set_opti_name");
-const hxAutoText = callable<[], { title: string; text: string; ok: string }>("helixsr_auto_text");
-const buildHelixsrCall = callable<[], Result>("build_helixsr");
+const hxAutoText = callable<[], BuildInfo>("helixsr_auto_text");
+const buildHelixsrCall = callable<[version: string, presetK: boolean, vulkan: boolean], Result>("build_helixsr");
 const setHelixsrFolder = callable<[path: string], Result>("set_helixsr_folder");
 const logText = callable<[appId: number], { path: string; text: string }>("log_text");
 const setToast = callable<[enabled: boolean], void>("set_toast");
@@ -193,7 +205,13 @@ async function download(keys: string[]): Promise<Result> {
   }
 }
 
-async function choose(game: Game, choice: string): Promise<boolean> {
+async function choose(game: Game, choice: string, hx = ""): Promise<boolean> {
+  if (hx && game.choice === choice) {
+    // HelixSR Scaler is there: only the upscaler it runs changes
+    const result = await working(t("busy_install", { name: game.name }), () => setHxCall(game.app_id, hx));
+    await report(result);
+    return result.ok;
+  }
   const plan = await working(t("busy_check", { name: game.name }), () => planCall(game.app_id, choice));
   for (const step of plan.steps) {
     if (step.kind === "helixsr") {
@@ -215,11 +233,11 @@ async function choose(game: Game, choice: string): Promise<boolean> {
       await acceptLossy(variant);
     }
   }
-  let result = await working(t("busy_install", { name: game.name }), () => applyCall(game.app_id, choice));
+  let result = await working(t("busy_install", { name: game.name }), () => applyCall(game.app_id, choice, hx));
   if (!result.ok && result.kind === "download" && result.keys) {
     const fetched = await download(result.keys);
     if (!fetched.ok) { await report(fetched); return false; }
-    result = await working(t("busy_install", { name: game.name }), () => applyCall(game.app_id, choice));
+    result = await working(t("busy_install", { name: game.name }), () => applyCall(game.app_id, choice, hx));
   }
   await report(result);
   return result.ok;
@@ -300,6 +318,8 @@ function GameModal({ game, closeModal, refresh }: {
           <div style={{ color: TONES.warn, fontSize: "12px" }}>⚠ {game.anti_cheat.join(", ")} — {t("ups_anti_cheat")}</div>
         )}
         {game.hint && <div style={{ ...muted, marginTop: "6px" }}>{game.hint}</div>}
+        {game.hx && <div style={{ fontSize: "12px", marginTop: "4px" }}>
+          <span style={{ color: "#8b929a" }}>{t("det_hx_upscaler")}: </span>{game.hx}</div>}
         <div style={{ marginTop: "8px" }}>
           {facts.map(([name, value]) => (
             <div key={name} style={{ fontSize: "12px" }}>
@@ -315,7 +335,30 @@ function GameModal({ game, closeModal, refresh }: {
                 {fixLabel} — {game.label}
               </DialogButton>
             )}
-            {game.choices.map((choice, index) => (
+            {game.choices.map((choice, index) => choice.options && choice.options.length > 0 ? (
+              <div key={choice.id}>
+                <Field label={<span>{`${choice.current ? "✓ " : ""}${choice.label}`}</span>}
+                  description={<span style={{ whiteSpace: "pre-wrap" }}>{choice.hint}</span>}
+                  bottomSeparator="none" focusable />
+                {choice.options.map((option, i) => (
+                  <Field key={option.id || `hx-${i}`} indentLevel={1}
+                    label={<span style={{ opacity: option.id ? 1 : 0.45 }}>
+                      {`${option.current ? "✓ " : ""}${option.label}`}</span>}
+                    description={<span style={{ whiteSpace: "pre-wrap", opacity: option.id ? 1 : 0.6 }}>
+                      {option.hint}
+                      {option.note && <div style={{ color: TONES.warn }}>⚠ {option.note}</div>}</span>}
+                    bottomSeparator="none" childrenLayout="inline"
+                    focusable={!option.id || option.current}>
+                    {option.id && !option.current && (
+                      <DialogButton style={{ minWidth: "120px" }}
+                        onClick={() => run(() => choose(game, choice.id, option.id))}>
+                        {t("deck_use")}
+                      </DialogButton>
+                    )}
+                  </Field>
+                ))}
+              </div>
+            ) : (
               <Field key={choice.id || `blocked-${index}`}
                 label={<span style={{
                   opacity: choice.id ? 1 : 0.45,
@@ -458,6 +501,31 @@ function DownloadsModal({ downloads, closeModal, refresh }: {
   );
 }
 
+function BuildModal({ info, closeModal, onStart }: {
+  info: BuildInfo; closeModal?: () => void;
+  onStart: (version: string, presetK: boolean, vulkan: boolean) => void;
+}) {
+  const [version, setVersion] = useState(info.versions[0][0]);
+  const [presetK, setPresetK] = useState(false);
+  const [vulkan, setVulkan] = useState(false);
+  const picked = info.versions.find((v) => v[0] === version) ?? info.versions[0];
+  return (
+    <ConfirmModal strTitle={info.title} strOKButtonText={info.ok} strCancelButtonText={t("cancel")}
+      closeModal={closeModal}
+      onOK={() => onStart(version, presetK && picked[2], vulkan && picked[3])}>
+      {info.error && <div style={{ ...muted, color: TONES.warn }}>{info.error}</div>}
+      <DropdownItem label={info.version_label}
+        rgOptions={info.versions.map(([data, label]) => ({ data, label }))}
+        selectedOption={version} onChange={(option) => setVersion(option.data)} />
+      <ToggleField label={info.k} description={info.k_tip} disabled={!picked[2]}
+        checked={presetK && picked[2]} onChange={setPresetK} />
+      <ToggleField label={info.vk} description={info.vk_tip} disabled={!picked[3]}
+        checked={vulkan && picked[3]} onChange={setVulkan} />
+      <div style={{ ...muted, whiteSpace: "pre-wrap", maxHeight: "180px", overflowY: "auto" }}>{info.text}</div>
+    </ConfirmModal>
+  );
+}
+
 // ---- the Quick Access panel ------------------------------------------------------------------
 
 function GameRow({ game, refresh }: { game: Game; refresh: () => void }) {
@@ -594,15 +662,16 @@ function Content() {
           <PanelSectionRow>
             <ButtonItem layout="below" description={t("btn_hx_auto_tip")}
               onClick={async () => {
-                const info = await hxAutoText();
-                if (!(await ask(info.title, info.text, info.ok))) return;
-                setBusy({ text: t("busy_hxa"), progress: -1 });
-                try {
-                  await report(await buildHelixsrCall());
-                } finally {
-                  setBusy({ text: "", progress: -1 });
-                }
-                refresh();
+                const info = await working(t("hxa_title"), () => hxAutoText());
+                showModal(<BuildModal info={info} onStart={async (version, presetK, vulkan) => {
+                  setBusy({ text: t("busy_hxa"), progress: -1 });
+                  try {
+                    await report(await buildHelixsrCall(version, presetK, vulkan));
+                  } finally {
+                    setBusy({ text: "", progress: -1 });
+                  }
+                  refresh();
+                }} />);
               }}>
               {t("btn_hx_auto")}
             </ButtonItem>

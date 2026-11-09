@@ -85,8 +85,11 @@ class Plugin:
     async def accept_lossy(self, variant: str = "lossy"):
         self.bridge.accept_lossy(str(variant))
 
-    async def apply(self, app_id: int, choice: str):
-        return await self._work(self.bridge.apply, int(app_id), choice)
+    async def apply(self, app_id: int, choice: str, hx: str = ""):
+        return await self._work(self.bridge.apply, int(app_id), choice, str(hx or ""))
+
+    async def set_hx_upscaler(self, app_id: int, value: str):
+        return await self._work(self.bridge.set_hx_upscaler, int(app_id), str(value))
 
     async def removal(self, app_id: int):
         return await self._read(self.bridge.removal, int(app_id))
@@ -112,13 +115,14 @@ class Plugin:
     async def helixsr_auto_text(self):
         return await self._read(self.bridge.helixsr_auto_text)
 
-    async def build_helixsr(self):
+    async def build_helixsr(self, version: str = "", preset_k: bool = False, vulkan: bool = False):
         loop = self.loop
 
         def progress(text, percent):
             asyncio.run_coroutine_threadsafe(decky.emit("helixsr_progress", text, int(percent)), loop)
 
-        return await self._work(self.bridge.build_helixsr, progress)
+        return await self._work(self.bridge.build_helixsr, progress, str(version or ""),
+                                bool(preset_k), bool(vulkan))
 
     async def remove_downloads(self):
         return await self._work(self.bridge.remove_downloads)

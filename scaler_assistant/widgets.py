@@ -487,6 +487,9 @@ class GameCard(QFrame):
         rows += [(tr("det_fsr_dll"), path) for path in layout.fsr_targets]
         if status.opti_name:
             rows.append(("OptiScaler", status.opti_name))
+        if status.route == "hscaler" and entry.hx_options:   # HelixSR 3.0+: which upscaler
+            rows.append((tr("det_hx_upscaler"), tr("hxu_" + entry.hx_upscaler)
+                         if entry.hx_upscaler else tr("det_hx_other")))
         if status.opti_name and needs_override(status.opti_name) or entry.launch_options:
             rows.append((tr("det_launch"), entry.launch_options or tr("empty")))
         if status.installed_by:
@@ -500,7 +503,10 @@ class GameCard(QFrame):
         box.addLayout(grid)
         hints = []
         if status.installed:
-            hints.append(tr("svc_pick_" + str(status.choice).replace(":", "_")))
+            if status.choice == "helixsr:hscaler" and "DLSS" not in layout.inputs:
+                hints.append(tr("svc_pick_hscaler_fsr"))   # HelixSR Scaler takes over the game's FSR
+            else:
+                hints.append(tr("svc_pick_" + str(status.choice).replace(":", "_")))
         hints += [tr(issue) for issue in entry.issues]
         if not entry.supported:
             hints.append(tr("st_unsupported_tip"))

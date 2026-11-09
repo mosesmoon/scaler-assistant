@@ -4,8 +4,8 @@ HelixSR gets into a game one of three ways (the names are the ``route`` values
 HelixSR's own setup records, so both tools understand each other's installs):
 
 * ``direct`` (f, "FSR way"): the game's FSR 3.1 DLL is replaced by HelixSR.
-* ``optiscaler`` (o): OptiScaler next to the game's .exe hands DLSS, XeSS or
-  FSR 2 inputs to HelixSR.
+* ``optiscaler`` (o): OptiScaler next to the game's .exe hands DLSS, XeSS,
+  FSR 2 or FSR 3.0 inputs to HelixSR.
 * ``dlss`` (d, experimental): HelixSR's DLSS loader and HelixSR as nvngx.dll
   next to the game's .exe.
 
@@ -37,8 +37,11 @@ INPUTS = {
     "libxess.dll": "XeSS",
     "ffx_fsr2_api_x64.dll": "FSR 2",
     "ffx_fsr2_api_dx12_x64.dll": "FSR 2",
+    # FSR 3.0 (before FidelityFX's FSR 3.1 DLLs): no DLL HelixSR's FSR drop-in can replace, but
+    # OptiScaler (and HelixSR Scaler) hook its upscaler DLL's calls (EnableFsr3Inputs)
+    "ffx_fsr3upscaler_x64.dll": "FSR 3",
 }
-INPUT_ORDER = ("DLSS", "XeSS", "FSR 2")
+INPUT_ORDER = ("DLSS", "XeSS", "FSR 2", "FSR 3")
 FOLDER = "HelixSR"                    # HelixSR's folder next to the .exe (OptiScaler / DLSS ways)
 MARKER = "helixsr-install.json"       # HelixSR's install record
 SCALER_FOLDER = "ScalerAssistant"     # this tool's folder next to the .exe (FSR 4.1 / FSR 3)

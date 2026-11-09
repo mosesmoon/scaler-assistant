@@ -12,14 +12,14 @@ import re
 from pathlib import Path
 from typing import Any, Callable, Optional
 
-from . import __version__, components, gpu, i18n, optiscaler, settings
+from . import __version__, components, gpu, hxscaler, i18n, optiscaler, settings
 from .helixsr import MIN_VERSION
 from .i18n import tr
 from .launch_options import needs_override
 from .runtime import RunningGame, detect_running
 from .service import (
     AssistantService, GameEntry, GameRunningError, NeedsDownloadError, NeedsHelixSRError,
-    SteamMustCloseError, choice_label, component_label, upscaler_of,
+    SteamMustCloseError, choice_label, component_label, hx_label, pick_hint, upscaler_of,
 )
 from .status import describe
 
@@ -152,8 +152,10 @@ class DeckBridge:
             "outdated": entry.outdated,
             "issues": [plain(tr(i)) for i in entry.issues],
             "notes": notes,
-            "hint": plain(tr("svc_pick_" + str(status.choice).replace(":", "_")))
-                    if status.installed else "",
+            "hint": plain(pick_hint(status.choice, layout)) if status.installed else "",
+            # HelixSR Scaler's upscaler (HelixSR 3.0+): "" when not HelixSR Scaler
+            "hx": (hx_label(entry.hx_upscaler) if entry.hx_upscaler else tr("det_hx_other"))
+                  if status.route == "hscaler" and entry.hx_options else "",
             "opti_name": status.opti_name or "",
             "opti_possible": layout.optiscaler_possible,
             "launch_options": entry.launch_options,
@@ -191,8 +193,25 @@ class DeckBridge:
             if recommended:
                 text = f"{text}  {tr('rec_suffix')}"
                 hint = f"{hint}\n{tr('rec_lossy')}"
-            result.append({"id": choice, "label": text, "hint": hint,
-                           "current": choice == entry.status.choice, "recommended": recommended})
+            item = {"id": choice, "label": text, "hint": hint,
+                    "current": choice == entry.status.choice, "recommended": recommended,
+                    "options": []}
+            if choice == "helixsr:hscaler" and entry.hx_options:
+                # HelixSR Scaler's upscaler: HLX DLSS Preset E / K, HLX FSR 4 / FSR 4 Full
+                installed = choice == entry.status.choice
+                for value in entry.hx_options:
+                    group = "hxu_group_dlss" if value in hxscaler.DLSS else "hxu_group_fsr4"
+                    reason = entry.hx_blocked.get(value)
+                    note = entry.hx_notes.get(value)
+                    item["options"].append({
+                        "id": "" if reason else value,
+                        "label": f"{tr(group)} · {tr('hxu_item_' + value)}"
+                                 + (f" ({tr(reason + '_short')})" if reason else ""),
+                        "hint": tr(reason) if reason else tr("hxu_tip_" + value),
+                        "note": tr(note) if note else "",
+                        "current": installed and entry.hx_upscaler == value,
+                    })
+            result.append(item)
         layout = entry.layout
         if layout.optiscaler_possible and not entry.ways:
             result.insert(0, {"id": "", "label": tr("menu_helixsr"), "current": False,
@@ -219,15 +238,33 @@ class DeckBridge:
                                     minimum=minimum))}
 
     def helixsr_auto_text(self) -> dict[str, Any]:
+        """The build dialog: the releases to pick from (newest first, with the optional parts
+        each can build), the options and the agreement."""
+        error = ""
+        try:
+            releases = self.service.helixsr_releases()
+        except (OSError, RuntimeError) as exc:
+            releases, error = [], plain(tr("hxa_list_failed", error=exc))
+        versions = [[r["version"], tr("hxa_version_newest", version=r["version"]) if i == 0
+                     else r["version"], bool(r["preset_k"]), bool(r["vulkan"])]
+                    for i, r in enumerate(releases)]
+        if not versions:
+            versions = [["", tr("hxa_version_newest", version="?"), True, True]]
         return {"title": tr("hxa_title"), "text": self.service.helixsr_auto_consent(),
-                "ok": tr("hxa_ok")}
+                "ok": tr("hxa_ok"), "versions": versions, "error": error,
+                "version_label": tr("hxa_version"),
+                "k": tr("hxa_opt_k"), "k_tip": tr("hxa_opt_k_tip"),
+                "vk": tr("hxa_opt_vk"), "vk_tip": tr("hxa_opt_vk_tip")}
 
-    def build_helixsr(self, progress: Callable[[str, int], None] = lambda *_: None) -> dict[str, Any]:
-        """progress(text, percent or -1)."""
+    def build_helixsr(self, progress: Callable[[str, int], None] = lambda *_: None,
+                      version: str = "", preset_k: bool = False,
+                      vulkan: bool = False) -> dict[str, Any]:
+        """progress(text, percent or -1). version: "" for the newest."""
         def report(stage: str, done: int, total: int, text: str) -> None:
             percent = int(100 * done / total) if total > 0 and done >= 0 else -1
             progress(self.service.helixsr_auto_progress(stage, done, total, text), percent)
-        return self._run(lambda: self.service.build_helixsr(report))
+        return self._run(lambda: self.service.build_helixsr(report, version or None,
+                                                            preset_k, vulkan))
 
     def downloads(self) -> dict[str, Any]:
         service = self.service
@@ -324,8 +361,11 @@ class DeckBridge:
             return {"ok": False, "kind": "error",
                     "message": self._note(tr("log_error", error=error))}
 
-    def apply(self, app_id: int, choice: str) -> dict[str, Any]:
-        return self._run(lambda: self.service.apply(app_id, choice))
+    def apply(self, app_id: int, choice: str, hx: str = "") -> dict[str, Any]:
+        return self._run(lambda: self.service.apply(app_id, choice, hx or None))
+
+    def set_hx_upscaler(self, app_id: int, value: str) -> dict[str, Any]:
+        return self._run(lambda: self.service.set_hx_upscaler(app_id, value))
 
     def set_frame_generation(self, app_id: int, on: bool) -> dict[str, Any]:
         return self._run(lambda: self.service.set_frame_generation(app_id, on))

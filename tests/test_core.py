@@ -1090,6 +1090,130 @@ class NgxHelixSRTest(Base):
         self.assertEqual(snapshot(self.common / "DlssGame"), before[DLSS])
 
 
+
+class HxScalerUpscalerTest(Base):
+    """HelixSR Scaler's upscaler (HelixSR 3.0 and newer): HLX DLSS Preset E / K, HLX FSR 4 / Full."""
+
+    def setUp(self):
+        super().setUp()
+        from tests.fakes import make_helixsr_ngx
+        self.hx = make_helixsr_ngx(self.root / "HelixSR-3.3.0", "3.3.0", scaler="2.3.0",
+                                   hlx_builder=False, custom=True)
+        make_components(self.root / "components")
+        self.service._gpus = [gpu.Gpu("AMD", 0x744c, (11, 0, 0))]   # RX 7900: HLX FSR 4 Full runs
+        self.service.set_helixsr_folder(self.hx)
+
+    def ini(self):
+        from scaler_assistant import optiscaler as o
+        text = (self.dlss_bin / "OptiScaler.ini").read_text()
+        up = o.section_text(text, "Upscalers")
+        return (o.get_value(up, "Dx12Upscaler"), o.get_value(up, "Dx11Upscaler"),
+                o.get_value(up, "VulkanUpscaler"),
+                o.get_value(o.section_text(text, "HelixSR"), "DlssModel"))
+
+    def calls(self):
+        lines = (self.hx / "bridge-calls.txt").read_text().splitlines()
+        return sum(1 for line in lines if line.startswith("install "))
+
+    def test_options_and_what_blocks_them(self):
+        entry = self.entry(DLSS)
+        self.assertEqual(entry.hx_options, ["dlss_e", "dlss_k", "fsr4", "fsr4_full"])
+        self.assertEqual(entry.hx_blocked, {"dlss_k": "hxu_no_k"})        # Preset K not built
+        self.assertEqual(entry.hx_notes["dlss_k"], "hxu_issue_k")
+        self.assertEqual(entry.hx_notes["fsr4_full"], "hxu_issue_full")
+        self.assertIsNone(entry.hx_upscaler)                              # nothing installed
+        self.service._gpus = [gpu.Gpu("NVIDIA", 0x2684)]
+        self.assertEqual(self.entry(DLSS).hx_blocked["fsr4_full"], "hxu_full_gpu")
+        self.service._gpus = [gpu.Gpu("AMD", 0x743F, (10, 3, 6), apu=False)]   # RX 6400
+        self.assertNotIn("fsr4_full", self.entry(DLSS).hx_blocked)
+        self.service._gpus = [gpu.Gpu("AMD", 0x163F, (10, 3, 3), apu=True)]    # Steam Deck
+        self.assertNotIn("fsr4_full", self.entry(DLSS).hx_blocked)
+        cached = next(g for g in self.service.state["games"] if int(g["app_id"]) == DLSS)
+        cached["layout"]["api"] = "vulkan"
+        self.assertEqual(self.entry(DLSS).hx_blocked["fsr4_full"], "hxu_full_api")
+        from tests.fakes import make_helixsr_ngx
+        older = make_helixsr_ngx(self.root / "HelixSR-3.2.0", "3.2.0", scaler="2.1.0")
+        self.service.set_helixsr_folder(older)                            # no HLX FSR 4 Full yet
+        self.assertEqual(self.entry(FSR).hx_blocked["fsr4_full"], "hxu_full_missing")
+        from tests.fakes import make_helixsr_modern
+        self.service.set_helixsr_folder(make_helixsr_modern(self.root / "HelixSR-2.0.0"))
+        self.assertEqual(self.entry(DLSS).hx_options, [])                 # HelixSR 2.0: none
+
+    def test_each_upscaler_written_read_back_and_removed(self):
+        before = snapshot(self.common / "DlssGame")
+        expected = {"dlss_e": ("auto", "auto", "auto", "auto"),
+                    "fsr4": ("ffx", "ffx_12", "HLX FSR 4", None),
+                    "fsr4_full": ("HLX FSR 4 Full", "ffx_12", "HLX FSR 4", None)}
+        self.service.apply(DLSS, "helixsr:hscaler", "fsr4")
+        self.assertEqual(self.calls(), 1)
+        self.assertEqual(self.ini(), expected["fsr4"])
+        self.assertEqual(self.entry(DLSS).hx_upscaler, "fsr4")
+        for value in ("fsr4_full", "dlss_e", "fsr4"):
+            message = self.service.set_hx_upscaler(DLSS, value)
+            self.assertIn("HLX", message)
+            self.assertEqual(self.entry(DLSS).hx_upscaler, value)
+            got = self.ini()
+            self.assertEqual(got[:3], expected[value][:3])
+        self.assertEqual(self.calls(), 1)                                 # switched in place
+        self.service.uninstall(DLSS, False)
+        self.assertEqual(snapshot(self.common / "DlssGame"), before)
+
+    def test_preset_k_brings_its_files_and_an_update_keeps_the_choice(self):
+        with self.assertRaises(InstallError):
+            self.service.apply(DLSS, "helixsr:hscaler", "dlss_k")         # not built
+        self.service.apply(DLSS, "helixsr:hscaler", "fsr4_full")
+        k = self.hx / "HelixSR" / "k"                                     # built afterwards
+        k.mkdir()
+        for name in ("helixsr.dll", "helixsr_modelk_kernels.pak", "helixsr_modelk_weights.bin",
+                     "helixsr.ini"):
+            (k / name).write_bytes(b"k")
+        self.service.set_hx_upscaler(DLSS, "dlss_k")                      # needs HelixSR/k: update
+        self.assertEqual(self.calls(), 2)
+        self.assertTrue((self.dlss_bin / "HelixSR" / "k" / "helixsr.dll").is_file())
+        self.assertEqual(self.ini()[3], "k")
+        self.assertEqual(self.entry(DLSS).hx_upscaler, "dlss_k")
+        self.service.apply(DLSS, "helixsr:hscaler")                       # update / repair
+        self.assertEqual(self.entry(DLSS).hx_upscaler, "dlss_k")          # kept
+        self.service.set_hx_upscaler(DLSS, "dlss_e")
+        self.assertEqual(self.ini()[3], "auto")
+
+    def test_other_choice_in_its_menu_is_left_alone(self):
+        self.service.apply(DLSS, "helixsr:hscaler")
+        self.assertEqual(self.entry(DLSS).hx_upscaler, "dlss_e")         # HelixSR Scaler's default
+        ini = self.dlss_bin / "OptiScaler.ini"
+        ini.write_text(ini.read_text().replace("Dx12Upscaler=auto", "Dx12Upscaler=xess"))
+        self.assertIsNone(self.entry(DLSS).hx_upscaler)
+        self.service.apply(DLSS, "helixsr:hscaler")                       # an update keeps it
+        self.assertIn("Dx12Upscaler=auto", ini.read_text())               # (the fake brings a new ini)
+
+    def test_fsr3_game_gets_helixsr_scaler_and_optiscaler(self):
+        game = self.common / "Fsr3Game"
+        (game / "bin").mkdir(parents=True)
+        (game / "bin" / "fsr3.exe").write_bytes(b"MZ" * 1000)
+        (game / "bin" / "ffx_fsr3upscaler_x64.dll").write_bytes(b"MZ FSR 3.0")
+        (game / "bin" / "ffx_backend_dx12_x64.dll").write_bytes(b"MZ FSR 3.0 backend")
+        (self.steam / "steamapps" / "appmanifest_400.acf").write_text(
+            '"AppState"\n{\n"appid" "400"\n"name" "Fsr3Game"\n"installdir" "Fsr3Game"\n}\n')
+        self.service.scan()
+        entry = self.entry(400)
+        self.assertEqual(entry.layout.inputs, ["FSR 3"])
+        self.assertEqual(entry.ways, ["hscaler"])                         # no FSR 3.1 DLL to replace
+        self.assertIn("fsr4:exact", entry.choices)
+        self.assertIn("fsr3", entry.choices)
+        self.assertEqual(entry.hx_options[:3], ["dlss_e", "dlss_k", "fsr4"])
+        before = snapshot(game)
+        from scaler_assistant.i18n import tr
+        message = self.service.apply(400, "helixsr:hscaler", "fsr4")
+        self.assertIn(tr("svc_pick_hscaler_fsr"), message)
+        self.service.apply(400, "fsr4:exact")                             # OptiScaler instead
+        self.assertEqual(self.entry(400).status.choice, "fsr4:exact")
+        self.service.uninstall(400, False)
+        self.assertEqual(snapshot(game), before)
+
+    def test_layout_version_rescans_cached_games(self):
+        self.assertGreaterEqual(LAYOUT_VERSION, 5)
+
+
 class AntiCheatTest(unittest.TestCase):
     def test_vendors_helixsr_knows(self):
         import tempfile

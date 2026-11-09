@@ -24,7 +24,7 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Callable, Optional
 
-from . import __version__, components, gpu, helixsr, hxsetup, installer, sandbox, settings
+from . import __version__, components, gpu, helixsr, hxscaler, hxsetup, installer, sandbox, settings
 from . import launch_options as lo
 from . import optiscaler
 from .components import Component
@@ -49,7 +49,7 @@ LOSSY_VARIANTS = ("lossy", "lite_lossy")
 # lossy2, retrained (the older lossy build is gone).
 LEGACY_CHOICES = {"fsr4:lossy2": "fsr4:lossy"}
 # Raised when games.detect_layout changes what it finds, so cached scans are redone.
-LAYOUT_VERSION = 4
+LAYOUT_VERSION = 5   # 5: FSR 3.0 games (ffx_fsr3upscaler_x64.dll)
 
 
 def config_dir() -> Path:
@@ -115,6 +115,13 @@ class GameEntry:
     recommended: Optional[str] = None                       # the choice to suggest for this PC
     fg: Optional[bool] = None            # HelixSR frame generation switch: None = not offered
     fg_block: Optional[str] = None       # i18n key: why the switch can't be used now
+    # HelixSR Scaler's upscaler (HelixSR 3.0 and newer, see hxscaler): the one the game runs
+    # (None: not HelixSR Scaler, or something else picked in its menu), the ones offered here,
+    # those that can't be used (value -> i18n key) and the known issues to show with them
+    hx_upscaler: Optional[str] = None
+    hx_options: list[str] = field(default_factory=list)
+    hx_blocked: dict[str, str] = field(default_factory=dict)
+    hx_notes: dict[str, str] = field(default_factory=dict)
 
     @property
     def display_name(self) -> str:
@@ -390,10 +397,16 @@ class AssistantService:
 
     @staticmethod
     def helixsr_auto_consent() -> str:
-        text = tr("hxa_consent", releases=hxsetup.RELEASES, data=hxsetup.data_root(),
+        return tr("hxa_consent", releases=hxsetup.RELEASES, data=hxsetup.data_root(),
                   licences="\n".join(hxsetup.NVIDIA_LICENSES), amd=hxsetup.AMD_DRIVERS)
-        body, _, question = text.rpartition("\n\n")   # the Vulkan note goes before the question
-        return f"{body}\n\n{tr('hxa_consent_vk')}\n\n{question}" if body else text
+
+    @staticmethod
+    def helixsr_releases(opener=None) -> list[dict]:
+        """The HelixSR releases "Download and build HelixSR" can use, newest first, with the
+        optional parts each one's setup can build: [{version, preset_k, vulkan}]."""
+        return [{"version": r.version, "preset_k": r.version_tuple >= hxsetup.K_VERSION,
+                 "vulkan": r.version_tuple >= hxsetup.VK_VERSION}
+                for r in hxsetup.list_releases(opener)]
 
     @staticmethod
     def helixsr_auto_progress(stage: str, done: int, total: int, text: str) -> str:
@@ -410,11 +423,15 @@ class AssistantService:
                     else tr("hxa_p_build_line", text=text))
         return tr("busy_hxa")
 
-    def build_helixsr(self, report: Callable[[str, int, int, str], None] = lambda *_: None) -> str:
-        """Download the newest HelixSR, build its network (and frame generation) on this PC and
-        use it. Only after the user agreed to NVIDIA's downloads (helixsr_auto_consent)."""
+    def build_helixsr(self, report: Callable[[str, int, int, str], None] = lambda *_: None,
+                      version: Optional[str] = None, preset_k: bool = False,
+                      vulkan: bool = False) -> str:
+        """Download HelixSR (that version, else the newest), build its network (and frame
+        generation; Preset K and HLX DLSS's Vulkan kernels when asked for) on this PC and use
+        it. Only after the user agreed to NVIDIA's downloads (helixsr_auto_consent)."""
         try:
-            result = hxsetup.install(report)
+            release = hxsetup.find_release(version) if version else None
+            result = hxsetup.install(report, release, preset_k=preset_k, vulkan=vulkan)
         except hxsetup.SetupError as error:
             raise hxsetup.SetupError(tr("hxa_failed", error=error)) from error
         folder = self.set_helixsr_folder(result.folder.path)
@@ -427,6 +444,11 @@ class AssistantService:
             lines.append(tr("hxa_vk_ready"))
         elif result.vulkan is False:
             lines.append(tr("hxa_no_vk"))
+            failed = True
+        if result.preset_k:           # HelixSR 3.2.1: Preset K
+            lines.append(tr("hxa_k_ready"))
+        elif result.preset_k is False:
+            lines.append(tr("hxa_no_k"))
             failed = True
         if result.fg:
             lines.append(tr("hxa_fg_ready"))
@@ -652,6 +674,7 @@ class AssistantService:
             ways = self._ways(layout, folder)
             choices = self.choices_for(layout, folder, ways)
             fg, fg_block = self.frame_generation(layout, status, folder)
+            hx_options, hx_blocked, hx_notes = self.hx_choices(layout, folder, ways)
             result.append(GameEntry(
                 app_id=app_id,
                 name=game["name"],
@@ -668,8 +691,78 @@ class AssistantService:
                 launch_missing=missing,
                 fg=fg,
                 fg_block=fg_block,
+                hx_upscaler=self.hx_current(layout, status),
+                hx_options=hx_options,
+                hx_blocked=hx_blocked,
+                hx_notes=hx_notes,
             ))
         return result
+
+    # ---- HelixSR Scaler's upscaler (HelixSR 3.0 and newer) -----------------------------
+
+    def hx_choices(self, layout: GameLayout, folder: Optional[HelixSRFolder],
+                   ways: Optional[list[str]] = None
+                   ) -> tuple[list[str], dict[str, str], dict[str, str]]:
+        """(offered, blocked: value -> i18n key, known issues: value -> i18n key) for the
+        upscaler HelixSR Scaler runs: HLX DLSS Preset E / K, HLX FSR 4 / FSR 4 Full."""
+        ways = self._ways(layout, folder) if ways is None else ways
+        if folder is None or not folder.ngx or "hscaler" not in ways:
+            return [], {}, {}
+        blocked: dict[str, str] = {}
+        if not (folder.path / hxscaler.K_DLL).is_file():
+            blocked["dlss_k"] = "hxu_no_k"
+        if not (folder.scaler_pkg / hxscaler.FULL_DLL).is_file():
+            blocked["fsr4_full"] = "hxu_full_missing"
+        elif layout.api in ("dx11", "vulkan"):
+            blocked["fsr4_full"] = "hxu_full_api"
+        elif not hxscaler.full_gpu(self.gpus()):
+            blocked["fsr4_full"] = "hxu_full_gpu"
+        notes = {"dlss_k": "hxu_issue_k", "fsr4_full": "hxu_issue_full"}
+        if layout.api == "vulkan" and hxsetup.vulkan_built(folder.path):
+            notes["dlss_e"] = "hxu_issue_vk"   # HLX DLSS native in Vulkan games: new in 3.3
+        return list(hxscaler.UPSCALERS), blocked, notes
+
+    @staticmethod
+    def hx_current(layout: GameLayout, status: InstallState) -> Optional[str]:
+        if status.route != "hscaler" or not layout.exe_dir:
+            return None
+        exe = Path(layout.exe_dir)
+        record = installer.hscaler_record(exe)
+        if record is None or not record["ngx"]:
+            return None
+        return hxscaler.current(exe, layout.api)
+
+    def _write_hx(self, exe: Path, value: str) -> None:
+        try:
+            hxscaler.write(exe, value)
+        except optiscaler.IniError as error:
+            raise installer.InstallError(
+                tr("err_ini_duplicate", name=str(error), file=hxscaler.OPTI_INI)) from error
+        except OSError as error:
+            raise installer.InstallError(str(error)) from error
+
+    def set_hx_upscaler(self, app_id: int, value: str) -> str:
+        """The upscaler HelixSR Scaler runs in a game; HelixSR Scaler is installed (or updated,
+        for a Preset K the game does not have yet) first when needed."""
+        if value not in hxscaler.UPSCALERS:
+            raise LookupError(value)
+        folder = self.require_helixsr()
+        cached, layout = self._refresh_game(app_id)
+        status = installer.state(layout)
+        exe = Path(layout.exe_dir) if layout.exe_dir else None
+        record = installer.hscaler_record(exe) if exe else None
+        if (status.route != "hscaler" or exe is None or record is None or not record["ngx"]
+                or value == "dlss_k" and not (exe / hxscaler.K_DLL).is_file()):
+            return self.apply(app_id, "helixsr:hscaler", value)
+        offered, blocked, _ = self.hx_choices(layout, folder)
+        if value not in offered:
+            raise LookupError(value)
+        if value in blocked:
+            raise installer.InstallError(tr(blocked[value]))
+        name = self._name(cached)
+        self._ensure_closed(app_id, name)
+        self._write_hx(exe, value)
+        return tr("svc_hxu_set", name=name, upscaler=hx_label(value))
 
     @staticmethod
     def frame_generation(layout: GameLayout, status: InstallState,
@@ -821,8 +914,10 @@ class AssistantService:
         if reason:
             raise installer.InstallError(tr(reason))
 
-    def apply(self, app_id: int, choice: str) -> str:
-        """Install, switch to, update or repair a choice in one game."""
+    def apply(self, app_id: int, choice: str, hx: Optional[str] = None) -> str:
+        """Install, switch to, update or repair a choice in one game. hx: the upscaler HelixSR
+        Scaler runs (helixsr:hscaler with HelixSR 3.0 and newer); an update keeps the one the
+        game had."""
         if choice not in installer.CHOICES:
             raise LookupError(choice)
         upscaler = upscaler_of(choice)
@@ -836,6 +931,18 @@ class AssistantService:
         name = self._name(cached)
         self._ensure_closed(app_id, name)
         before = installer.state(layout)
+        if choice == "helixsr:hscaler" and folder is not None and folder.ngx:
+            if hx is not None:
+                offered, blocked, _ = self.hx_choices(layout, folder)
+                if hx not in offered:
+                    raise LookupError(hx)
+                if hx in blocked:
+                    raise installer.InstallError(tr(blocked[hx]))
+                keep = hx
+            else:
+                keep = self.hx_current(layout, before)
+        else:
+            keep = None
         options = self.read_launch_options([app_id]).get(app_id, "")
         opti_name, _ = self._opti_name(cached, layout, before, choice, options)
         try:
@@ -859,6 +966,8 @@ class AssistantService:
                 force_int8=upscaler == "fsr4" and self.force_int8(),
                 source=f"{component.key}-{component.version}")
             notes = installer.install_scaler(layout, plan, STAMP)
+        if keep is not None and layout.exe_dir and (Path(layout.exe_dir) / hxscaler.OPTI_INI).is_file():
+            self._write_hx(Path(layout.exe_dir), keep)   # an update may bring a new OptiScaler.ini
         after = installer.state(layout)
         label = choice_label(choice)
         if before.choice == choice:
@@ -869,7 +978,9 @@ class AssistantService:
             head = tr("svc_installed", name=name, choice=label)
         lines = [head, *("  " + n for n in notes)]
         lines += self._write_launch(app_id, options, new_options, record, changed)
-        lines.append(tr("svc_pick_" + choice.replace(":", "_")))
+        if hx is not None:
+            lines.append(tr("svc_hxu_now", upscaler=hx_label(hx)))
+        lines.append(pick_hint(choice, layout))
         if after.issues:
             lines += [tr(i) for i in after.issues]
         return "\n".join(lines)
@@ -1036,6 +1147,19 @@ def _accepted_key(variant: str) -> str:
 
 def choice_label(choice: Optional[str]) -> str:
     return tr("choice_" + (choice or "none").replace(":", "_"))
+
+
+def hx_label(value: Optional[str]) -> str:
+    """HelixSR Scaler's upscaler by name: "HLX DLSS · Preset K", "HLX FSR 4 · FSR 4 Full …"."""
+    return tr("hxu_" + value) if value else ""
+
+
+def pick_hint(choice: Optional[str], layout: GameLayout) -> str:
+    """What to select in the game for a choice. HelixSR Scaler takes over any upscaler the game
+    has: in a game without DLSS (only FSR 2 / FSR 3, say) that is FSR."""
+    if choice == "helixsr:hscaler" and "DLSS" not in layout.inputs:
+        return tr("svc_pick_hscaler_fsr")
+    return tr("svc_pick_" + str(choice).replace(":", "_"))
 
 
 def component_label(component: Component) -> str:

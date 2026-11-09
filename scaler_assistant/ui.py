@@ -21,11 +21,12 @@ from PyQt6.QtGui import QAction, QDesktopServices, QGuiApplication, QPixmap
 from PyQt6.QtWidgets import (
     QApplication, QCheckBox, QComboBox, QDialog, QDialogButtonBox, QDoubleSpinBox, QFileDialog,
     QFormLayout, QFrame, QGroupBox, QHBoxLayout, QLabel, QLineEdit, QMainWindow, QMenu,
-    QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QVBoxLayout, QWidget,
+    QMessageBox, QPlainTextEdit, QPushButton, QScrollArea, QVBoxLayout, QWidget, QWidgetAction,
 )
 
 from . import (
-    __version__, components, gpu, i18n, optiscaler, overlay, sandbox, settings, status, theme,
+    __version__, components, gpu, hxscaler, i18n, optiscaler, overlay, sandbox, settings, status,
+    theme,
 )
 from .helixsr import HelixSRFolder, MIN_VERSION
 from .i18n import tr
@@ -33,7 +34,7 @@ from .launch_options import needs_override
 from .runtime import RunningGame, detect_running
 from .service import (
     AssistantService, ChoicePlan, GameEntry, GameRunningError, NeedsDownloadError,
-    NeedsHelixSRError, SteamMustCloseError, choice_label, component_label, upscaler_of,
+    NeedsHelixSRError, SteamMustCloseError, choice_label, component_label, hx_label, upscaler_of,
 )
 from .widgets import (
     API_LABELS, THUMB_H, THUMB_W, Backdrop, CrystalButtons, GameCard, Segmented, Switch, Wordmark,
@@ -365,6 +366,73 @@ class HelixSRDialog(_FitDialog):
         close.clicked.connect(self.reject)
         buttons.addWidget(close)
         layout.addLayout(buttons)
+
+
+class HelixSRBuildDialog(_FitDialog):
+    """Download and build HelixSR: which release, the optional parts its setup can build
+    (Preset K from 3.2.1, HLX DLSS's Vulkan kernels from 3.3), and the agreement to NVIDIA's
+    (and AMD's) downloads."""
+
+    def __init__(self, releases: list[dict], consent: str, parent: QWidget) -> None:
+        super().__init__(parent)
+        self.setWindowTitle(tr("hxa_title"))
+        self.setMinimumWidth(640)
+        self.releases = releases
+        layout = QVBoxLayout(self)
+        form = QFormLayout()
+        self.version = QComboBox()
+        for index, release in enumerate(releases):
+            text = release["version"]
+            self.version.addItem(tr("hxa_version_newest", version=text) if index == 0 else text,
+                                 release["version"])
+        if not releases:   # the list could not be read: the newest, whatever it is
+            self.version.addItem(tr("hxa_version_newest", version="?"), None)
+        form.addRow(tr("hxa_version"), self.version)
+        layout.addLayout(form)
+        self.preset_k = QCheckBox(tr("hxa_opt_k"))
+        self.k_tip = _label(html.escape(tr("hxa_opt_k_tip")), "meta")
+        self.vulkan = QCheckBox(tr("hxa_opt_vk"))
+        self.vk_tip = _label(html.escape(tr("hxa_opt_vk_tip")), "meta")
+        for widget in (self.preset_k, self.k_tip, self.vulkan, self.vk_tip):
+            layout.addWidget(widget)
+        text = QLabel(consent)
+        text.setWordWrap(True)
+        text.setTextFormat(Qt.TextFormat.PlainText)
+        text.setTextInteractionFlags(Qt.TextInteractionFlag.TextSelectableByMouse)
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setWidget(text)
+        scroll.setMinimumHeight(220)
+        layout.addWidget(scroll, 1)
+        buttons = QDialogButtonBox()
+        buttons.addButton(tr("hxa_ok"), QDialogButtonBox.ButtonRole.AcceptRole)
+        buttons.addButton(tr("cancel"), QDialogButtonBox.ButtonRole.RejectRole)
+        buttons.accepted.connect(self.accept)
+        buttons.rejected.connect(self.reject)
+        layout.addWidget(buttons)
+        self.version.currentIndexChanged.connect(self._version_changed)
+        self._version_changed()
+
+    def _release(self) -> Optional[dict]:
+        version = self.version.currentData()
+        return next((r for r in self.releases if r["version"] == version), None)
+
+    def _version_changed(self) -> None:
+        release = self._release()
+        for box, key, label in ((self.preset_k, "preset_k", "hxa_opt_k"),
+                                (self.vulkan, "vulkan", "hxa_opt_vk")):
+            offered = release is None or bool(release[key])
+            box.setEnabled(offered)
+            if not offered:
+                box.setChecked(False)
+                box.setText(f"{tr(label)}   ({tr('hxa_opt_unavailable', version=release['version'])})")
+            else:
+                box.setText(tr(label))
+
+    def values(self) -> tuple[Optional[str], bool, bool]:
+        """(version or None for the newest, Preset K, Vulkan kernels)."""
+        return (self.version.currentData(), self.preset_k.isEnabled() and self.preset_k.isChecked(),
+                self.vulkan.isEnabled() and self.vulkan.isChecked())
 
 
 class DownloadsDialog(_FitDialog):
@@ -937,18 +1005,26 @@ class MainWindow(QMainWindow):
         self.refresh(rescan=False)
 
     def build_helixsr(self) -> None:
-        """Download the newest HelixSR and build it here, after the user agreed to NVIDIA's
-        downloads (HelixSR's setup gets --yes only then)."""
-        box = QMessageBox(QMessageBox.Icon.Question, tr("hxa_title"),
-                          self.service.helixsr_auto_consent(), parent=self)
-        box.setTextFormat(Qt.TextFormat.PlainText)
-        agree = box.addButton(tr("hxa_ok"), QMessageBox.ButtonRole.AcceptRole)
-        box.addButton(tr("cancel"), QMessageBox.ButtonRole.RejectRole)
-        box.exec()
-        if box.clickedButton() is not agree:
+        """Download HelixSR (the release the user picks) and build it here, after the user
+        agreed to NVIDIA's downloads (HelixSR's setup gets --yes only then)."""
+        def listed(releases):
+            self._build_helixsr(releases)
+
+        def failed(error):
+            self.write_log(tr("hxa_list_failed", error=error))
+            self._build_helixsr([])
+            return True
+
+        self.run_task(tr("hxa_title") + "…", self.service.helixsr_releases,
+                      on_done=listed, on_error=failed)
+
+    def _build_helixsr(self, releases: list[dict]) -> None:
+        dialog = HelixSRBuildDialog(releases, self.service.helixsr_auto_consent(), self)
+        if dialog.exec() != QDialog.DialogCode.Accepted:
             self.write_log(tr("log_cancelled"))
             return
-        self.write_log(tr("log_hxa_start"))
+        version, preset_k, vulkan = dialog.values()
+        self.write_log(tr("log_hxa_start") + (f" ({version})" if version else ""))
 
         def progress(value):
             self.last_line.setText(self.service.helixsr_auto_progress(*value))
@@ -958,7 +1034,8 @@ class MainWindow(QMainWindow):
             self.refresh(rescan=False)
 
         self.run_task(tr("busy_hxa"),
-                      lambda emit: self.service.build_helixsr(lambda *v: emit(v)),
+                      lambda emit: self.service.build_helixsr(lambda *v: emit(v), version,
+                                                              preset_k, vulkan),
                       on_done=done, on_progress=progress)
 
     def run_setup(self) -> None:
@@ -1128,7 +1205,9 @@ class MainWindow(QMainWindow):
             for way in helixsr_ways:
                 choice = f"helixsr:{way}"
                 reason = entry.blocked.get(choice)
-                if reason:
+                if way == "hscaler" and entry.hx_options and not reason:
+                    self._hscaler_menu(sub, entry, choice)
+                elif reason:
                     action = sub.addAction(f"{tr('menu_install_' + way)}   ({tr(reason + '_short')})")
                     action.setEnabled(False)
                     action.setToolTip(tr(reason))
@@ -1222,6 +1301,46 @@ class MainWindow(QMainWindow):
             card.launch_btn.setEnabled(False)  # re-enabled by polling if the game never starts
         QTimer.singleShot(1500, self.poll_runtime)
 
+    def _hscaler_menu(self, parent: QMenu, entry: GameEntry, choice: str) -> None:
+        """HelixSR Scaler ▸ HLX DLSS: Preset E / Preset K, HLX FSR 4: FSR 4 / FSR 4 Full — the
+        upscaler HelixSR Scaler runs (HelixSR 3.0 and newer), each with its known issues."""
+        installed = entry.status.choice == choice
+        title = tr("menu_install_hscaler")
+        sub = parent.addMenu(("✓ " if installed else "") + title)
+        sub.setToolTipsVisible(True)
+        for group, values in (("hxu_group_dlss", hxscaler.DLSS), ("hxu_group_fsr4", hxscaler.FSR4)):
+            header = sub.addAction(tr(group))
+            header.setEnabled(False)
+            font = header.font()
+            font.setBold(True)
+            header.setFont(font)
+            for value in values:
+                text = "    " + tr("hxu_item_" + value)
+                reason = entry.hx_blocked.get(value)
+                if reason:
+                    action = sub.addAction(f"{text}   ({tr(reason + '_short')})")
+                    action.setEnabled(False)
+                    action.setToolTip(tr(reason))
+                else:
+                    action = sub.addAction(text)
+                    action.setCheckable(True)
+                    action.setChecked(installed and entry.hx_upscaler == value)
+                    action.setToolTip(tr("hxu_tip_" + value))
+                    action.triggered.connect(
+                        lambda _, e=entry, c=choice, v=value: self.choose(e, c, v))
+                note = entry.hx_notes.get(value)
+                if note:   # the known issues, right under the option
+                    label = QLabel("⚠ " + tr(note))
+                    label.setWordWrap(True)
+                    label.setFixedWidth(460)
+                    label.setObjectName("menuNote")
+                    holder = QWidgetAction(sub)
+                    holder.setDefaultWidget(label)
+                    holder.setEnabled(False)
+                    sub.addAction(holder)
+            if group == "hxu_group_dlss":
+                sub.addSeparator()
+
     def _warnings_ok(self, entry: GameEntry, choice: str) -> bool:
         name = html.escape(entry.display_name)
         if entry.status.choice == choice:
@@ -1237,15 +1356,22 @@ class MainWindow(QMainWindow):
             return False
         return True
 
-    def choose(self, entry: GameEntry, choice: str) -> None:
-        """Install, switch to, update or repair a choice: ask for whatever it needs first."""
+    def choose(self, entry: GameEntry, choice: str, hx: Optional[str] = None) -> None:
+        """Install, switch to, update or repair a choice: ask for whatever it needs first.
+        hx: the upscaler HelixSR Scaler runs (helixsr:hscaler, HelixSR 3.0 and newer)."""
+        if hx is not None and entry.status.choice == choice:
+            # HelixSR Scaler is there: only its upscaler changes (an update first when needed)
+            self.write_log(tr("log_switch", name=entry.display_name, choice=hx_label(hx)))
+            self._run_action(tr("busy_install", name=entry.display_name),
+                             self.service.set_hx_upscaler, entry.app_id, hx)
+            return
         if not self._warnings_ok(entry, choice):
             self.write_log(tr("log_cancelled"))
             return
         self.run_task(tr("busy_check", name=entry.display_name), self.service.plan,
-                      entry.app_id, choice, on_done=lambda plan: self._continue(entry, plan))
+                      entry.app_id, choice, on_done=lambda plan: self._continue(entry, plan, hx))
 
-    def _continue(self, entry: GameEntry, plan: ChoicePlan) -> None:
+    def _continue(self, entry: GameEntry, plan: ChoicePlan, hx: Optional[str] = None) -> None:
         if plan.needs_helixsr:
             self.write_log(tr("log_needs_helixsr"))
             self.show_helixsr()
@@ -1254,7 +1380,7 @@ class MainWindow(QMainWindow):
             if not self._confirm_download(plan.downloads, choice_label(plan.choice)):
                 self.write_log(tr("log_cancelled"))
                 return
-            self.download(plan.downloads, then=lambda: self.choose(entry, plan.choice))
+            self.download(plan.downloads, then=lambda: self.choose(entry, plan.choice, hx))
             return
         if plan.lossy_warning:
             dialog = LossyDialog(self.service.lossy_warning_text(plan.lossy_warning), self,
@@ -1269,11 +1395,12 @@ class MainWindow(QMainWindow):
             key = "log_switch"
         else:
             key = "log_install"
-        self.write_log(tr(key, name=entry.display_name, choice=choice_label(plan.choice)))
+        label = choice_label(plan.choice) + (f" · {hx_label(hx)}" if hx else "")
+        self.write_log(tr(key, name=entry.display_name, choice=label))
         if plan.launch_change:
             self.write_log(tr("log_launch_change", options=plan.launch_after or tr("empty")))
         self._run_action(tr("busy_install", name=entry.display_name),
-                         self.service.apply, entry.app_id, plan.choice)
+                         self.service.apply, entry.app_id, plan.choice, hx)
 
     def _confirm_download(self, wanted: list, what: str = "") -> bool:
         what = what or window_title()

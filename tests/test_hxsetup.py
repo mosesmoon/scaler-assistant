@@ -101,22 +101,30 @@ if "--status" in sys.argv:
     print(f"network={int(net)} fg=0 hlx={int(hlx.read_bytes()[-24:-16] == b'HLXFSR4D')} k=0")
     sys.exit(0)
 assert "--yes" in sys.argv and "--dxc" in sys.argv
-assert "--fg-only" not in sys.argv
+assert not ("--fg-only" in sys.argv and "--vulkan" in sys.argv)
 with open(rel / "calls.txt", "a") as f:
     f.write(" ".join(sys.argv[2:]) + "\n")
-data = dll.read_bytes()
-if data[-32:-24] == b"HXSRNET1":   # an earlier network is replaced
-    data = data[:-48]
-dll.write_bytes(data + b"W" * 16 + b"HXSRNET1" + struct.pack("<QQQ", 8, 8, 1))
-vk = "--vulkan" in sys.argv
-if vk and (rel / "vk-fail").exists():
-    print("[helixsr-setup] Vulkan shaders: the compiler ran out of memory", flush=True)
-    sys.exit(1)
-(rel / "helixsr_setup.json").write_text(json.dumps({"shaders": 2, "vulkan": vk}))
+if "--fg-only" not in sys.argv:
+    data = dll.read_bytes()
+    if data[-32:-24] == b"HXSRNET1":   # an earlier network is replaced
+        data = data[:-48]
+    dll.write_bytes(data + b"W" * 16 + b"HXSRNET1" + struct.pack("<QQQ", 8, 8, 1))
+    vk = "--vulkan" in sys.argv
+    if vk and (rel / "vk-fail").exists():
+        print("[helixsr-setup] Vulkan shaders: the compiler ran out of memory", flush=True)
+        sys.exit(1)
+    (rel / "helixsr_setup.json").write_text(json.dumps({"shaders": 2, "vulkan": vk}))
+if "--preset-k" in sys.argv:   # Preset K into HelixSR/k (a "k-fail" file: exit code 5)
+    if (rel / "k-fail").exists():
+        print("[helixsr-setup] Preset K: not built, its kernels did not compile", flush=True)
+        sys.exit(5)
+    (rel / "HelixSR" / "k").mkdir(exist_ok=True)
+    for n in ("helixsr.dll", "helixsr_modelk_kernels.pak", "helixsr_modelk_weights.bin", "helixsr.ini"):
+        (rel / "HelixSR" / "k" / n).write_bytes(b"k")
 '''
 
 
-def release_zip_hlx_built(version="3.3.0", vulkan=True) -> bytes:
+def release_zip_hlx_built(version="3.3.0", vulkan=True, preset_k=True) -> bytes:
     data = io.BytesIO()
     top = f"HelixSR-{version}/"
     with zipfile.ZipFile(data, "w") as z:
@@ -128,6 +136,8 @@ def release_zip_hlx_built(version="3.3.0", vulkan=True) -> bytes:
         z.writestr(top + "setup/helixsr_bridge.py", "")
         if vulkan:
             z.writestr(top + "setup/lib/setup_vk_shaders.py", "")
+        if preset_k:
+            z.writestr(top + "setup/preset-k/helixsr.dll", b"MZ preset K")
     return data.getvalue()
 
 
@@ -298,13 +308,20 @@ class HxSetupTest(Base):
             self.service.build_helixsr()
         self.assertEqual(len((folder.path / "calls.txt").read_text().splitlines()), 1)
 
-    def test_helixsr_3_3_builds_vulkan_kernels(self):
-        # HelixSR 3.3 can build HLX DLSS's Vulkan kernels: the one-step build always asks for them
+    def test_helixsr_3_3_builds_vulkan_kernels_when_ticked(self):
+        # HelixSR 3.3 can build HLX DLSS's Vulkan kernels: only when the option is ticked
         from scaler_assistant.i18n import tr
         self.files["HelixSR-3.3.0.zip"] = release_zip_hlx_built()
         self.listing = api(("3.3.0", self.files["HelixSR-3.3.0.zip"], False))
         with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
             message = self.service.build_helixsr()
+        folder = self.service.helixsr()
+        self.assertNotIn("--vulkan", (folder.path / "calls.txt").read_text())
+        self.assertNotIn(tr("hxa_vk_ready"), message)
+        self.assertFalse(hxsetup.vulkan_built(folder.path))
+        (folder.path / "calls.txt").unlink()
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            message = self.service.build_helixsr(vulkan=True)
         folder = self.service.helixsr()
         self.assertTrue(folder.ready and folder.built, message)
         self.assertIn(tr("hxa_vk_ready"), message)
@@ -314,8 +331,10 @@ class HxSetupTest(Base):
         self.assertIn("--vulkan", calls[0])
         self.assertTrue(hxsetup.vulkan_built(folder.path))
         with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
-            self.service.build_helixsr()          # built with them: nothing to do
+            self.service.build_helixsr(vulkan=True)   # built with them: nothing to do
+            self.service.build_helixsr()              # not ticked: what is built stays
         self.assertEqual(len((folder.path / "calls.txt").read_text().splitlines()), 1)
+        self.assertTrue(hxsetup.vulkan_built(folder.path))
 
     def test_helixsr_3_3_network_without_vulkan_is_built_again(self):
         # built earlier without the Vulkan kernels (HelixSR's own setup, or the kernels failed):
@@ -331,24 +350,85 @@ class HxSetupTest(Base):
             hxsetup.build(sys.executable, target, Path("/bin/true"), lambda *a: None)   # no --vulkan
         self.assertFalse(hxsetup.vulkan_built(target))
         with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
-            message = self.service.build_helixsr()
+            message = self.service.build_helixsr(vulkan=True)
         self.assertIn(tr("hxa_no_vk"), message)              # the Vulkan step failed: said so
         self.assertIn("ran out of memory", message)
         self.assertTrue(self.service.helixsr().ready)        # the earlier network still works
         (target / "vk-fail").unlink()
         with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
-            message = self.service.build_helixsr()
+            message = self.service.build_helixsr(vulkan=True)
         self.assertIn(tr("hxa_vk_ready"), message)
         calls = (target / "calls.txt").read_text().splitlines()
         self.assertEqual(len(calls), 3)
         self.assertNotIn("--vulkan", calls[0])
         self.assertTrue(all("--vulkan" in c and "--fg-only" not in c for c in calls[1:]))
 
-    def test_consent_names_vulkan_build_before_the_question(self):
+    def test_preset_k_only_when_ticked(self):
+        # HelixSR 3.2.1 and newer can build Preset K: a full build gets --preset-k, a network
+        # built before gets Preset K alone (--fg-only); a failure (exit code 5) is reported
         from scaler_assistant.i18n import tr
-        text = self.service.helixsr_auto_consent()
-        self.assertIn(tr("hxa_consent_vk"), text)
-        self.assertTrue(text.endswith(tr("hxa_consent").rpartition("\n\n")[2]))
+        self.files["HelixSR-3.3.0.zip"] = release_zip_hlx_built()
+        self.listing = api(("3.3.0", self.files["HelixSR-3.3.0.zip"], False))
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            message = self.service.build_helixsr()
+        folder = self.service.helixsr().path
+        self.assertNotIn("--preset-k", (folder / "calls.txt").read_text())
+        self.assertNotIn(tr("hxa_k_ready"), message)
+        (folder / "k-fail").write_text("")
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            message = self.service.build_helixsr(preset_k=True)
+        self.assertIn(tr("hxa_no_k"), message)
+        self.assertIn("did not compile", message)
+        (folder / "k-fail").unlink()
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            message = self.service.build_helixsr(preset_k=True)
+        self.assertIn(tr("hxa_k_ready"), message)
+        self.assertTrue(hxsetup.preset_k_built(folder))
+        calls = (folder / "calls.txt").read_text().splitlines()
+        self.assertEqual(len(calls), 3)
+        self.assertTrue(all("--fg-only" in c and "--preset-k" in c for c in calls[1:]))
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            self.service.build_helixsr(preset_k=True)   # built: nothing to do
+        self.assertEqual(len((folder / "calls.txt").read_text().splitlines()), 3)
+
+    def test_both_options_in_one_full_build(self):
+        self.files["HelixSR-3.3.0.zip"] = release_zip_hlx_built()
+        self.listing = api(("3.3.0", self.files["HelixSR-3.3.0.zip"], False))
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            self.service.build_helixsr(preset_k=True, vulkan=True)
+        folder = self.service.helixsr().path
+        calls = (folder / "calls.txt").read_text().splitlines()
+        self.assertEqual(len(calls), 1)
+        self.assertTrue("--vulkan" in calls[0] and "--preset-k" in calls[0] and "--fg-only" not in calls[0])
+
+    def test_options_ignored_where_the_release_cannot(self):
+        # 3.3.0 without the Vulkan step and without Preset K (as 3.2.0): nothing extra is asked
+        self.files["HelixSR-3.3.0.zip"] = release_zip_hlx_built(vulkan=False, preset_k=False)
+        self.listing = api(("3.3.0", self.files["HelixSR-3.3.0.zip"], False))
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            message = self.service.build_helixsr(preset_k=True, vulkan=True)
+        folder = self.service.helixsr().path
+        call = (folder / "calls.txt").read_text()
+        self.assertNotIn("--vulkan", call)
+        self.assertNotIn("--preset-k", call)
+        from scaler_assistant.i18n import tr
+        self.assertNotIn(tr("hxa_no_k"), message)
+        self.assertNotIn(tr("hxa_no_vk"), message)
+
+    def test_version_can_be_picked(self):
+        self.publish("2.0.0")
+        self.files["HelixSR-3.3.0.zip"] = release_zip_hlx_built()
+        self.listing = api(("3.3.0", self.files["HelixSR-3.3.0.zip"], False)) + self.listing
+        releases = self.service.helixsr_releases(self.opener)
+        self.assertEqual([r["version"] for r in releases], ["3.3.0", "2.0.0"])
+        self.assertEqual((releases[0]["preset_k"], releases[0]["vulkan"]), (True, True))
+        self.assertEqual((releases[1]["preset_k"], releases[1]["vulkan"]), (False, False))
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener):
+            self.service.build_helixsr(version="2.0.0")
+        self.assertEqual(self.service.helixsr().version, "2.0.0")
+        with mock.patch("scaler_assistant.hxsetup.open_url", self.opener), \
+                self.assertRaises(hxsetup.SetupError):
+            self.service.build_helixsr(version="9.9.9")
 
     def test_consent_names_amd_download(self):
         text = self.service.helixsr_auto_consent()

@@ -261,6 +261,7 @@ QLabel#footer {{ font-size: 11px; }}
 QLabel#gameTitle {{ font-family: {DISPLAY}; font-size: 16px; }}
 QLabel#meta {{ color: {p['muted']}; font-size: 12px; }}
 QLabel#issue {{ color: {p['warn']}; font-size: 12px; }}
+QLabel#menuNote {{ color: {p['warn']}; font-size: 11px; padding: 0px 12px 6px 34px; }}
 QLabel#path {{ color: {p['faint']}; font-size: 11px; font-family: {MONO}; }}
 QLabel#panelTitle {{ font-family: {DISPLAY}; font-size: 15px; }}
 QLabel#fieldLabel {{ color: {p['muted']}; font-family: {BODY_MEDIUM}; font-size: 12px; }}

@@ -222,10 +222,19 @@ if command == "install":
             os.replace(t / name, t / "HelixSR-Scaler-backup" / name)
         shutil.copyfile(Path(args["--scaler"]) / "OptiScaler.dll", t / name)
         files.append(name)
+        sub = Path(args["--scaler"]) / "OptiScaler"   # HelixSR Scaler's own folder (custom upscalers)
+        for f in sorted(sub.rglob("*")) if sub.is_dir() else []:
+            if f.is_file():
+                rel = "OptiScaler/" + f.relative_to(sub).as_posix()
+                (t / rel).parent.mkdir(parents=True, exist_ok=True)
+                shutil.copyfile(f, t / rel)
+                files.append(rel)
         (t / helix).mkdir(exist_ok=True)
         shutil.copyfile(release / helix / helix_dll, t / helix / helix_dll)
         files.append(helix + "/" + helix_dll)
-        (t / "OptiScaler.ini").write_text("[HelixSR]\n")
+        (t / "OptiScaler.ini").write_text(
+            "[HelixSR]\nInt8=auto\n\n[Upscalers]\nDx11Upscaler=auto\nDx12Upscaler=auto\n"
+            "VulkanUpscaler=auto\n\n[FSR]\nUpscalerIndex=auto\n")
         files.append("OptiScaler.ini")
         if ngx:   # made when the game starts; removed with HelixSR Scaler
             (t / helix / "helixsr.ini").write_text("[HelixSR]\n")
@@ -314,10 +323,11 @@ def hlx_dll(built: bool = True) -> bytes:
 
 def make_helixsr_ngx(folder: Path, version: str = "3.0.0", built: bool = True,
                      hlx: bool = True, scaler: str = "2.0.0", preset_k: bool = False,
-                     hlx_builder: bool = True) -> Path:
+                     hlx_builder: bool = True, custom: bool = False) -> Path:
     """A HelixSR 3.0 style release: HelixSR/helixsr.dll, HLX-FSR4, helixsr-scaler, the installer
     and no frame generation; preset_k: HelixSR 3.2.1's optional Preset K built (HelixSR/k);
-    hlx_builder: False for HelixSR 3.3, which ships HLX FSR 4 built without setup/hlxfsr4."""
+    hlx_builder: False for HelixSR 3.3, which ships HLX FSR 4 built without setup/hlxfsr4;
+    custom: HelixSR Scaler's custom upscalers (HLX FSR 4 Full, 3.2.1; HLX FSR 4 for Vulkan, 3.3)."""
     folder.mkdir(parents=True, exist_ok=True)
     (folder / "helixsr-setup.sh").write_text("#!/bin/sh\n")
     (folder / "HelixSR").mkdir(exist_ok=True)
@@ -328,6 +338,13 @@ def make_helixsr_ngx(folder: Path, version: str = "3.0.0", built: bool = True,
     (folder / "helixsr-scaler").mkdir(exist_ok=True)
     (folder / "helixsr-scaler" / "OptiScaler.dll").write_bytes(
         b"MZ OptiScaler HelixSR Scaler v" + scaler.encode() + b" (marker)")
+    if custom:
+        opti = folder / "helixsr-scaler" / "OptiScaler"
+        for rel in ("amd_fidelityfx_upscaler_dx12.dll", "custom/HLX FSR 4 Full/ffx/amd_fidelityfx_upscaler_dx12.dll",
+                    "custom/HLX FSR 4 Full/ffx/hlx_fsr4.ini",
+                    "custom/HLX FSR 4/ffx_vk/amd_fidelityfx_upscaler_vk.dll"):
+            (opti / rel).parent.mkdir(parents=True, exist_ok=True)
+            (opti / rel).write_bytes(b"MZ HLX FSR 4 (4.1.2) stand-in")
     (folder / "setup").mkdir(parents=True, exist_ok=True)
     if hlx_builder:
         (folder / "setup" / "hlxfsr4").mkdir(exist_ok=True)

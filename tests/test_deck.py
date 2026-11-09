@@ -141,6 +141,49 @@ class DeckBridgeTest(Base):
         self.assertIsNone(self.bridge.runtime(PLAIN))
 
 
+    def test_helixsr_scaler_upscaler_options(self):
+        from tests.fakes import make_helixsr_ngx
+        hx = make_helixsr_ngx(self.root / "HelixSR-3.3.0", "3.3.0", scaler="2.3.0",
+                              hlx_builder=False, custom=True)
+        self.service.set_helixsr_folder(hx)
+        dlss = self.game(self.bridge.overview(), DLSS)
+        json.dumps(dlss)
+        hscaler = next(c for c in dlss["choices"] if c["id"] == "helixsr:hscaler")
+        options = {o["label"]: o for o in hscaler["options"]}
+        self.assertEqual(len(options), 4)
+        k = next(o for o in hscaler["options"] if "Preset K" in o["label"])
+        self.assertEqual(k["id"], "")                                   # not built
+        self.assertIn("--preset-k", k["hint"])
+        self.assertIn("Steam overlay", k["note"])                       # its known issues
+        full = next(o for o in hscaler["options"] if "Full" in o["label"])
+        self.assertEqual(full["id"], "fsr4_full")                       # Steam Deck: offered
+        self.assertIn("ghosting", full["note"])
+        result = self.bridge.apply(DLSS, "helixsr:hscaler", "fsr4_full")
+        self.assertTrue(result["ok"], result)
+        dlss = self.game(self.bridge.overview(), DLSS)
+        self.assertIn("FSR 4 Full", dlss["hx"])
+        result = self.bridge.set_hx_upscaler(DLSS, "fsr4")
+        self.assertTrue(result["ok"], result)
+        hscaler = next(c for c in self.game(self.bridge.overview(), DLSS)["choices"]
+                       if c["id"] == "helixsr:hscaler")
+        self.assertEqual([o["id"] for o in hscaler["options"] if o["current"]], ["fsr4"])
+
+    def test_build_dialog_lists_versions_and_options(self):
+        releases = [{"version": "3.3.0", "preset_k": True, "vulkan": True},
+                    {"version": "3.2.0", "preset_k": False, "vulkan": False}]
+        with mock.patch.object(self.service, "helixsr_releases", return_value=releases):
+            info = self.bridge.helixsr_auto_text()
+        json.dumps(info)
+        self.assertEqual([v[0] for v in info["versions"]], ["3.3.0", "3.2.0"])
+        self.assertEqual(info["versions"][1][2:], [False, False])
+        self.assertIn("3.3.0", info["versions"][0][1])
+        from scaler_assistant.hxsetup import SetupError
+        with mock.patch.object(self.service, "helixsr_releases", side_effect=SetupError("offline")):
+            info = self.bridge.helixsr_auto_text()
+        self.assertEqual(info["versions"][0][0], "")                    # the newest
+        self.assertIn("offline", info["error"])
+
+
 class DeckyBackendTest(Base):
     """decky/main.py with a stand-in for Decky Loader's `decky` module."""
 
